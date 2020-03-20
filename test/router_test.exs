@@ -1,20 +1,18 @@
 defmodule Exampple.RouterTest do
   use ExUnit.Case
 
+  defmodule TestingController do
+    def get(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
+    def set(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
+  end
+
   defmodule TestingRouter do
     use Exampple.Router
 
-    alias Exampple.RouterTest.TestingController
-
     scope :iq do
-      get "urn:exampple:test:get:0", TestingController, :get
-      set "urn:exampple:test:set:0", TestingController, :set
+      get "urn:exampple:test:get:0", Exampple.RouterTest.TestingController, :get
+      set "urn:exampple:test:set:0", Exampple.RouterTest.TestingController, :set
     end
-  end
-
-  defmodule TestingController do
-    def get(conn, stanza), do: {:ok, conn, stanza}
-    def set(conn, stanza), do: {:ok, conn, stanza}
   end
 
   describe "defining routes" do
@@ -27,14 +25,32 @@ defmodule Exampple.RouterTest do
     end
 
     test "check get and set" do
+      Application.put_env(:exampple, :router, TestingRouter)
+      stanza = %Exampple.Saxy.Xmlel{
+        name: "iq",
+        attrs: %{"type" => "set"},
+        children: [
+          %Exampple.Saxy.Xmlel{
+            name: "query",
+            attrs: %{"xmlns" => "urn:exampple:test:set:0"}
+          }
+        ]
+      }
+      domain = "example.com"
       conn =
         %Exampple.Router.Conn{
+          domain: "example.com",
           stanza_type: "iq",
           type: "set",
           xmlns: "urn:exampple:test:set:0"
         }
-      stanza = %Exampple.Saxy.Xmlel{}
-      assert {:ok, conn, stanza} == TestingRouter.route(conn, stanza)
+      Process.register(self(), :test_get_and_set)
+      assert {:ok, _pid} = Exampple.Router.route(stanza, domain)
+      received =
+        receive do
+          info -> info
+        end
+      assert {:ok, conn, stanza} == received
     end
   end
 end

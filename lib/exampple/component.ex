@@ -172,7 +172,7 @@ defmodule Exampple.Component do
 
     packet
     |> Xmlel.clean_spaces()
-    |> data.router_handler.route()
+    |> data.router_handler.route(data.domain)
 
     stream = XmlStream.new()
     {:keep_state, %Data{data | stream: stream}, timeout_action(data)}

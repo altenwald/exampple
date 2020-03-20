@@ -2,6 +2,7 @@ defmodule Exampple.Router do
   require Logger
 
   alias Exampple.Saxy.Xmlel
+  alias Exampple.Xmpp.Jid
 
   defmodule Conn do
     @moduledoc false
@@ -26,8 +27,8 @@ defmodule Exampple.Router do
       conn =
         %Conn{
           domain: domain,
-          from_jid: Xmlel.get_attr(xmlel, "from"),
-          to_jid: Xmlel.get_attr(xmlel, "to"),
+          from_jid: Jid.parse(Xmlel.get_attr(xmlel, "from")),
+          to_jid: Jid.parse(Xmlel.get_attr(xmlel, "to")),
           id: Xmlel.get_attr(xmlel, "id"),
           type: Xmlel.get_attr(xmlel, "type", "normal"),
           xmlns: xmlns,
