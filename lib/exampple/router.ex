@@ -39,7 +39,7 @@ defmodule Exampple.Router do
     end)
   end
 
-  defmacro __using__(opts) do
+  defmacro __using__(_opts) do
     quote do
       import Exampple.Router
       Module.register_attribute(__MODULE__, :routes, accumulate: true)
