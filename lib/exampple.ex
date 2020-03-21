@@ -14,7 +14,7 @@ defmodule Exampple do
     GenStateMachine.start_link(Exampple.Component, args, name: Exampple.Component)
   end
 
-  def start_link(args) do
+  def start_link([args]) do
     GenStateMachine.start_link(Exampple.Component, args, name: Exampple.Component)
   end
 
@@ -22,7 +22,7 @@ defmodule Exampple do
   def child_spec(args) do
     %{
       id: Exampple,
-      start: {Exampple, :start_link, args},
+      start: {Exampple, :start_link, [args]},
       restart: :permanent,
       shutdown: 5_000
     }
