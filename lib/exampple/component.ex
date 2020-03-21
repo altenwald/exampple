@@ -142,6 +142,17 @@ defmodule Exampple.Component do
     {:next_state, :ready, %Data{data | stream: XmlStream.new()}, timeout_action(data)}
   end
 
+  def authenticate(:info, {:xmlelement, %Xmlel{name: "stream:error"} = xmlel}, data) do
+    raise ArgumentError, """
+
+    ******************************************
+    The system is NOT configured properly, it was returning:
+    #{to_string(xmlel)}
+    ******************************************
+    """
+    {:stop, :normal, data}
+  end
+
   defp get_handshake(stream_id, secret) do
     <<mac::integer-size(160)>> = :crypto.hash(:sha, "#{stream_id}#{secret}")
     mac
@@ -162,7 +173,8 @@ defmodule Exampple.Component do
     {:keep_state_and_data, timeout_action(data)}
   end
 
-  def ready(:info, {:send, packet}, data) do
+  def ready(:cast, {:send, packet}, data) do
+    Logger.debug("send packet: #{inspect(packet)}")
     data.tcp_handler.send(packet, data.socket)
     {:keep_state_and_data, timeout_action(data)}
   end

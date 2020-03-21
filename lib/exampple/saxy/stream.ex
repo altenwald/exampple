@@ -17,6 +17,11 @@ defmodule Exampple.Saxy.Stream do
       {:cont, partial} -> partial
       error -> error
     end
+  rescue FunctionClauseError ->
+    case Partial.parse(partial, "<stream:stream>" <> chunk) do
+      {:cont, partial} -> partial
+      error -> error
+    end
   end
 
   def terminate(partial) do

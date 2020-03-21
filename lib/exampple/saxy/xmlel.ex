@@ -103,7 +103,7 @@ defmodule Exampple.Saxy.Xmlel do
     """
     def to_string(xmlel) do
       encode(xmlel)
-      |> Encoder.encode_to_binary([])
+      |> Encoder.encode_to_binary()
     end
   end
 

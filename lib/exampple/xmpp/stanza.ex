@@ -203,7 +203,7 @@ defmodule Exampple.Xmpp.Stanza do
   """
   def error_tag(error) do
     {code, type} = get_error(error)
-    err_tag = Xmlel.new("error", %{"xmlns" => @xmpp_stanzas})
+    err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
     Xmlel.new("error", %{"code" => code, "type" => type}, [err_tag])
   end
 
