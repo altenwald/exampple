@@ -61,8 +61,19 @@ defmodule Exampple.Router do
     route_info_function = quote do
       def route_info(), do: unquote(routes)
     end
+    fallback =
+      if fback = Module.get_attribute(env.module, :fallback) do
+        {{controller, function}, []} = Code.eval_quoted(fback)
+        [
+          quote do
+            def route(conn, stanza), do: unquote(controller).unquote(function)(conn, stanza)
+          end
+        ]
+      else
+        []
+      end
 
-    [route_info_function | route_functions]
+    [route_info_function | route_functions] ++ [fallback]
   end
 
   defmacro scope(stanza_type, do: block) do
@@ -109,7 +120,7 @@ defmodule Exampple.Router do
   defmacro get(xmlns, controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
-    quote do
+    quote location: :keep do
       Module.put_attribute(__MODULE__, :routes, Macro.escape({@stanza_type, "get", unquote(xmlns), unquote(controller), unquote(function)}))
     end
   end
@@ -117,8 +128,16 @@ defmodule Exampple.Router do
   defmacro set(xmlns, controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
-    quote do
+    quote location: :keep do
       Module.put_attribute(__MODULE__, :routes, Macro.escape({@stanza_type, "set", unquote(xmlns), unquote(controller), unquote(function)}))
+    end
+  end
+
+  defmacro fallback(controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+    quote location: :keep do
+      Module.put_attribute(__MODULE__, :fallback, Macro.escape({unquote(controller), unquote(function)}))
     end
   end
 end

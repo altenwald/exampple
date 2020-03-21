@@ -4,6 +4,7 @@ defmodule Exampple.RouterTest do
   defmodule TestingController do
     def get(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
     def set(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
+    def error(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
   end
 
   defmodule TestingRouter do
@@ -13,6 +14,8 @@ defmodule Exampple.RouterTest do
       get "urn:exampple:test:get:0", Exampple.RouterTest.TestingController, :get
       set "urn:exampple:test:set:0", Exampple.RouterTest.TestingController, :set
     end
+
+    fallback Exampple.RouterTest.TestingController, :error
   end
 
   describe "defining routes" do
