@@ -89,6 +89,25 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
+  Taking an IQ stanza, it generates a response swapping from and to,
+  changing the type to "result" and replacing payload using the
+  provided as second parameter.
+
+  Examples:
+    iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "get"}
+    iex> payload = Exampple.Saxy.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
+    iex> xmlel = Exampple.Saxy.Xmlel.new("iq", attrs, [payload])
+    iex> data = Exampple.Saxy.Xmlel.new("item", %{"id" => "1"}, ["contact 1"])
+    iex> payload_resp = Exampple.Saxy.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
+    iex> Exampple.Xmpp.Stanza.iq_resp(xmlel, [payload_resp])
+    "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"><query xmlns=\\"jabber:iq:roster\\">contact 1</query></iq>"
+  """
+  def iq_resp(%Xmlel{name: "iq"} = xmlel, payload) do
+    get = &(Xmlel.get_attr(xmlel, &1))
+    iq(payload, get.("to"), get.("id"), get.("from"), "result")
+  end
+
+  @doc """
   Generates a result IQ stanza passing the payload, from JID, id and to JID.
 
   Examples:
