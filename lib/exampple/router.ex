@@ -24,16 +24,17 @@ defmodule Exampple.Router do
           [%Xmlel{} = subel | _] -> Xmlel.get_attr(subel, "xmlns")
           _ -> nil
         end
-      conn =
-        %Conn{
-          domain: domain,
-          from_jid: Jid.parse(Xmlel.get_attr(xmlel, "from")),
-          to_jid: Jid.parse(Xmlel.get_attr(xmlel, "to")),
-          id: Xmlel.get_attr(xmlel, "id"),
-          type: Xmlel.get_attr(xmlel, "type", "normal"),
-          xmlns: xmlns,
-          stanza_type: xmlel.name
-        }
+
+      conn = %Conn{
+        domain: domain,
+        from_jid: Jid.parse(Xmlel.get_attr(xmlel, "from")),
+        to_jid: Jid.parse(Xmlel.get_attr(xmlel, "to")),
+        id: Xmlel.get_attr(xmlel, "id"),
+        type: Xmlel.get_attr(xmlel, "type", "normal"),
+        xmlns: xmlns,
+        stanza_type: xmlel.name
+      }
+
       module = Application.get_env(:exampple, :router)
       apply(module, :route, [conn, xmlel])
     end)
@@ -49,21 +50,34 @@ defmodule Exampple.Router do
 
   defmacro __before_compile__(env) do
     routes = Module.get_attribute(env.module, :routes)
+
     route_functions =
       for route <- routes do
         {{stanza_type, type, xmlns, controller, function}, []} = Code.eval_quoted(route)
+
         quote do
-          def route(%Exampple.Router.Conn{stanza_type: unquote(stanza_type), xmlns: unquote(xmlns), type: unquote(type)} = conn, stanza) do
+          def route(
+                %Exampple.Router.Conn{
+                  stanza_type: unquote(stanza_type),
+                  xmlns: unquote(xmlns),
+                  type: unquote(type)
+                } = conn,
+                stanza
+              ) do
             unquote(controller).unquote(function)(conn, stanza)
           end
         end
       end
-    route_info_function = quote do
-      def route_info(), do: unquote(routes)
-    end
+
+    route_info_function =
+      quote do
+        def route_info(), do: unquote(routes)
+      end
+
     fallback =
       if fback = Module.get_attribute(env.module, :fallback) do
         {{controller, function}, []} = Code.eval_quoted(fback)
+
         [
           quote do
             def route(conn, stanza), do: unquote(controller).unquote(function)(conn, stanza)
@@ -78,6 +92,7 @@ defmodule Exampple.Router do
 
   defmacro scope(stanza_type, do: block) do
     stanza_type = to_string(stanza_type)
+
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, unquote(stanza_type))
       unquote(block)
@@ -86,29 +101,34 @@ defmodule Exampple.Router do
 
   def validate_controller!(controller) do
     {module, []} = Code.eval_quoted(controller)
+
     try do
       module.module_info()
-    rescue UndefinedFunctionError ->
-      module_name =
-        module
-        |> Module.split()
-        |> Enum.join(".")
-      raise ArgumentError, """
-      The module #{module_name} was not found to create the route,
-      use absolute paths or aliases to be sure all of the modules
-      are reachable.
-      """
+    rescue
+      UndefinedFunctionError ->
+        module_name =
+          module
+          |> Module.split()
+          |> Enum.join(".")
+
+        raise ArgumentError, """
+        The module #{module_name} was not found to create the route,
+        use absolute paths or aliases to be sure all of the modules
+        are reachable.
+        """
     end
   end
 
   def validate_function!(controller, function) do
     {module, []} = Code.eval_quoted(controller)
     {function, []} = Code.eval_quoted(function)
+
     unless function_exported?(module, function, 2) do
       module_name =
         module
         |> Module.split()
         |> Enum.join(".")
+
       raise ArgumentError, """
       The function #{module_name}.#{function}/2 was not found to create
       the route, check the function exists and have 2 parameters to
@@ -120,24 +140,43 @@ defmodule Exampple.Router do
   defmacro get(xmlns, controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
+
     quote location: :keep do
-      Module.put_attribute(__MODULE__, :routes, Macro.escape({@stanza_type, "get", unquote(xmlns), unquote(controller), unquote(function)}))
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "get", unquote(xmlns), unquote(controller), unquote(function)}
+        )
+      )
     end
   end
 
   defmacro set(xmlns, controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
+
     quote location: :keep do
-      Module.put_attribute(__MODULE__, :routes, Macro.escape({@stanza_type, "set", unquote(xmlns), unquote(controller), unquote(function)}))
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "set", unquote(xmlns), unquote(controller), unquote(function)}
+        )
+      )
     end
   end
 
   defmacro fallback(controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
+
     quote location: :keep do
-      Module.put_attribute(__MODULE__, :fallback, Macro.escape({unquote(controller), unquote(function)}))
+      Module.put_attribute(
+        __MODULE__,
+        :fallback,
+        Macro.escape({unquote(controller), unquote(function)})
+      )
     end
   end
 end

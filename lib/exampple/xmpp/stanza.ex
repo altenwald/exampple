@@ -48,7 +48,7 @@ defmodule Exampple.Xmpp.Stanza do
     iex> Exampple.Xmpp.Stanza.presence([], alice, "1")
     "<presence from=\\"alice@example.com\\" id=\\"1\\"/>"
   """
-  def presence(payload, from, id,  to \\ nil, type \\ nil) do
+  def presence(payload, from, id, to \\ nil, type \\ nil) do
     stanza(payload, "presence", from, id, to, type)
   end
 
@@ -64,11 +64,13 @@ defmodule Exampple.Xmpp.Stanza do
   """
   def message_error(payload, error, from, id, to) do
     {code, type} = get_error(error)
+
     payload_error = [
       Xmlel.new("error", %{"code" => code, "type" => type}, [
         Xmlel.new("error", %{"xmlns" => @xmpp_stanzas})
       ])
     ]
+
     message(payload ++ payload_error, from, id, to, "error")
   end
 
@@ -84,7 +86,7 @@ defmodule Exampple.Xmpp.Stanza do
     "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"><query xmlns=\\"jabber:iq:roster\\"/></iq>"
   """
   def iq_resp(%Xmlel{name: "iq", children: payload} = xmlel) do
-    get = &(Xmlel.get_attr(xmlel, &1))
+    get = &Xmlel.get_attr(xmlel, &1)
     iq(payload, get.("to"), get.("id"), get.("from"), "result")
   end
 
@@ -103,7 +105,7 @@ defmodule Exampple.Xmpp.Stanza do
     "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"><query xmlns=\\"jabber:iq:roster\\">contact 1</query></iq>"
   """
   def iq_resp(%Xmlel{name: "iq"} = xmlel, payload) do
-    get = &(Xmlel.get_attr(xmlel, &1))
+    get = &Xmlel.get_attr(xmlel, &1)
     iq(payload, get.("to"), get.("id"), get.("from"), "result")
   end
 
@@ -150,7 +152,7 @@ defmodule Exampple.Xmpp.Stanza do
     "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error code=\\"404\\" type=\\"cancel\\"><error xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
   """
   def iq_error(%Xmlel{name: "iq", children: payload} = xmlel, error) do
-    get = &(Xmlel.get_attr(xmlel, &1))
+    get = &Xmlel.get_attr(xmlel, &1)
     payload = payload ++ [error_tag(error)]
     iq(payload, get.("to"), get.("id"), get.("from"), "error")
   end

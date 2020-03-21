@@ -1,8 +1,7 @@
 defmodule Exampple.Xmpp.Jid do
-
   alias Exampple.Xmpp.Jid
 
-  defstruct [node: "", server: "", resource: ""]
+  defstruct node: "", server: "", resource: ""
 
   @type t :: %__MODULE__{node: binary, server: binary, resource: binary}
 
@@ -83,15 +82,19 @@ defmodule Exampple.Xmpp.Jid do
     {:error, :enojid}
   """
   def parse(nil), do: nil
+
   def parse(jid) when is_binary(jid) do
     opts = [capture: :all_but_first]
+
     case Regex.run(~r/^(?:([^@]+)@)?([^\/]+)(?:\/(.*))?$/, jid, opts) do
       [node, server] ->
-          %Jid{node: node, server: server}
+        %Jid{node: node, server: server}
+
       [node, server, res] ->
-          %Jid{node: node, server: server, resource: res}
+        %Jid{node: node, server: server, resource: res}
+
       nil ->
-          {:error, :enojid}
+        {:error, :enojid}
     end
   end
 

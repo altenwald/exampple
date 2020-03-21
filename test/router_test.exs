@@ -11,11 +11,11 @@ defmodule Exampple.RouterTest do
     use Exampple.Router
 
     scope :iq do
-      get "urn:exampple:test:get:0", Exampple.RouterTest.TestingController, :get
-      set "urn:exampple:test:set:0", Exampple.RouterTest.TestingController, :set
+      get("urn:exampple:test:get:0", Exampple.RouterTest.TestingController, :get)
+      set("urn:exampple:test:set:0", Exampple.RouterTest.TestingController, :set)
     end
 
-    fallback Exampple.RouterTest.TestingController, :error
+    fallback(Exampple.RouterTest.TestingController, :error)
   end
 
   describe "defining routes" do
@@ -24,11 +24,13 @@ defmodule Exampple.RouterTest do
         {"iq", "set", "urn:exampple:test:set:0", TestingController, :set},
         {"iq", "get", "urn:exampple:test:get:0", TestingController, :get}
       ]
+
       assert info == TestingRouter.route_info()
     end
 
     test "check get and set" do
       Application.put_env(:exampple, :router, TestingRouter)
+
       stanza = %Exampple.Saxy.Xmlel{
         name: "iq",
         attrs: %{"type" => "set"},
@@ -39,20 +41,24 @@ defmodule Exampple.RouterTest do
           }
         ]
       }
+
       domain = "example.com"
-      conn =
-        %Exampple.Router.Conn{
-          domain: "example.com",
-          stanza_type: "iq",
-          type: "set",
-          xmlns: "urn:exampple:test:set:0"
-        }
+
+      conn = %Exampple.Router.Conn{
+        domain: "example.com",
+        stanza_type: "iq",
+        type: "set",
+        xmlns: "urn:exampple:test:set:0"
+      }
+
       Process.register(self(), :test_get_and_set)
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain)
+
       received =
         receive do
           info -> info
         end
+
       assert {:ok, conn, stanza} == received
     end
   end
