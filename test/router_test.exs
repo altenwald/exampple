@@ -31,11 +31,11 @@ defmodule Exampple.RouterTest do
     test "check get and set" do
       Application.put_env(:exampple, :router, TestingRouter)
 
-      stanza = %Exampple.Saxy.Xmlel{
+      stanza = %Exampple.Xml.Xmlel{
         name: "iq",
         attrs: %{"type" => "set"},
         children: [
-          %Exampple.Saxy.Xmlel{
+          %Exampple.Xml.Xmlel{
             name: "query",
             attrs: %{"xmlns" => "urn:exampple:test:set:0"}
           }
@@ -48,8 +48,10 @@ defmodule Exampple.RouterTest do
         domain: "example.com",
         stanza_type: "iq",
         type: "set",
-        xmlns: "urn:exampple:test:set:0"
+        xmlns: "urn:exampple:test:set:0",
+        stanza: stanza
       }
+      query = stanza.children
 
       Process.register(self(), :test_get_and_set)
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain)
@@ -59,7 +61,7 @@ defmodule Exampple.RouterTest do
           info -> info
         end
 
-      assert {:ok, conn, stanza} == received
+      assert {:ok, conn, query} == received
     end
   end
 end

@@ -1,7 +1,7 @@
-defmodule Exampple.Saxy.Parser.SenderTest do
+defmodule Exampple.Xml.Parser.SenderTest do
   use ExUnit.Case
 
-  alias Exampple.Saxy.Stream, as: XmlStream
+  alias Exampple.Xml.Stream, as: XmlStream
 
   describe "process a document" do
     test "correctly step by step (debug)" do
@@ -15,11 +15,11 @@ defmodule Exampple.Saxy.Parser.SenderTest do
                |> XmlStream.parse("</foo>")
                |> XmlStream.terminate()
 
-      xmlel = %Exampple.Saxy.Xmlel{
+      xmlel = %Exampple.Xml.Xmlel{
         attrs: %{"id" => "1"},
         children: [
           "Hello world!",
-          %Exampple.Saxy.Xmlel{attrs: %{}, children: ["more data"], name: "bar"}
+          %Exampple.Xml.Xmlel{attrs: %{}, children: ["more data"], name: "bar"}
         ],
         name: "foo"
       }
@@ -51,12 +51,12 @@ defmodule Exampple.Saxy.Parser.SenderTest do
                |> XmlStream.parse("</foo>")
                |> XmlStream.terminate()
 
-      xmlel = %Exampple.Saxy.Xmlel{
+      xmlel = %Exampple.Xml.Xmlel{
         attrs: %{"id" => "1"},
         children: [
           "Hello world!",
-          %Exampple.Saxy.Xmlel{attrs: %{}, children: ["more data"], name: "bar"},
-          %Exampple.Saxy.Xmlel{attrs: %{}, children: ["and more"], name: "baz"}
+          %Exampple.Xml.Xmlel{attrs: %{}, children: ["more data"], name: "bar"},
+          %Exampple.Xml.Xmlel{attrs: %{}, children: ["and more"], name: "baz"}
         ],
         name: "foo"
       }

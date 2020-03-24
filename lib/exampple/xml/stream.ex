@@ -1,11 +1,11 @@
-defmodule Exampple.Saxy.Stream do
+defmodule Exampple.Xml.Stream do
   @moduledoc """
   Process a stream chunk by chunk to obtain a XML document.
   """
 
   alias Saxy.Partial
 
-  @handler Exampple.Saxy.Parser.Sender
+  @handler Exampple.Xml.Parser.Sender
 
   def new(pid \\ self()) do
     {:ok, partial} = Partial.new(@handler, pid)

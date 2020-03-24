@@ -2,8 +2,8 @@ defmodule Exampple.Component do
   use GenStateMachine, callback_mode: :handle_event_function
   require Logger
 
-  alias Exampple.Saxy.Xmlel
-  alias Exampple.Saxy.Stream, as: XmlStream
+  alias Exampple.Xml.Xmlel
+  alias Exampple.Xml.Stream, as: XmlStream
 
   @default_tcp_handler Exampple.Tcp
   @default_router_handler Exampple.Router

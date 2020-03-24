@@ -1,10 +1,10 @@
-defmodule Exampple.Saxy.Parser.Sender do
+defmodule Exampple.Xml.Parser.Sender do
   @moduledoc false
 
   @behaviour Saxy.Handler
 
-  alias Exampple.Saxy.Parser.Simple
-  alias Exampple.Saxy.Xmlel
+  alias Exampple.Xml.Parser.Simple
+  alias Exampple.Xml.Xmlel
 
   defmodule Data do
     defstruct pid: nil, stack: [], debug_xml: false

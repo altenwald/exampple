@@ -1,7 +1,7 @@
 defmodule Exampple.Router do
   require Logger
 
-  alias Exampple.Saxy.Xmlel
+  alias Exampple.Xml.Xmlel
   alias Exampple.Xmpp.Jid
 
   defmodule Conn do
@@ -12,7 +12,8 @@ defmodule Exampple.Router do
               id: nil,
               type: nil,
               xmlns: nil,
-              stanza_type: nil
+              stanza_type: nil,
+              stanza: nil
   end
 
   def route(xmlel, domain) do
@@ -32,11 +33,13 @@ defmodule Exampple.Router do
         id: Xmlel.get_attr(xmlel, "id"),
         type: Xmlel.get_attr(xmlel, "type", "normal"),
         xmlns: xmlns,
-        stanza_type: xmlel.name
+        stanza_type: xmlel.name,
+        stanza: xmlel
       }
 
       module = Application.get_env(:exampple, :router)
-      apply(module, :route, [conn, xmlel])
+      query = xmlel.children
+      apply(module, :route, [conn, query])
     end)
   end
 

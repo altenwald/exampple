@@ -1,9 +1,9 @@
-defmodule Exampple.Saxy.Parser.Simple do
+defmodule Exampple.Xml.Parser.Simple do
   @moduledoc false
 
   @behaviour Saxy.Handler
 
-  alias Exampple.Saxy.Xmlel
+  alias Exampple.Xml.Xmlel
 
   def handle_event(:start_document, _prolog, _state) do
     {:ok, []}
