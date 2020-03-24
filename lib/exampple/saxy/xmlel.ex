@@ -19,15 +19,16 @@ defmodule Exampple.Saxy.Xmlel do
   @doc """
   Creates a Xmlel struct.
 
-  Examples:
-    iex> Exampple.Saxy.Xmlel.new("foo")
-    %Exampple.Saxy.Xmlel{attrs: %{}, children: [], name: "foo"}
+  ## Examples:
 
-    iex> Exampple.Saxy.Xmlel.new("bar", %{"id" => "10"})
-    %Exampple.Saxy.Xmlel{attrs: %{"id" => "10"}, children: [], name: "bar"}
+      iex> Exampple.Saxy.Xmlel.new("foo")
+      %Exampple.Saxy.Xmlel{attrs: %{}, children: [], name: "foo"}
 
-    iex> Exampple.Saxy.Xmlel.new("bar", [{"id", "10"}])
-    %Exampple.Saxy.Xmlel{attrs: %{"id" => "10"}, children: [], name: "bar"}
+      iex> Exampple.Saxy.Xmlel.new("bar", %{"id" => "10"})
+      %Exampple.Saxy.Xmlel{attrs: %{"id" => "10"}, children: [], name: "bar"}
+
+      iex> Exampple.Saxy.Xmlel.new("bar", [{"id", "10"}])
+      %Exampple.Saxy.Xmlel{attrs: %{"id" => "10"}, children: [], name: "bar"}
   """
   @spec new(name :: binary, attrs | [{attr_name, attr_value}], children) :: t
   def new(name, attrs \\ %{}, children \\ [])

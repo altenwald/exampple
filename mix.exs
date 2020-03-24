@@ -22,6 +22,7 @@ defmodule Exampple.MixProject do
   defp deps do
     [
       {:gen_state_machine, "~> 2.1.0"},
+      {:ex_doc, "~> 0.21.3"},
       ## TODO: check if the PR was merged: https://github.com/qcam/saxy/pull/57
       {:saxy, github: "manuel-rubio/saxy", branch: "master"}
     ]
