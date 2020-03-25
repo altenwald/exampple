@@ -5,10 +5,13 @@ defmodule Exampple do
   to a XMPP server and provide more functionality to your environment.
   """
 
+  @app_name Mix.Project.config() |> Keyword.fetch!(:app)
+
   @doc false
-  def start_link([]) do
+  def start_link([app]) when is_atom(app) do
     args =
-      Application.get_env(:exampple, :component)
+      @app_name
+      |> Application.get_env(Exampple.Component)
       |> Enum.into(%{})
 
     GenStateMachine.start_link(Exampple.Component, args, name: Exampple.Component)
