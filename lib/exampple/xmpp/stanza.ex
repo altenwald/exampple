@@ -139,7 +139,7 @@ defmodule Exampple.Xmpp.Stanza do
 
   def iq_resp(%Xmlel{name: "iq", children: payload} = xmlel, nil) do
     get = &Xmlel.get_attr(xmlel, &1)
-    iq(payload, get.("to"), get.("id"), get.("from"), "result")
+    iq_resp(payload, get.("to"), get.("id"), get.("from"))
   end
 
   @doc """
@@ -158,7 +158,7 @@ defmodule Exampple.Xmpp.Stanza do
   """
   def iq_resp(%Xmlel{name: "iq"} = xmlel, payload) do
     get = &Xmlel.get_attr(xmlel, &1)
-    iq(payload, get.("to"), get.("id"), get.("from"), "result")
+    iq_resp(payload, get.("to"), get.("id"), get.("from"))
   end
 
   @doc """
@@ -167,8 +167,8 @@ defmodule Exampple.Xmpp.Stanza do
 
   Examples:
     iex> attrs = %{
-    iex>   "from" => "bob@example.com",
-    iex>   "to" => "alice@example.com",
+    iex>   "from" => "alice@example.com",
+    iex>   "to" => "bob@example.com",
     iex>   "id" => "1"
     iex> }
     iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
@@ -179,8 +179,8 @@ defmodule Exampple.Xmpp.Stanza do
     "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"><query xmlns=\\"jabber:iq:roster\\"/></iq>"
 
     iex> attrs = %{
-    iex>   "from" => "bob@example.com",
-    iex>   "to" => "alice@example.com",
+    iex>   "from" => "alice@example.com",
+    iex>   "to" => "bob@example.com",
     iex>   "id" => "1"
     iex> }
     iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
@@ -196,9 +196,9 @@ defmodule Exampple.Xmpp.Stanza do
 
     response =
       if payload do
-        iq_resp(payload, from_jid, conn.id, to_jid)
+        iq_resp(payload, to_jid, conn.id, from_jid)
       else
-        iq_resp(conn.stanza.children, from_jid, conn.id, to_jid)
+        iq_resp(conn.stanza.children, to_jid, conn.id, from_jid)
       end
 
     %Conn{conn | response: response}
