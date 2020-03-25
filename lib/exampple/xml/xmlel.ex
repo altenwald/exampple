@@ -5,7 +5,6 @@ defmodule Exampple.Xml.Xmlel do
   """
 
   alias Exampple.Xml.Xmlel
-  alias Saxy.Encoder
 
   @type attr_name :: binary
   @type attr_value :: binary
@@ -121,6 +120,8 @@ defmodule Exampple.Xml.Xmlel do
 
   defimpl String.Chars, for: __MODULE__ do
     alias Exampple.Xml.Xmlel
+    alias Saxy.Encoder
+    alias Saxy.Builder
 
     @doc """
     Implements `to_string/1` to convert a XML entity to a XML
@@ -140,6 +141,7 @@ defmodule Exampple.Xml.Xmlel do
     def to_string(xmlel) do
       xmlel
       |> Xmlel.encode()
+      |> Builder.build()
       |> Encoder.encode_to_binary()
     end
   end
