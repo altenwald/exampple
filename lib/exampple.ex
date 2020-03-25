@@ -5,12 +5,10 @@ defmodule Exampple do
   to a XMPP server and provide more functionality to your environment.
   """
 
-  @app_name Mix.Project.config() |> Keyword.fetch!(:app)
-
   @doc false
-  def start_link([app]) when is_atom(app) do
+  def start_link([otp_app: otp_app]) when is_atom(otp_app) do
     args =
-      @app_name
+      otp_app
       |> Application.get_env(Exampple.Component)
       |> Enum.into(%{})
 
