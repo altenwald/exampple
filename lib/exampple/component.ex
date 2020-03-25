@@ -34,7 +34,7 @@ defmodule Exampple.Component do
     "<handshake>#{password}</handshake>"
   end
 
-  defmacro __usign__(_) do
+  defmacro __using__(_) do
     quote do
       import Exampple.Component, only: [send: 1]
 
