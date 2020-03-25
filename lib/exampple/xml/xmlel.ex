@@ -70,28 +70,57 @@ defmodule Exampple.Xml.Xmlel do
     decode(xmlel)
   end
 
-  defp decode(data) when is_binary(data), do: data
+  @doc """
+  This function is a helper function to translate the tuples coming
+  from Saxy to the Xmlel structs.
 
-  defp decode(%Xmlel{attrs: attrs, children: children} = xmlel) do
-    attrs = Enum.into(attrs, %{})
+  Examples:
+    iex> Exampple.Xml.Xmlel.decode({"foo", [], []})
+    %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}
+
+    iex> Exampple.Xml.Xmlel.decode({"bar", [{"id", "10"}], ["Hello!"]})
+    %Exampple.Xml.Xmlel{name: "bar", attrs: %{"id" => "10"}, children: ["Hello!"]}
+  """
+  def decode(data) when is_binary(data), do: data
+
+  def decode(%Xmlel{attrs: attrs, children: children} = xmlel) do
     children = Enum.map(children, &decode/1)
     %Xmlel{xmlel | attrs: attrs, children: children}
   end
 
+  def decode({name, attrs, children}) do
+    attrs = Enum.into(attrs, %{})
+    decode(%Xmlel{name: name, attrs: attrs, children: children})
+  end
+
+  @doc """
+  This function is a helper function to translate the content of the
+  Xmlel structs to the tuples needed by Saxy.
+
+  Examples:
+    iex> Exampple.Xml.Xmlel.encode(%Exampple.Xml.Xmlel{name: "foo"})
+    {"foo", [], []}
+
+    iex> Exampple.Xml.Xmlel.encode(%Exampple.Xml.Xmlel{name: "bar", attrs: %{"id" => "10"}, children: ["Hello!"]})
+    {"bar", [{"id", "10"}], ["Hello!"]}
+  """
+  def encode(%Xmlel{} = xmlel) do
+    children = Enum.map(xmlel.children, &encode/1)
+    {xmlel.name, Enum.into(xmlel.attrs, []), children}
+  end
+
+  def encode(content) when is_binary(content), do: content
+
+  def encode(%struct_name{} = struct) do
+    builder = Module.concat(Saxy.Builder, struct_name)
+
+    struct
+    |> builder.build()
+    |> Saxy.encode!(nil)
+  end
+
   defimpl String.Chars, for: __MODULE__ do
-    defp encode(%Xmlel{} = xmlel) do
-      children = Enum.map(xmlel.children, &encode/1)
-      {xmlel.name, Enum.into(xmlel.attrs, []), children}
-    end
-
-    defp encode(content) when is_binary(content), do: content
-
-    defp encode(%struct_name{} = struct) do
-      builder = Module.concat(Saxy.Builder, struct_name)
-      struct
-      |> builder.build()
-      |> Saxy.encode!(nil)
-    end
+    alias Exampple.Xml.Xmlel
 
     @doc """
     Implements `to_string/1` to convert a XML entity to a XML
@@ -109,8 +138,23 @@ defmodule Exampple.Xml.Xmlel do
       "<iq type=\\"get\\"><query xmlns=\\"urn:jabber:iq\\"/></iq>"
     """
     def to_string(xmlel) do
-      encode(xmlel)
+      xmlel
+      |> Xmlel.encode()
       |> Encoder.encode_to_binary()
+    end
+  end
+
+  defimpl Saxy.Builder, for: Xmlel do
+    @moduledoc false
+    @doc """
+    Generates the Saxy tuples from Xmlel structs.
+
+    Examples:
+      iex> Saxy.Builder.build(Exampple.Xml.Xmlel.new("foo", %{}, []))
+      {"foo", [], []}
+    """
+    def build(xmlel) do
+      Xmlel.encode(xmlel)
     end
   end
 

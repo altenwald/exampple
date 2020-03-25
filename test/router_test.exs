@@ -10,9 +10,9 @@ defmodule Exampple.RouterTest do
   defmodule TestingRouter do
     use Exampple.Router
 
-    scope :iq do
-      get("urn:exampple:test:get:0", Exampple.RouterTest.TestingController, :get)
-      set("urn:exampple:test:set:0", Exampple.RouterTest.TestingController, :set)
+    iq "urn:exampple:test:" do
+      get("get:0", Exampple.RouterTest.TestingController, :get)
+      set("set:0", Exampple.RouterTest.TestingController, :set)
     end
 
     fallback(Exampple.RouterTest.TestingController, :error)
@@ -51,6 +51,7 @@ defmodule Exampple.RouterTest do
         xmlns: "urn:exampple:test:set:0",
         stanza: stanza
       }
+
       query = stanza.children
 
       Process.register(self(), :test_get_and_set)

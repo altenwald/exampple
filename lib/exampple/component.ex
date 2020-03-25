@@ -4,6 +4,7 @@ defmodule Exampple.Component do
 
   alias Exampple.Xml.Xmlel
   alias Exampple.Xml.Stream, as: XmlStream
+  alias Exampple.Router.Conn
 
   @default_tcp_handler Exampple.Tcp
   @default_router_handler Exampple.Router
@@ -33,6 +34,21 @@ defmodule Exampple.Component do
     "<handshake>#{password}</handshake>"
   end
 
+  defmacro __usign__(_) do
+    quote do
+      import Exampple.Component, only: [send: 1]
+
+      import Exampple.Xmpp.Stanza,
+        only: [
+          message_resp: 2,
+          message_error: 2,
+          iq_resp: 1,
+          iq_resp: 2,
+          iq_error: 2
+        ]
+    end
+  end
+
   def start_link(name, args) do
     GenStateMachine.start_link(__MODULE__, args, name: name)
   end
@@ -49,7 +65,13 @@ defmodule Exampple.Component do
     :ok = GenStateMachine.stop(__MODULE__)
   end
 
-  def send(data) do
+  @spec send(binary | Router.Conn.t()) :: :ok
+  def send(data) when is_binary(data) do
+    GenStateMachine.cast(__MODULE__, {:send, data})
+  end
+
+  def send(%Conn{response: response} = conn) when response != nil do
+    data = to_string(conn.response)
     GenStateMachine.cast(__MODULE__, {:send, data})
   end
 
@@ -150,6 +172,7 @@ defmodule Exampple.Component do
     #{to_string(xmlel)}
     ******************************************
     """
+
     {:stop, :normal, data}
   end
 

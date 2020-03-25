@@ -3,8 +3,26 @@ defmodule Exampple.Xmpp.Stanza do
   Provides functions to create stanzas.
   """
   alias Exampple.Xml.Xmlel
+  alias Exampple.Router.Conn
 
   @xmpp_stanzas "urn:ietf:params:xml:ns:xmpp-stanzas"
+
+  @callback render(Map.t()) :: Xmlel.t()
+
+  @doc false
+  defmacro __using__(_) do
+    quote do
+      @behaviour Exampple.Xmpp.Stanza
+      defimpl Saxy.Builder, for: __MODULE__ do
+        @moduledoc false
+        def build(%module{} = data) do
+          data
+          |> module.render()
+          |> Xmlel.encode()
+        end
+      end
+    end
+  end
 
   @doc """
   Creates IQ stanzas.
@@ -60,18 +78,50 @@ defmodule Exampple.Xmpp.Stanza do
     iex> alice = "alice@example.com"
     iex> bob = "bob@example.com"
     iex> Exampple.Xmpp.Stanza.message_error(payload, "item-not-found", alice, "1", bob)
-    "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error code=\\"404\\" type=\\"cancel\\"><error xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
+    "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
   """
   def message_error(payload, error, from, id, to) do
-    {code, type} = get_error(error)
+    message(payload ++ [error_tag(error)], from, id, to, "error")
+  end
 
-    payload_error = [
-      Xmlel.new("error", %{"code" => code, "type" => type}, [
-        Xmlel.new("error", %{"xmlns" => @xmpp_stanzas})
-      ])
-    ]
+  @doc """
+  Creates a response error message inside of the Router.Conn struct (response).
 
-    message(payload ++ payload_error, from, id, to, "error")
+  Examples:
+    iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
+    iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1"}
+    iex> message = Exampple.Xml.Xmlel.new("message", attrs, payload)
+    iex> conn = Exampple.Router.build_conn(message)
+    iex> |> Exampple.Xmpp.Stanza.message_error("item-not-found")
+    iex> conn.response
+    "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
+  """
+  def message_error(%Conn{} = conn, error) do
+    from_jid = to_string(conn.from_jid)
+    to_jid = to_string(conn.to_jid)
+    response = message_error(conn.stanza.children, error, from_jid, conn.id, to_jid)
+    %Conn{conn | response: response}
+  end
+
+  @doc """
+  Creates a response message inside of the Router.Conn struct (response).
+  This is indeed not a response but a way to simplify the send to a message
+  to who was sending us something.
+
+  Examples:
+    iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
+    iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "chat"}
+    iex> message = Exampple.Xml.Xmlel.new("message", attrs, payload)
+    iex> conn = Exampple.Router.build_conn(message)
+    iex> |> Exampple.Xmpp.Stanza.message_resp([])
+    iex> conn.response
+    "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"chat\\"/>"
+  """
+  def message_resp(%Conn{} = conn, payload) do
+    from_jid = to_string(conn.from_jid)
+    to_jid = to_string(conn.to_jid)
+    response = message(payload, from_jid, conn.id, to_jid, conn.type)
+    %Conn{conn | response: response}
   end
 
   @doc """
@@ -85,7 +135,9 @@ defmodule Exampple.Xmpp.Stanza do
     iex> Exampple.Xmpp.Stanza.iq_resp(xmlel)
     "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"><query xmlns=\\"jabber:iq:roster\\"/></iq>"
   """
-  def iq_resp(%Xmlel{name: "iq", children: payload} = xmlel) do
+  def iq_resp(xmlel_or_conn, payload \\ nil)
+
+  def iq_resp(%Xmlel{name: "iq", children: payload} = xmlel, nil) do
     get = &Xmlel.get_attr(xmlel, &1)
     iq(payload, get.("to"), get.("id"), get.("from"), "result")
   end
@@ -107,6 +159,49 @@ defmodule Exampple.Xmpp.Stanza do
   def iq_resp(%Xmlel{name: "iq"} = xmlel, payload) do
     get = &Xmlel.get_attr(xmlel, &1)
     iq(payload, get.("to"), get.("id"), get.("from"), "result")
+  end
+
+  @doc """
+  Generates a result IQ stanza keeping the Router.Conn flow. It stores the response
+  inside of the Router.Conn to let it perform the send from there.
+
+  Examples:
+    iex> attrs = %{
+    iex>   "from" => "bob@example.com",
+    iex>   "to" => "alice@example.com",
+    iex>   "id" => "1"
+    iex> }
+    iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
+    iex> iq = Exampple.Xml.Xmlel.new("iq", attrs, [payload])
+    iex> conn = Exampple.Router.build_conn(iq)
+    iex> |> Exampple.Xmpp.Stanza.iq_resp()
+    iex> conn.response
+    "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"><query xmlns=\\"jabber:iq:roster\\"/></iq>"
+
+    iex> attrs = %{
+    iex>   "from" => "bob@example.com",
+    iex>   "to" => "alice@example.com",
+    iex>   "id" => "1"
+    iex> }
+    iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
+    iex> iq = Exampple.Xml.Xmlel.new("iq", attrs, [payload])
+    iex> conn = Exampple.Router.build_conn(iq)
+    iex> |> Exampple.Xmpp.Stanza.iq_resp([])
+    iex> conn.response
+    "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"/>"
+  """
+  def iq_resp(%Conn{} = conn, payload) do
+    from_jid = to_string(conn.from_jid)
+    to_jid = to_string(conn.to_jid)
+
+    response =
+      if payload do
+        iq_resp(payload, from_jid, conn.id, to_jid)
+      else
+        iq_resp(conn.stanza.children, from_jid, conn.id, to_jid)
+      end
+
+    %Conn{conn | response: response}
   end
 
   @doc """
@@ -155,6 +250,37 @@ defmodule Exampple.Xmpp.Stanza do
     get = &Xmlel.get_attr(xmlel, &1)
     payload = payload ++ [error_tag(error)]
     iq(payload, get.("to"), get.("id"), get.("from"), "error")
+  end
+
+  @doc """
+  Taken an IQ stanza, it generates an error based on error parameter.
+  The codes available are the following ones:
+
+  - bad-request
+  - forbidden
+  - item-not-found
+  - not-acceptable
+  - internal-server-error
+  - service-unavailable
+  - feature-not-implemented
+
+  see more here: https://xmpp.org/extensions/xep-0086.html
+
+  Examples:
+    iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "get"}
+    iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
+    iex> xmlel = Exampple.Xml.Xmlel.new("iq", attrs, [payload])
+    iex> conn = Exampple.Router.build_conn(xmlel)
+    iex> |> Exampple.Xmpp.Stanza.iq_error("item-not-found")
+    iex> conn.response
+    "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
+  """
+  def iq_error(%Conn{} = conn, error) do
+    to_jid = to_string(conn.to_jid)
+    from_jid = to_string(conn.from_jid)
+    payload = conn.stanza.children ++ [error_tag(error)]
+    response = iq(payload, to_jid, conn.id, from_jid, "error")
+    %Conn{conn | response: response}
   end
 
   @doc """

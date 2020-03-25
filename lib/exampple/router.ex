@@ -13,31 +13,37 @@ defmodule Exampple.Router do
               type: nil,
               xmlns: nil,
               stanza_type: nil,
-              stanza: nil
+              stanza: nil,
+              response: nil
+
+    @type t() :: %__MODULE__{}
+  end
+
+  def build_conn(%Xmlel{} = xmlel, domain \\ nil) do
+    xmlns =
+      case xmlel.children do
+        [%Xmlel{} = subel | _] -> Xmlel.get_attr(subel, "xmlns")
+        _ -> nil
+      end
+
+    %Conn{
+      domain: domain,
+      from_jid: Jid.parse(Xmlel.get_attr(xmlel, "from")),
+      to_jid: Jid.parse(Xmlel.get_attr(xmlel, "to")),
+      id: Xmlel.get_attr(xmlel, "id"),
+      type: Xmlel.get_attr(xmlel, "type", "normal"),
+      xmlns: xmlns,
+      stanza_type: xmlel.name,
+      stanza: xmlel
+    }
   end
 
   def route(xmlel, domain) do
     Logger.debug("[router] processing: #{inspect(xmlel)}")
     # TODO: add this task under a DynamicSupervisor
     Task.start(fn ->
-      xmlns =
-        case xmlel.children do
-          [%Xmlel{} = subel | _] -> Xmlel.get_attr(subel, "xmlns")
-          _ -> nil
-        end
-
-      conn = %Conn{
-        domain: domain,
-        from_jid: Jid.parse(Xmlel.get_attr(xmlel, "from")),
-        to_jid: Jid.parse(Xmlel.get_attr(xmlel, "to")),
-        id: Xmlel.get_attr(xmlel, "id"),
-        type: Xmlel.get_attr(xmlel, "type", "normal"),
-        xmlns: xmlns,
-        stanza_type: xmlel.name,
-        stanza: xmlel
-      }
-
       module = Application.get_env(:exampple, :router)
+      conn = build_conn(xmlel, domain)
       query = xmlel.children
       apply(module, :route, [conn, query])
     end)
@@ -93,11 +99,26 @@ defmodule Exampple.Router do
     [route_info_function | route_functions] ++ [fallback]
   end
 
-  defmacro scope(stanza_type, do: block) do
-    stanza_type = to_string(stanza_type)
-
+  defmacro iq(xmlns_partial \\ "", do: block) do
     quote location: :keep do
-      Module.put_attribute(__MODULE__, :stanza_type, unquote(stanza_type))
+      Module.put_attribute(__MODULE__, :stanza_type, "iq")
+      Module.put_attribute(__MODULE__, :xmlns_partial, unquote(xmlns_partial))
+      unquote(block)
+    end
+  end
+
+  defmacro message(do: block) do
+    quote location: :keep do
+      Module.put_attribute(__MODULE__, :stanza_type, "message")
+      Module.put_attribute(__MODULE__, :xmlns_partial, "")
+      unquote(block)
+    end
+  end
+
+  defmacro presence(do: block) do
+    quote location: :keep do
+      Module.put_attribute(__MODULE__, :stanza_type, "presence")
+      Module.put_attribute(__MODULE__, :xmlns_partial, "")
       unquote(block)
     end
   end
@@ -149,7 +170,8 @@ defmodule Exampple.Router do
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "get", unquote(xmlns), unquote(controller), unquote(function)}
+          {@stanza_type, "get", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
         )
       )
     end
@@ -164,7 +186,8 @@ defmodule Exampple.Router do
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "set", unquote(xmlns), unquote(controller), unquote(function)}
+          {@stanza_type, "set", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
         )
       )
     end
