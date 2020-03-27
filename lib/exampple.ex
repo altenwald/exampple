@@ -11,6 +11,7 @@ defmodule Exampple do
       otp_app
       |> Application.get_env(Exampple.Component)
       |> Enum.into(%{})
+      |> Map.put(:otp_app, otp_app)
 
     GenStateMachine.start_link(Exampple.Component, args, name: Exampple.Component)
   end

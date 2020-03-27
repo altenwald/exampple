@@ -20,7 +20,8 @@ defmodule Exampple.Component do
               set_from: false,
               ping: false,
               tcp_handler: Tcp,
-              router_handler: Router
+              router_handler: Router,
+              otp_app: nil
   end
 
   defp xml_init(domain) do
@@ -82,6 +83,16 @@ defmodule Exampple.Component do
     ping = Map.get(cfg, :ping, false)
     router_handler = Map.get(cfg, :router_handler, @default_router_handler)
     tcp_handler = Map.get(cfg, :tcp_handler, @default_tcp_handler)
+    otp_app = Map.get(cfg, :otp_app)
+
+    unless otp_app do
+      raise """
+      *****************
+      You have to provide :otp_app to the Exampple.Component
+      configuration!!!
+      *****************
+      """
+    end
 
     events =
       if Map.get(cfg, :auto_connect, false) do
@@ -100,7 +111,8 @@ defmodule Exampple.Component do
        set_from: set_from,
        ping: ping,
        router_handler: router_handler,
-       tcp_handler: tcp_handler
+       tcp_handler: tcp_handler,
+       otp_app: otp_app
      }, events}
   end
 
@@ -115,6 +127,10 @@ defmodule Exampple.Component do
         Logger.error("connecting error [#{host}:#{port}]: #{inspect(error)}")
         {:next_state, :retrying, data, [{:next_event, :cast, :connect}]}
     end
+  end
+
+  def disconnected(:info, {:xmlelement, _xmlel}, _data) do
+    {:keep_state_and_data, [postpone: true]}
   end
 
   def retrying(:cast, :connect, data) do
@@ -207,7 +223,7 @@ defmodule Exampple.Component do
 
     packet
     |> Xmlel.clean_spaces()
-    |> data.router_handler.route(data.domain)
+    |> data.router_handler.route(data.domain, data.otp_app)
 
     stream = XmlStream.new()
     {:keep_state, %Data{data | stream: stream}, timeout_action(data)}
@@ -215,7 +231,7 @@ defmodule Exampple.Component do
 
   def ready(:info, {:xmlelement, packet}, %Data{trimmed: false} = data) do
     Logger.debug("received packet: #{inspect(packet)}")
-    data.router_handler.route(packet)
+    data.router_handler.route(packet, data.domain, data.otp_app)
     stream = XmlStream.new()
     {:keep_state, %Data{data | stream: stream}, timeout_action(data)}
   end

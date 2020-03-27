@@ -38,11 +38,11 @@ defmodule Exampple.Router do
     }
   end
 
-  def route(xmlel, domain) do
+  def route(xmlel, domain, otp_app) do
     Logger.debug("[router] processing: #{inspect(xmlel)}")
     # TODO: add this task under a DynamicSupervisor
     Task.start(fn ->
-      module = Application.get_env(:exampple, :router)
+      module = Application.get_env(otp_app, :router)
       conn = build_conn(xmlel, domain)
       query = xmlel.children
       apply(module, :route, [conn, query])
