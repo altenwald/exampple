@@ -32,6 +32,20 @@ defmodule Exampple.Xmpp.Jid do
   def is_full?(%Jid{}), do: true
   def is_full?(_), do: {:error, :enojid}
 
+  @spec new(node :: binary, server :: binary, resource :: binary) :: t
+  @doc """
+  Creates a new JID passing node, server and resource data.
+
+  Examples:
+    iex> Exampple.Xmpp.Jid.new("foo", "bar", "baz")
+    %Exampple.Xmpp.Jid{node: "foot", server: "bar", resource: "baz"}
+  """
+  def new(node, server, resource) do
+    node = node || ""
+    resource = resource || ""
+    %Jid{node: node, server: server, resource: resource}
+  end
+
   @spec to_bare(binary) :: binary
   @doc """
   Converts JID to a bare JID in binary format.
