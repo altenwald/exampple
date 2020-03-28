@@ -160,7 +160,7 @@ defmodule Exampple.Component do
 
       false ->
         Logger.error("stream invalid, no Stream ID")
-        :gen_tcp.close(data.socket)
+        data.tcp_handler.stop(data.socket)
         {:next_state, :retrying, data, [{:next_event, :cast, :connect}]}
     end
   end
