@@ -43,7 +43,15 @@ defmodule Exampple.Client do
           "<iq to='#{to}' id='#{id}' type='#{type}'>#{payload}</iq>"
         (to, id, type, xmlns: xmlns, payload: payload) ->
           "<iq to='#{to}' id='#{id}' type='#{type}'><query xmlns='#{xmlns}'>#{payload}</query></iq>"
-      end
+      end,
+      register: fn(username, password, phone) ->
+        "<iq id='reg1' type='set'>" <>
+        "<query xmlns='jabber:iq:register'>" <>
+        "<username>#{username}</username>" <>
+        "<password>#{password}</password>" <>
+        "<phone>#{phone}</phone>" <>
+        "</query></iq>"
+      end,
     ]
   end
 
