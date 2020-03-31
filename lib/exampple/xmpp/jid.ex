@@ -38,7 +38,7 @@ defmodule Exampple.Xmpp.Jid do
 
   Examples:
     iex> Exampple.Xmpp.Jid.new("foo", "bar", "baz")
-    %Exampple.Xmpp.Jid{node: "foot", server: "bar", resource: "baz"}
+    %Exampple.Xmpp.Jid{node: "foo", server: "bar", resource: "baz"}
   """
   def new(node, server, resource) do
     node = node || ""

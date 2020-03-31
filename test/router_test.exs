@@ -55,7 +55,7 @@ defmodule Exampple.RouterTest do
       query = stanza.children
 
       Process.register(self(), :test_get_and_set)
-      assert {:ok, _pid} = Exampple.Router.route(stanza, domain)
+      assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
 
       received =
         receive do

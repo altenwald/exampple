@@ -44,11 +44,30 @@ defmodule Exampple.Xml.Xmlel do
 
   Examples:
     iex> import Exampple.Xml.Xmlel
-    iex> ~X|<foo/>|
-    %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "foo"}
+    iex> ~X|<foo>
+    iex> </foo>
+    iex> |
+    %Exampple.Xml.Xmlel{attrs: %{}, children: ["\\n "], name: "foo"}
   """
   def sigil_X(string, _addons) do
     parse(string)
+  end
+
+  @doc """
+  Sigil to use ~x to provide XML text and transform it to Xmlel struct
+  removing spaces and breaking lines.
+
+  Examples:
+    iex> import Exampple.Xml.Xmlel
+    iex> ~x|<foo>
+    iex> </foo>
+    iex> |
+    %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "foo"}
+  """
+  def sigil_x(string, _addons) do
+    string
+    |> parse()
+    |> clean_spaces()
   end
 
   @doc """
