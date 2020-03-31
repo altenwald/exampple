@@ -61,8 +61,8 @@ defmodule Exampple.Component do
     :ok = GenStateMachine.cast(__MODULE__, :connect)
   end
 
-  @spec disconnect() :: :ok
-  def disconnect() do
+  @spec stop() :: :ok
+  def stop() do
     :ok = GenStateMachine.stop(__MODULE__)
   end
 
@@ -253,6 +253,14 @@ defmodule Exampple.Component do
 
   def handle_event(:info, {:xmlstreamstart, _name, _attrs}, state, _data)
       when state != :stream_init do
+    :keep_state_and_data
+  end
+
+  def handle_event(:info, :xmlstartdoc, _state, _data) do
+    :keep_state_and_data
+  end
+
+  def handle_event(:info, {:xmlstreamend, _name}, _state, _data) do
     :keep_state_and_data
   end
 
