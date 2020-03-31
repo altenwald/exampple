@@ -5,7 +5,7 @@ defmodule Exampple.DummyTcp do
   def start(_host, _port) do
     client_pid = self()
     case GenServer.start_link(__MODULE__, [client_pid], name: __MODULE__) do
-      {:error, {:already_started, pid}} ->
+      {:error, {:already_started, _pid}} ->
         stop(__MODULE__)
         start(nil, nil)
       {:ok, pid} -> {:ok, pid}
