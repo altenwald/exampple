@@ -349,11 +349,25 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   ## took from: https://xmpp.org/extensions/xep-0086.html
+  def get_error("gone"), do: {"302", "modify"}
+  def get_error("redirect"), do: {"302", "modify"}
   def get_error("bad-request"), do: {"400", "modify"}
+  def get_error("jid-malformed"), do: {"400", "modify"}
+  def get_error("unexpected-request"), do: {"400", "wait"}
+  def get_error("not-authorized"), do: {"401", "auth"}
+  def get_error("payment-required"), do: {"402", "auth"}
   def get_error("forbidden"), do: {"403", "auth"}
   def get_error("item-not-found"), do: {"404", "cancel"}
+  def get_error("recipient-unavailable"), do: {"404", "cancel"}
+  def get_error("remote-server-not-found"), do: {"404", "cancel"}
+  def get_error("not-allowed"), do: {"405", "cancel"}
   def get_error("not-acceptable"), do: {"406", "modify"}
+  def get_error("registration-required"), do: {"407", "auth"}
+  def get_error("subscription-required"), do: {"407", "auth"}
+  def get_error("conflict"), do: {"409", "cancel"}
   def get_error("internal-server-error"), do: {"500", "wait"}
-  def get_error("service-unavailable"), do: {"503", "cancel"}
+  def get_error("resource-constraint"), do: {"500", "wait"}
   def get_error("feature-not-implemented"), do: {"501", "cancel"}
+  def get_error("service-unavailable"), do: {"503", "cancel"}
+  def get_error("remote-server-timeout"), do: {"504", "wait"}
 end
