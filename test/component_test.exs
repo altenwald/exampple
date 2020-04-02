@@ -44,14 +44,18 @@ defmodule Exampple.ComponentTest do
       Exampple.start_link(otp_app: :exampple)
       Component.connect()
       Process.sleep(500)
+
       DummyTcp.received(
         "<iq type='get' to='test.example.com' from='user@example.com/res1' id='1'>" <>
-        "<query xmlns='jabber:iq:ping'/></iq>"
+          "<query xmlns='jabber:iq:ping'/></iq>"
       )
+
       Process.sleep(500)
+
       recv =
         "<iq from=\"test.example.com\" id=\"1\" to=\"user@example.com/res1\" " <>
-        "type=\"result\"><query xmlns=\"jabber:iq:ping\"/></iq>"
+          "type=\"result\"><query xmlns=\"jabber:iq:ping\"/></iq>"
+
       assert recv == DummyTcp.sent()
       Component.stop()
     end

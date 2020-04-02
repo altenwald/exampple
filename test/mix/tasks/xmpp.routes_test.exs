@@ -8,6 +8,7 @@ defmodule Mix.Tasks.Xmpp.RoutesTest do
 
   defmodule TestingRouter do
     use Exampple.Router
+
     iq "urn:exampple:test:" do
       get("get:0", Exampple.RouterTest.TestingController, :get)
     end
@@ -16,6 +17,7 @@ defmodule Mix.Tasks.Xmpp.RoutesTest do
   describe "run/1" do
     test "no router configured" do
       Application.put_env(:exampple, :router, nil)
+
       output =
         capture_io(fn ->
           Mix.Tasks.Xmpp.Routes.run([])
@@ -30,6 +32,7 @@ defmodule Mix.Tasks.Xmpp.RoutesTest do
 
     test "print routes" do
       Application.put_env(:exampple, :router, TestingRouter)
+
       output =
         capture_io(fn ->
           Mix.Tasks.Xmpp.Routes.run([])

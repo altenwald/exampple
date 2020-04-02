@@ -14,44 +14,48 @@ defmodule Exampple.Client do
   defp default_templates() do
     [
       init: &xml_init/1,
-      starttls: fn() -> "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>" end,
-      auth: fn(user, password) ->
-        base64 = Base.encode64(<<0, user :: binary, 0, password :: binary>>)
+      starttls: fn -> "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>" end,
+      auth: fn user, password ->
+        base64 = Base.encode64(<<0, user::binary, 0, password::binary>>)
+
         "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' " <>
           "mechanism='PLAIN'>#{base64}</auth>"
       end,
-      bind: fn(resource) ->
+      bind: fn resource ->
         "<iq type='set' id='bind3' xmlns='jabber:client'>" <>
-        "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>" <>
-        "<resource>#{resource}</resource></bind></iq>"
+          "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>" <>
+          "<resource>#{resource}</resource></bind></iq>"
       end,
-      session: fn() ->
+      session: fn ->
         "<iq type='set' id='session4'>" <>
-        "<session xmlns='urn:ietf:params:xml:ns:xmpp-session'/></iq>"
+          "<session xmlns='urn:ietf:params:xml:ns:xmpp-session'/></iq>"
       end,
-      presence: fn() -> "<presence/>" end,
+      presence: fn -> "<presence/>" end,
       message: fn
-        (to, id, body: body_text) ->
+        to, id, body: body_text ->
           "<message to='#{to}' id='#{id}' type='chat'><body>#{body_text}</body></message>"
-        (to, id, type: type, payload: payload) ->
+
+        to, id, type: type, payload: payload ->
           "<message to='#{to}' id='#{id}' type='#{type}'>#{payload}</message>"
       end,
       iq: fn
-        (to, id, type, xmlns: xmlns) ->
+        to, id, type, xmlns: xmlns ->
           "<iq to='#{to}' id='#{id}' type='#{type}'><query xmlns='#{xmlns}'/></iq>"
-        (to, id, type, payload: payload) ->
+
+        to, id, type, payload: payload ->
           "<iq to='#{to}' id='#{id}' type='#{type}'>#{payload}</iq>"
-        (to, id, type, xmlns: xmlns, payload: payload) ->
+
+        to, id, type, xmlns: xmlns, payload: payload ->
           "<iq to='#{to}' id='#{id}' type='#{type}'><query xmlns='#{xmlns}'>#{payload}</query></iq>"
       end,
-      register: fn(username, password, phone) ->
+      register: fn username, password, phone ->
         "<iq id='reg1' type='set'>" <>
-        "<query xmlns='jabber:iq:register'>" <>
-        "<username>#{username}</username>" <>
-        "<password>#{password}</password>" <>
-        "<phone>#{phone}</phone>" <>
-        "</query></iq>"
-      end,
+          "<query xmlns='jabber:iq:register'>" <>
+          "<username>#{username}</username>" <>
+          "<password>#{password}</password>" <>
+          "<phone>#{phone}</phone>" <>
+          "</query></iq>"
+      end
     ]
   end
 
@@ -120,7 +124,8 @@ defmodule Exampple.Client do
         |> apply(args)
         |> send()
 
-      :error -> :not_found
+      :error ->
+        :not_found
     end
   end
 
@@ -134,20 +139,20 @@ defmodule Exampple.Client do
 
   @impl GenStateMachine
   def init(%{host: host, port: port, domain: domain} = cfg) do
-    state_data =
-      %Data{
-        stream: nil,
-        host: host,
-        user_jid: Jid.new(Map.get(cfg, :user), domain, Map.get(cfg, :resource)),
-        password: Map.get(cfg, :password),
-        domain: domain,
-        port: port,
-        trimmed: Map.get(cfg, :trimmed, false),
-        set_from: Map.get(cfg, :set_from, false),
-        ping: Map.get(cfg, :ping, false),
-        tcp_handler: Map.get(cfg, :tcp_handler, @default_tcp_handler),
-        templates: default_templates()
-      }
+    state_data = %Data{
+      stream: nil,
+      host: host,
+      user_jid: Jid.new(Map.get(cfg, :user), domain, Map.get(cfg, :resource)),
+      password: Map.get(cfg, :password),
+      domain: domain,
+      port: port,
+      trimmed: Map.get(cfg, :trimmed, false),
+      set_from: Map.get(cfg, :set_from, false),
+      ping: Map.get(cfg, :ping, false),
+      tcp_handler: Map.get(cfg, :tcp_handler, @default_tcp_handler),
+      templates: default_templates()
+    }
+
     {:ok, :disconnected, state_data}
   end
 
@@ -198,7 +203,7 @@ defmodule Exampple.Client do
     :keep_state_and_data
   end
 
-  def connected({:call, from}, :get_conn, %Data{stored_conns: [conn|conns]} = data) do
+  def connected({:call, from}, :get_conn, %Data{stored_conns: [conn | conns]} = data) do
     {:keep_state, %Data{data | stored_conns: conns}, [{:reply, from, conn}]}
   end
 
@@ -210,6 +215,7 @@ defmodule Exampple.Client do
 
   @impl GenStateMachine
   def terminate(_reason, :disconnected, _data), do: :ok
+
   def terminate(_reason, _state, data) do
     data.tcp_handler.send(xml_terminate(), data.socket)
     Logger.info("sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")

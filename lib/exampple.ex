@@ -6,7 +6,7 @@ defmodule Exampple do
   """
 
   @doc false
-  def start_link([otp_app: otp_app]) when is_atom(otp_app) do
+  def start_link(otp_app: otp_app) when is_atom(otp_app) do
     args =
       otp_app
       |> Application.get_env(Exampple.Component)

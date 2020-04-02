@@ -107,18 +107,18 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro message(do: block) do
+  defmacro message(xmlns_partial \\ "", do: block) do
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, "message")
-      Module.put_attribute(__MODULE__, :xmlns_partial, "")
+      Module.put_attribute(__MODULE__, :xmlns_partial, unquote(xmlns_partial))
       unquote(block)
     end
   end
 
-  defmacro presence(do: block) do
+  defmacro presence(xmlns_partial \\ "", do: block) do
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, "presence")
-      Module.put_attribute(__MODULE__, :xmlns_partial, "")
+      Module.put_attribute(__MODULE__, :xmlns_partial, unquote(xmlns_partial))
       unquote(block)
     end
   end
@@ -158,6 +158,182 @@ defmodule Exampple.Router do
       the route, check the function exists and have 2 parameters to
       receive "conn" and "stanza".
       """
+    end
+  end
+
+  defmacro error(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "error", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro unavailable(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "unavailable", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro subscribe(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "subscribe", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro subscribed(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "subscribed", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro unsubscribe(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "unsubscribe", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro unsubscribed(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "unsubscribed", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro probe(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "probe", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro normal(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "normal", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro headline(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "headline", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro groupchat(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "groupchat", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
+    end
+  end
+
+  defmacro chat(xmlns, controller, function) do
+    validate_controller!(controller)
+    validate_function!(controller, function)
+
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :routes,
+        Macro.escape(
+          {@stanza_type, "chat", @xmlns_partial <> unquote(xmlns), unquote(controller),
+           unquote(function)}
+        )
+      )
     end
   end
 

@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Xmpp.Routes do
     if router do
       IO.inspect(router.route_info())
     else
-      IO.puts "No router configured!"
+      IO.puts("No router configured!")
     end
   end
 end
