@@ -239,6 +239,16 @@ defmodule Exampple.Xmpp.Stanza do
 
   see more here: https://xmpp.org/extensions/xep-0086.html
 
+  You can also use a 3-elements tuple to send {error, lang, text}, this way you can create a rich
+  error like this:
+
+  ```xml
+  <error code="404" type="cancel">
+    <item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+    <text lang="en" xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">item was not found in database</text>
+  </error>
+  ```
+
   Examples:
     iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "get"}
     iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
@@ -265,6 +275,16 @@ defmodule Exampple.Xmpp.Stanza do
   - feature-not-implemented
 
   see more here: https://xmpp.org/extensions/xep-0086.html
+
+  You can also use a 3-elements tuple to send {error, lang, text}, this way you can create a rich
+  error like this:
+
+  ```xml
+  <error code="404" type="cancel">
+    <item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+    <text lang="en" xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">item was not found in database</text>
+  </error>
+  ```
 
   Examples:
     iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "get"}
@@ -297,6 +317,16 @@ defmodule Exampple.Xmpp.Stanza do
 
   see more here: https://xmpp.org/extensions/xep-0086.html
 
+  You can also use a 3-elements tuple to send {error, lang, text}, this way you can create a rich
+  error like this:
+
+  ```xml
+  <error code="404" type="cancel">
+    <item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+    <text lang="en" xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">item was not found in database</text>
+  </error>
+  ```
+
   Examples:
     iex> from = "bob@example.com"
     iex> to = "alice@example.com"
@@ -323,14 +353,33 @@ defmodule Exampple.Xmpp.Stanza do
 
   see more here: https://xmpp.org/extensions/xep-0086.html
 
+  You can also use a 3-elements tuple to send {error, lang, text}, this way you can create a rich
+  error like this:
+
+  ```xml
+  <error code="404" type="cancel">
+    <item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+    <text lang="en" xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">item was not found in database</text>
+  </error>
+  ```
+
   Examples:
     iex> Exampple.Xmpp.Stanza.error_tag("item-not-found") |> to_string()
     "<error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error>"
+    iex> Exampple.Xmpp.Stanza.error_tag({"item-not-found", "en", "item was not found in database"}) |> to_string()
+    "<error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/><text lang=\\"en\\" xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\">item was not found in database</text></error>"
   """
-  def error_tag(error) do
+  def error_tag(error) when is_binary(error) do
     {code, type} = get_error(error)
     err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
     Xmlel.new("error", %{"code" => code, "type" => type}, [err_tag])
+  end
+
+  def error_tag({error, lang, text}) do
+    {code, type} = get_error(error)
+    err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
+    text_tag = Xmlel.new("text", %{"xmlns" => @xmpp_stanzas, "lang" => lang}, [text])
+    Xmlel.new("error", %{"code" => code, "type" => type}, [err_tag, text_tag])
   end
 
   defp maybe_add(attrs, _name, nil), do: attrs
