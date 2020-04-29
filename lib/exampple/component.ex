@@ -41,11 +41,11 @@ defmodule Exampple.Component do
 
       import Exampple.Xmpp.Stanza,
         only: [
-          message_resp: 2,
-          message_error: 2,
+          iq_error: 2,
           iq_resp: 1,
           iq_resp: 2,
-          iq_error: 2
+          message_resp: 2,
+          message_error: 2
         ]
     end
   end

@@ -6,4 +6,5 @@ defmodule ExamppleTest do
   doctest String.Chars.Exampple.Xmpp.Jid
   doctest Exampple.Xmpp.Stanza
   doctest Exampple.Xmpp.Jid
+  doctest Exampple.Xmpp.Timestamp
 end
