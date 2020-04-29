@@ -81,6 +81,7 @@ defmodule Exampple.Xml.Parser.SenderTest do
 
     test "more than one stanza" do
       Application.put_env(:exampple, :debug_xml, false)
+
       assert {:ok, "<bar>more data</bar><baz>and more</baz>"} =
                XmlStream.new()
                |> XmlStream.parse("<foo id='1'")
@@ -91,9 +92,10 @@ defmodule Exampple.Xml.Parser.SenderTest do
                |> XmlStream.terminate()
 
       events = [
-        {:xmlstreamstart, "foo", [{"id" , "1"}]},
+        {:xmlstreamstart, "foo", [{"id", "1"}]},
         {:xmlelement, ~x[<foo id='1'>Hello world!</foo>]}
       ]
+
       assert events == receive_all()
     end
   end

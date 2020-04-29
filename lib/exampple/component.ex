@@ -241,12 +241,14 @@ defmodule Exampple.Component do
     case XmlStream.parse(data.stream, packet) do
       {:cont, partial} ->
         {:keep_state, %Data{data | stream: partial}}
+
       {:halt, _user, rest} ->
         stream = XmlStream.new()
         actions = [{:next_event, :info, {:tcp, socket, rest}}]
         {:keep_state, %Data{data | stream: stream}, actions}
+
       {:error, error} ->
-        Logger.error("parsing error: #{inspect error}")
+        Logger.error("parsing error: #{inspect(error)}")
         data.tcp_handler.stop(data.socket)
         {:next_state, :retrying, data, [{:next_event, :cast, :connect}]}
     end

@@ -13,17 +13,21 @@ defmodule Exampple.Xml.Stream do
   end
 
   def parse({:cont, partial}, chunk), do: parse(partial, chunk)
+
   def parse({:halt, state, rest}, chunk) do
     {:halt, state, rest <> chunk}
   end
+
   def parse(%Partial{} = partial, chunk) do
     Partial.parse(partial, chunk)
   end
 
   def terminate({:cont, partial}), do: terminate(partial)
+
   def terminate({:halt, _state, rest}) do
     {:ok, rest}
   end
+
   def terminate(%Partial{} = partial) do
     {:ok, _state} = Partial.terminate(partial)
     {:ok, ""}
