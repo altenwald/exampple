@@ -237,9 +237,19 @@ defmodule Exampple.Component do
   end
 
   @impl GenStateMachine
-  def handle_event(:info, {:tcp, _socket, packet}, _state, data) do
-    stream = XmlStream.parse(data.stream, packet)
-    {:keep_state, %Data{data | stream: stream}}
+  def handle_event(:info, {:tcp, socket, packet}, _state, data) do
+    case XmlStream.parse(data.stream, packet) do
+      {:cont, partial} ->
+        {:keep_state, %Data{data | stream: partial}}
+      {:halt, _user, rest} ->
+        stream = XmlStream.new()
+        actions = [{:next_event, :info, {:tcp, socket, rest}}]
+        {:keep_state, %Data{data | stream: stream}, actions}
+      {:error, error} ->
+        Logger.error("parsing error: #{inspect error}")
+        data.tcp_handler.stop(data.socket)
+        {:next_state, :retrying, data, [{:next_event, :cast, :connect}]}
+    end
   end
 
   def handle_event(:info, {:tcp_closed, _socket}, _state, data) do

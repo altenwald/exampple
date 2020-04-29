@@ -2,12 +2,13 @@ defmodule Exampple.Xml.Parser.SenderTest do
   use ExUnit.Case
 
   alias Exampple.Xml.Stream, as: XmlStream
+  import Exampple.Xml.Xmlel, only: [sigil_x: 2]
 
   describe "process a document" do
     test "correctly step by step (debug)" do
       Application.put_env(:exampple, :debug_xml, true)
 
-      assert :ok =
+      assert {:ok, ""} =
                XmlStream.new()
                |> XmlStream.parse("<foo id='1'")
                |> XmlStream.parse(">Hello world!<bar>")
@@ -42,7 +43,7 @@ defmodule Exampple.Xml.Parser.SenderTest do
     test "correctly step by step" do
       Application.put_env(:exampple, :debug_xml, false)
 
-      assert :ok =
+      assert {:ok, ""} =
                XmlStream.new()
                |> XmlStream.parse("<foo id='1'")
                |> XmlStream.parse(">Hello world!<bar>")
@@ -55,8 +56,8 @@ defmodule Exampple.Xml.Parser.SenderTest do
         attrs: %{"id" => "1"},
         children: [
           "Hello world!",
-          %Exampple.Xml.Xmlel{attrs: %{}, children: ["more data"], name: "bar"},
-          %Exampple.Xml.Xmlel{attrs: %{}, children: ["and more"], name: "baz"}
+          ~x[<bar>more data</bar>],
+          ~x[<baz>and more</baz>]
         ],
         name: "foo"
       }
@@ -76,6 +77,24 @@ defmodule Exampple.Xml.Parser.SenderTest do
                XmlStream.new()
                |> XmlStream.parse("<foo id='1'")
                |> XmlStream.parse(" Hello world!<bar>")
+    end
+
+    test "more than one stanza" do
+      Application.put_env(:exampple, :debug_xml, false)
+      assert {:ok, "<bar>more data</bar><baz>and more</baz>"} =
+               XmlStream.new()
+               |> XmlStream.parse("<foo id='1'")
+               |> XmlStream.parse(">Hello world!")
+               |> XmlStream.parse("</foo>")
+               |> XmlStream.parse("<bar>more data</bar>")
+               |> XmlStream.parse("<baz>and more</baz>")
+               |> XmlStream.terminate()
+
+      events = [
+        {:xmlstreamstart, "foo", [{"id" , "1"}]},
+        {:xmlelement, ~x[<foo id='1'>Hello world!</foo>]}
+      ]
+      assert events == receive_all()
     end
   end
 

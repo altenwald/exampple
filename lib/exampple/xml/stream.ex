@@ -12,21 +12,20 @@ defmodule Exampple.Xml.Stream do
     partial
   end
 
-  def parse(partial, chunk) do
-    case Partial.parse(partial, chunk) do
-      {:cont, partial} -> partial
-      error -> error
-    end
-  rescue
-    FunctionClauseError ->
-      case Partial.parse(partial, "<stream:stream>" <> chunk) do
-        {:cont, partial} -> partial
-        error -> error
-      end
+  def parse({:cont, partial}, chunk), do: parse(partial, chunk)
+  def parse({:halt, state, rest}, chunk) do
+    {:halt, state, rest <> chunk}
+  end
+  def parse(%Partial{} = partial, chunk) do
+    Partial.parse(partial, chunk)
   end
 
-  def terminate(partial) do
+  def terminate({:cont, partial}), do: terminate(partial)
+  def terminate({:halt, _state, rest}) do
+    {:ok, rest}
+  end
+  def terminate(%Partial{} = partial) do
     {:ok, _state} = Partial.terminate(partial)
-    :ok
+    {:ok, ""}
   end
 end
