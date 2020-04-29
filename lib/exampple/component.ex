@@ -95,10 +95,10 @@ defmodule Exampple.Component do
     end
 
     events =
-      if Map.get(cfg, :auto_connect, false) do
-        [{:next_event, :cast, :connect}]
-      else
-        []
+      case Map.get(cfg, :auto_connect, false) do
+        true -> [{:next_event, :cast, :connect}]
+        false -> []
+        time when is_integer(time) -> [{:timeout, time, :connect}]
       end
 
     {:ok, :disconnected,
@@ -117,7 +117,7 @@ defmodule Exampple.Component do
   end
 
   def disconnected(type, :connect, %Data{host: host, port: port} = data)
-      when type in [:cast, :state_timeout] do
+      when type in [:cast, :state_timeout, :timeout] do
     case data.tcp_handler.start(host, port) do
       {:ok, socket} ->
         {:next_state, :connected, %Data{data | socket: socket},
