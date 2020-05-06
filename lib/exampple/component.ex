@@ -85,6 +85,7 @@ defmodule Exampple.Component do
   @spec wait_for_ready() :: :ok
   def wait_for_ready() do
     subscribe()
+
     receive do
       :ready -> :ok
     after
