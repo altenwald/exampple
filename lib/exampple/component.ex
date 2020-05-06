@@ -21,7 +21,8 @@ defmodule Exampple.Component do
               ping: false,
               tcp_handler: Tcp,
               router_handler: Router,
-              otp_app: nil
+              otp_app: nil,
+              subscribed: nil
   end
 
   defp xml_init(domain) do
@@ -74,6 +75,21 @@ defmodule Exampple.Component do
   def send(%Conn{response: response} = conn) when response != nil do
     data = to_string(conn.response)
     GenStateMachine.cast(__MODULE__, {:send, data})
+  end
+
+  @spec subscribe() :: :ok
+  def subscribe() do
+    GenStateMachine.cast(__MODULE__, {:subscribe, self()})
+  end
+
+  @spec wait_for_ready() :: :ok
+  def wait_for_ready() do
+    subscribe()
+    receive do
+      :ready -> :ok
+    after
+      100 -> wait_for_ready()
+    end
   end
 
   @impl GenStateMachine
@@ -177,6 +193,7 @@ defmodule Exampple.Component do
   end
 
   def authenticate(:info, {:xmlelement, %Xmlel{name: "handshake", children: []}}, data) do
+    if pid = data.subscribed, do: send(pid, :ready)
     {:next_state, :ready, %Data{data | stream: XmlStream.new()}, timeout_action(data)}
   end
 
@@ -274,6 +291,15 @@ defmodule Exampple.Component do
 
   def handle_event(:info, {:xmlstreamend, _name}, _state, _data) do
     :keep_state_and_data
+  end
+
+  def handle_event(:cast, {:subscribe, pid}, :ready, data) do
+    send(pid, :ready)
+    {:keep_state, %Data{data | subscribed: pid}}
+  end
+
+  def handle_event(:cast, {:subscribe, pid}, _state, data) do
+    {:keep_state, %Data{data | subscribed: pid}}
   end
 
   def handle_event(type, content, state, data) do

@@ -1,20 +1,23 @@
 defmodule Exampple.DummyTcp do
   @moduledoc false
   use GenServer
+  require Logger
+
+  import Kernel, except: [send: 2]
+
+  alias Exampple.Xml.Xmlel
 
   def start(_host, _port) do
     client_pid = self()
+    args = [client_pid]
 
-    case GenServer.start_link(__MODULE__, [client_pid], name: __MODULE__) do
+    case GenServer.start_link(__MODULE__, args, name: __MODULE__) do
       {:error, {:already_started, _pid}} ->
         stop(__MODULE__)
         start(nil, nil)
 
       {:ok, pid} ->
         {:ok, pid}
-
-      _ = error ->
-        error
     end
   end
 
@@ -22,21 +25,37 @@ defmodule Exampple.DummyTcp do
     GenServer.stop(pid)
   end
 
-  def send(packet, pid) do
+  def send(packet, pid) when is_binary(packet) do
     GenServer.cast(pid, {:send, packet})
+  end
+
+  def subscribe() do
+    GenServer.cast(__MODULE__, {:subscribe, self()})
   end
 
   def sent() do
     GenServer.call(__MODULE__, :sent)
   end
 
-  def received(packet) do
+  def wait_for_sent_xml(timeout \\ 5_000) do
+    receive do
+      packet when is_binary(packet) -> Xmlel.parse(packet)
+    after
+      timeout -> nil
+    end
+  end
+
+  def received(%Xmlel{} = packet) do
+    received(to_string(packet))
+  end
+
+  def received(packet) when is_binary(packet) do
     GenServer.cast(__MODULE__, {:received, packet})
   end
 
   @impl GenServer
   def init([client_pid]) do
-    {:ok, %{client_pid: client_pid, stream: []}}
+    {:ok, %{client_pid: client_pid, subscribed: nil, stream: []}}
   end
 
   defp xml_init() do
@@ -58,12 +77,17 @@ defmodule Exampple.DummyTcp do
   end
 
   def handle_cast({:send, packet}, data) do
+    if pid = data.subscribed, do: Kernel.send(pid, packet)
     {:noreply, %{data | stream: data.stream ++ [packet]}}
   end
 
   def handle_cast({:received, packet}, data) do
     Kernel.send(data.client_pid, {:tcp, self(), packet})
     {:noreply, data}
+  end
+
+  def handle_cast({:subscribe, pid}, data) do
+    {:noreply, Map.put(data, :subscribed, pid)}
   end
 
   @impl GenServer

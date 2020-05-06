@@ -36,13 +36,21 @@ defmodule Exampple.Xmpp.Jid do
   @doc """
   Creates a new JID passing node, server and resource data.
 
+  Note that XMPP standard says the JID is case insensitive therefore,
+  and to make easier the handle of comparisons, we put everything
+  in downcase mode.
+
   Examples:
-    iex> Exampple.Xmpp.Jid.new("foo", "bar", "baz")
-    %Exampple.Xmpp.Jid{node: "foo", server: "bar", resource: "baz"}
+      iex> Exampple.Xmpp.Jid.new("foo", "bar", "baz")
+      %Exampple.Xmpp.Jid{node: "foo", server: "bar", resource: "baz"}
+
+      iex> Exampple.Xmpp.Jid.new("FOO", "BAR", "BAZ")
+      %Exampple.Xmpp.Jid{node: "foo", server: "bar", resource: "baz"}
   """
   def new(node, server, resource) do
-    node = node || ""
-    resource = resource || ""
+    node = String.downcase(node || "")
+    server = String.downcase(server)
+    resource = String.downcase(resource || "")
     %Jid{node: node, server: server, resource: resource}
   end
 
@@ -77,23 +85,35 @@ defmodule Exampple.Xmpp.Jid do
   Parse a binary to a Jid struct.
 
   Examples:
-    iex> Exampple.Xmpp.Jid.parse("alice@example.com/resource")
-    %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "resource"}
+      iex> Exampple.Xmpp.Jid.parse("alice@example.com/resource")
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "resource"}
 
-    iex> Exampple.Xmpp.Jid.parse("alice@example.com")
-    %Exampple.Xmpp.Jid{node: "alice", server: "example.com"}
+      iex> Exampple.Xmpp.Jid.parse("AlicE@Example.Com/Resource")
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "resource"}
 
-    iex> Exampple.Xmpp.Jid.parse("example.com/resource")
-    %Exampple.Xmpp.Jid{server: "example.com", resource: "resource"}
+      iex> Exampple.Xmpp.Jid.parse("alice@example.com")
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com"}
 
-    iex> Exampple.Xmpp.Jid.parse("example.com")
-    %Exampple.Xmpp.Jid{server: "example.com"}
+      iex> Exampple.Xmpp.Jid.parse("AlicE@Example.Com")
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com"}
 
-    iex> Exampple.Xmpp.Jid.parse(nil)
-    nil
+      iex> Exampple.Xmpp.Jid.parse("example.com/resource")
+      %Exampple.Xmpp.Jid{server: "example.com", resource: "resource"}
 
-    iex> Exampple.Xmpp.Jid.parse("/example.com/resource")
-    {:error, :enojid}
+      iex> Exampple.Xmpp.Jid.parse("Example.Com/Resource")
+      %Exampple.Xmpp.Jid{server: "example.com", resource: "resource"}
+
+      iex> Exampple.Xmpp.Jid.parse("example.com")
+      %Exampple.Xmpp.Jid{server: "example.com"}
+
+      iex> Exampple.Xmpp.Jid.parse("Example.Com")
+      %Exampple.Xmpp.Jid{server: "example.com"}
+
+      iex> Exampple.Xmpp.Jid.parse(nil)
+      nil
+
+      iex> Exampple.Xmpp.Jid.parse("/example.com/resource")
+      {:error, :enojid}
   """
   def parse(nil), do: nil
 
@@ -102,14 +122,30 @@ defmodule Exampple.Xmpp.Jid do
 
     case Regex.run(~r/^(?:([^@]+)@)?([^\/]+)(?:\/(.*))?$/, jid, opts) do
       [node, server] ->
-        %Jid{node: node, server: server}
+        %Jid{node: String.downcase(node), server: String.downcase(server)}
 
       [node, server, res] ->
+        node = String.downcase(node)
+        server = String.downcase(server)
+        res = String.downcase(res)
         %Jid{node: node, server: server, resource: res}
 
       nil ->
         {:error, :enojid}
     end
+  end
+
+  @doc """
+  This sigil help us to define JIDs using a simple format and get
+  their struct representation.
+
+  Examples:
+      iex> import Exampple.Xmpp.Jid
+      iex> ~j[alice@example.com/ios]
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "ios"}
+  """
+  def sigil_j(binary, _opts) do
+    parse(binary)
   end
 
   defimpl String.Chars, for: __MODULE__ do

@@ -1,6 +1,8 @@
 defmodule Exampple.ComponentTest do
   use ExUnit.Case
 
+  import Exampple.Xml.Xmlel
+
   alias Exampple.{Component, DummyTcp, Router}
   alias Exampple.Xmpp.Stanza
 
@@ -43,20 +45,23 @@ defmodule Exampple.ComponentTest do
     test "ping" do
       Exampple.start_link(otp_app: :exampple)
       Component.connect()
-      Process.sleep(500)
+      Component.wait_for_ready()
+      DummyTcp.subscribe()
 
-      DummyTcp.received(
-        "<iq type='get' to='test.example.com' from='user@example.com/res1' id='1'>" <>
-          "<query xmlns='jabber:iq:ping'/></iq>"
-      )
+      DummyTcp.received(~x[
+        <iq type='get' to='test.example.com' from='user@example.com/res1' id='1'>
+          <query xmlns='jabber:iq:ping'/>
+        </iq>
+      ])
 
-      Process.sleep(500)
+      recv = ~x[
+        <iq from="test.example.com" id="1" to="user@example.com/res1" type="result">
+          <query xmlns="jabber:iq:ping"/>
+        </iq>
+      ]
 
-      recv =
-        "<iq from=\"test.example.com\" id=\"1\" to=\"user@example.com/res1\" " <>
-          "type=\"result\"><query xmlns=\"jabber:iq:ping\"/></iq>"
-
-      assert recv == DummyTcp.sent()
+      assert recv == DummyTcp.wait_for_sent_xml()
+      assert recv == parse(DummyTcp.sent())
       Component.stop()
     end
   end

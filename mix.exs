@@ -6,11 +6,15 @@ defmodule Exampple.MixProject do
       app: :exampple,
       version: "0.1.0",
       elixir: "~> 1.9",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
       deps: deps()
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do

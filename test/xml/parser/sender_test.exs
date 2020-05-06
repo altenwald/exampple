@@ -16,15 +16,6 @@ defmodule Exampple.Xml.Parser.SenderTest do
                |> XmlStream.parse("</foo>")
                |> XmlStream.terminate()
 
-      xmlel = %Exampple.Xml.Xmlel{
-        attrs: %{"id" => "1"},
-        children: [
-          "Hello world!",
-          %Exampple.Xml.Xmlel{attrs: %{}, children: ["more data"], name: "bar"}
-        ],
-        name: "foo"
-      }
-
       events = [
         :xmlstartdoc,
         {:xmlstreamstart, "foo", [{"id", "1"}]},
@@ -33,7 +24,7 @@ defmodule Exampple.Xml.Parser.SenderTest do
         {:xmlcdata, "more data"},
         {:xmlstreamend, "bar"},
         {:xmlstreamend, "foo"},
-        {:xmlelement, xmlel},
+        {:xmlelement, ~x[<foo id="1">Hello world!<bar>more data</bar></foo>]},
         :xmlenddoc
       ]
 
@@ -52,21 +43,13 @@ defmodule Exampple.Xml.Parser.SenderTest do
                |> XmlStream.parse("</foo>")
                |> XmlStream.terminate()
 
-      xmlel = %Exampple.Xml.Xmlel{
-        attrs: %{"id" => "1"},
-        children: [
-          "Hello world!",
-          ~x[<bar>more data</bar>],
-          ~x[<baz>and more</baz>]
-        ],
-        name: "foo"
-      }
-
       events = [
         {:xmlstreamstart, "foo", [{"id", "1"}]},
         {:xmlstreamstart, "bar", []},
         {:xmlstreamstart, "baz", []},
-        {:xmlelement, xmlel}
+        {:xmlelement, ~x[
+          <foo id="1">Hello world!<bar>more data</bar><baz>and more</baz></foo>
+        ]}
       ]
 
       assert events == receive_all()

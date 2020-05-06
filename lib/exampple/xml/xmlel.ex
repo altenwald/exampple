@@ -19,14 +19,14 @@ defmodule Exampple.Xml.Xmlel do
   Creates a Xmlel struct.
 
   Examples:
-    iex> Exampple.Xml.Xmlel.new("foo")
-    %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "foo"}
+      iex> Exampple.Xml.Xmlel.new("foo")
+      %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "foo"}
 
-    iex> Exampple.Xml.Xmlel.new("bar", %{"id" => "10"})
-    %Exampple.Xml.Xmlel{attrs: %{"id" => "10"}, children: [], name: "bar"}
+      iex> Exampple.Xml.Xmlel.new("bar", %{"id" => "10"})
+      %Exampple.Xml.Xmlel{attrs: %{"id" => "10"}, children: [], name: "bar"}
 
-    iex> Exampple.Xml.Xmlel.new("bar", [{"id", "10"}])
-    %Exampple.Xml.Xmlel{attrs: %{"id" => "10"}, children: [], name: "bar"}
+      iex> Exampple.Xml.Xmlel.new("bar", [{"id", "10"}])
+      %Exampple.Xml.Xmlel{attrs: %{"id" => "10"}, children: [], name: "bar"}
   """
   @spec new(name :: binary, attrs | [{attr_name, attr_value}], children) :: t
   def new(name, attrs \\ %{}, children \\ [])
@@ -43,11 +43,11 @@ defmodule Exampple.Xml.Xmlel do
   Sigil to use ~X to provide XML text and transform it to Xmlel struct.
 
   Examples:
-    iex> import Exampple.Xml.Xmlel
-    iex> ~X|<foo>
-    iex> </foo>
-    iex> |
-    %Exampple.Xml.Xmlel{attrs: %{}, children: ["\\n "], name: "foo"}
+      iex> import Exampple.Xml.Xmlel
+      iex> ~X|<foo>
+      iex> </foo>
+      iex> |
+      %Exampple.Xml.Xmlel{attrs: %{}, children: ["\\n "], name: "foo"}
   """
   def sigil_X(string, _addons) do
     parse(string)
@@ -58,11 +58,11 @@ defmodule Exampple.Xml.Xmlel do
   removing spaces and breaking lines.
 
   Examples:
-    iex> import Exampple.Xml.Xmlel
-    iex> ~x|<foo>
-    iex> </foo>
-    iex> |
-    %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "foo"}
+      iex> import Exampple.Xml.Xmlel
+      iex> ~x|<foo>
+      iex> </foo>
+      iex> |
+      %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "foo"}
   """
   def sigil_x(string, _addons) do
     string
@@ -74,14 +74,14 @@ defmodule Exampple.Xml.Xmlel do
   Parser a XML string into Xmlel struct.
 
   Examples:
-    iex> Exampple.Xml.Xmlel.parse("<foo/>")
-    %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}
+      iex> Exampple.Xml.Xmlel.parse("<foo/>")
+      %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}
 
-    iex> Exampple.Xml.Xmlel.parse("<foo bar='10'>hello world!</foo>")
-    %Exampple.Xml.Xmlel{name: "foo", attrs: %{"bar" => "10"}, children: ["hello world!"]}
+      iex> Exampple.Xml.Xmlel.parse("<foo bar='10'>hello world!</foo>")
+      %Exampple.Xml.Xmlel{name: "foo", attrs: %{"bar" => "10"}, children: ["hello world!"]}
 
-    iex> Exampple.Xml.Xmlel.parse("<foo><bar>hello world!</bar></foo>")
-    %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: [%Exampple.Xml.Xmlel{name: "bar", attrs: %{}, children: ["hello world!"]}]}
+      iex> Exampple.Xml.Xmlel.parse("<foo><bar>hello world!</bar></foo>")
+      %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: [%Exampple.Xml.Xmlel{name: "bar", attrs: %{}, children: ["hello world!"]}]}
   """
   def parse(xml) when is_binary(xml) do
     {:ok, [xmlel]} = Saxy.parse_string(xml, Exampple.Xml.Parser.Simple, [])
@@ -93,11 +93,11 @@ defmodule Exampple.Xml.Xmlel do
   from Saxy to the Xmlel structs.
 
   Examples:
-    iex> Exampple.Xml.Xmlel.decode({"foo", [], []})
-    %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}
+      iex> Exampple.Xml.Xmlel.decode({"foo", [], []})
+      %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}
 
-    iex> Exampple.Xml.Xmlel.decode({"bar", [{"id", "10"}], ["Hello!"]})
-    %Exampple.Xml.Xmlel{name: "bar", attrs: %{"id" => "10"}, children: ["Hello!"]}
+      iex> Exampple.Xml.Xmlel.decode({"bar", [{"id", "10"}], ["Hello!"]})
+      %Exampple.Xml.Xmlel{name: "bar", attrs: %{"id" => "10"}, children: ["Hello!"]}
   """
   def decode(data) when is_binary(data), do: data
 
@@ -116,11 +116,14 @@ defmodule Exampple.Xml.Xmlel do
   Xmlel structs to the tuples needed by Saxy.
 
   Examples:
-    iex> Exampple.Xml.Xmlel.encode(%Exampple.Xml.Xmlel{name: "foo"})
-    {"foo", [], []}
+      iex> Exampple.Xml.Xmlel.encode(%Exampple.Xml.Xmlel{name: "foo"})
+      {"foo", [], []}
 
-    iex> Exampple.Xml.Xmlel.encode(%Exampple.Xml.Xmlel{name: "bar", attrs: %{"id" => "10"}, children: ["Hello!"]})
-    {"bar", [{"id", "10"}], ["Hello!"]}
+      iex> Exampple.Xml.Xmlel.encode(%Exampple.Xml.Xmlel{name: "bar", attrs: %{"id" => "10"}, children: ["Hello!"]})
+      {"bar", [{"id", "10"}], ["Hello!"]}
+
+      iex> Exampple.Xml.Xmlel.encode(%TestBuild{name: "bro"})
+      "<bro/>"
   """
   def encode(%Xmlel{} = xmlel) do
     children = Enum.map(xmlel.children, &encode/1)
@@ -147,15 +150,15 @@ defmodule Exampple.Xml.Xmlel do
     representation.
 
     Examples:
-      iex> Exampple.Xml.Xmlel.new("foo") |> to_string()
-      "<foo/>"
+        iex> Exampple.Xml.Xmlel.new("foo") |> to_string()
+        "<foo/>"
 
-      iex> Exampple.Xml.Xmlel.new("bar", %{"id" => "10"}) |> to_string()
-      "<bar id=\\"10\\"/>"
+        iex> Exampple.Xml.Xmlel.new("bar", %{"id" => "10"}) |> to_string()
+        "<bar id=\\"10\\"/>"
 
-      iex> query = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "urn:jabber:iq"})
-      iex> Exampple.Xml.Xmlel.new("iq", %{"type" => "get"}, [query]) |> to_string()
-      "<iq type=\\"get\\"><query xmlns=\\"urn:jabber:iq\\"/></iq>"
+        iex> query = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "urn:jabber:iq"})
+        iex> Exampple.Xml.Xmlel.new("iq", %{"type" => "get"}, [query]) |> to_string()
+        "<iq type=\\"get\\"><query xmlns=\\"urn:jabber:iq\\"/></iq>"
     """
     def to_string(xmlel) do
       xmlel
@@ -171,8 +174,8 @@ defmodule Exampple.Xml.Xmlel do
     Generates the Saxy tuples from Xmlel structs.
 
     Examples:
-      iex> Saxy.Builder.build(Exampple.Xml.Xmlel.new("foo", %{}, []))
-      {"foo", [], []}
+        iex> Saxy.Builder.build(Exampple.Xml.Xmlel.new("foo", %{}, []))
+        {"foo", [], []}
     """
     def build(xmlel) do
       Xmlel.encode(xmlel)
@@ -183,12 +186,12 @@ defmodule Exampple.Xml.Xmlel do
   Retrieve an attribute from a Xmlel struct.
 
   Examples:
-    iex> attrs = %{"id" => "100", "name" => "Alice"}
-    iex> xmlel = %Exampple.Xml.Xmlel{attrs: attrs}
-    iex> Exampple.Xml.Xmlel.get_attr(xmlel, "name")
-    "Alice"
-    iex> Exampple.Xml.Xmlel.get_attr(xmlel, "surname")
-    nil
+      iex> attrs = %{"id" => "100", "name" => "Alice"}
+      iex> xmlel = %Exampple.Xml.Xmlel{attrs: attrs}
+      iex> Exampple.Xml.Xmlel.get_attr(xmlel, "name")
+      "Alice"
+      iex> Exampple.Xml.Xmlel.get_attr(xmlel, "surname")
+      nil
   """
   def get_attr(%Xmlel{attrs: attrs}, name, default \\ nil) do
     Map.get(attrs, name, default)
@@ -198,13 +201,13 @@ defmodule Exampple.Xml.Xmlel do
   Deletes an attribute from a Xmlel struct.
 
   Examples:
-    iex> attrs = %{"id" => "100", "name" => "Alice"}
-    iex> xmlel = %Exampple.Xml.Xmlel{attrs: attrs}
-    iex> Exampple.Xml.Xmlel.get_attr(xmlel, "name")
-    "Alice"
-    iex> Exampple.Xml.Xmlel.delete_attr(xmlel, "name")
-    iex> |> Exampple.Xml.Xmlel.get_attr("name")
-    nil
+      iex> attrs = %{"id" => "100", "name" => "Alice"}
+      iex> xmlel = %Exampple.Xml.Xmlel{attrs: attrs}
+      iex> Exampple.Xml.Xmlel.get_attr(xmlel, "name")
+      "Alice"
+      iex> Exampple.Xml.Xmlel.delete_attr(xmlel, "name")
+      iex> |> Exampple.Xml.Xmlel.get_attr("name")
+      nil
   """
   def delete_attr(%Xmlel{attrs: attrs} = xmlel, name) do
     %Xmlel{xmlel | attrs: Map.delete(attrs, name)}
@@ -215,11 +218,11 @@ defmodule Exampple.Xml.Xmlel do
   parameter.
 
   Examples:
-    iex> attrs = %{"id" => "100", "name" => "Alice"}
-    iex> %Exampple.Xml.Xmlel{attrs: attrs}
-    iex> |> Exampple.Xml.Xmlel.put_attr("name", "Bob")
-    iex> |> Exampple.Xml.Xmlel.get_attr("name")
-    "Bob"
+      iex> attrs = %{"id" => "100", "name" => "Alice"}
+      iex> %Exampple.Xml.Xmlel{attrs: attrs}
+      iex> |> Exampple.Xml.Xmlel.put_attr("name", "Bob")
+      iex> |> Exampple.Xml.Xmlel.get_attr("name")
+      "Bob"
   """
   def put_attr(%Xmlel{attrs: attrs} = xmlel, name, value) do
     %Xmlel{xmlel | attrs: Map.put(attrs, name, value)}
@@ -230,13 +233,13 @@ defmodule Exampple.Xml.Xmlel do
   passed as parameter.
 
   Examples:
-    iex> fields = %{"id" => "100", "name" => "Alice", "city" => "Cordoba"}
-    iex> Exampple.Xml.Xmlel.put_attrs(%Exampple.Xml.Xmlel{name: "foo"}, fields) |> to_string()
-    "<foo city=\\"Cordoba\\" id=\\"100\\" name=\\"Alice\\"/>"
+      iex> fields = %{"id" => "100", "name" => "Alice", "city" => "Cordoba"}
+      iex> Exampple.Xml.Xmlel.put_attrs(%Exampple.Xml.Xmlel{name: "foo"}, fields) |> to_string()
+      "<foo city=\\"Cordoba\\" id=\\"100\\" name=\\"Alice\\"/>"
 
-    iex> fields = %{"id" => "100", "name" => "Alice", "city" => :"Cordoba"}
-    iex> Exampple.Xml.Xmlel.put_attrs(%Exampple.Xml.Xmlel{name: "foo"}, fields) |> to_string()
-    "<foo id=\\"100\\" name=\\"Alice\\"/>"
+      iex> fields = %{"id" => "100", "name" => "Alice", "city" => :"Cordoba"}
+      iex> Exampple.Xml.Xmlel.put_attrs(%Exampple.Xml.Xmlel{name: "foo"}, fields) |> to_string()
+      "<foo id=\\"100\\" name=\\"Alice\\"/>"
   """
   def put_attrs(xmlel, fields) do
     Enum.reduce(fields, xmlel, fn
@@ -250,11 +253,11 @@ defmodule Exampple.Xml.Xmlel do
   we can perform matching in a proper way.
 
   Examples:
-    iex> "<foo>\\n    <bar>\\n        Hello<br/>world!\\n    </bar>\\n</foo>"
-    iex> |> Exampple.Xml.Xmlel.parse()
-    iex> |> Exampple.Xml.Xmlel.clean_spaces()
-    iex> |> to_string()
-    "<foo><bar>Hello<br/>world!</bar></foo>"
+      iex> "<foo>\\n    <bar>\\n        Hello<br/>world!\\n    </bar>\\n</foo>"
+      iex> |> Exampple.Xml.Xmlel.parse()
+      iex> |> Exampple.Xml.Xmlel.clean_spaces()
+      iex> |> to_string()
+      "<foo><bar>Hello<br/>world!</bar></foo>"
   """
   def clean_spaces(%Xmlel{children: []} = xmlel), do: xmlel
 
