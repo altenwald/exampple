@@ -63,6 +63,7 @@ defmodule Exampple.ComponentTest do
       assert recv == DummyTcp.wait_for_sent_xml()
       assert recv == parse(DummyTcp.sent())
       Component.stop()
+      DummyTcp.stop()
     end
   end
 end

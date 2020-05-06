@@ -21,6 +21,10 @@ defmodule Exampple.DummyTcp do
     end
   end
 
+  def stop() do
+    stop(__MODULE__)
+  end
+
   def stop(pid) do
     GenServer.stop(pid)
   end
