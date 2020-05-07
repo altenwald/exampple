@@ -5,7 +5,7 @@ defmodule Exampple.Xmpp.Jid do
 
   @type t :: %__MODULE__{node: binary, server: binary, resource: binary}
 
-  @spec is_full?(binary) :: boolean
+  @spec is_full?(binary | t()) :: boolean | {:error, :enojid}
   @doc """
   Returns true if the JID is a full JID, false otherwise.
 
@@ -54,7 +54,7 @@ defmodule Exampple.Xmpp.Jid do
     %Jid{node: node, server: server, resource: resource}
   end
 
-  @spec to_bare(binary) :: binary
+  @spec to_bare(binary | t()) :: binary
   @doc """
   Converts JID to a bare JID in binary format.
 
@@ -80,7 +80,7 @@ defmodule Exampple.Xmpp.Jid do
   def to_bare(%Jid{node: "", server: server}), do: server
   def to_bare(%Jid{node: node, server: server}), do: "#{node}@#{server}"
 
-  @spec parse(jid :: binary) :: {binary, binary, binary} | {:error, :enojid}
+  @spec parse(jid :: binary) :: t() | {:error, :enojid}
   @doc """
   Parse a binary to a Jid struct.
 
