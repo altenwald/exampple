@@ -1,7 +1,7 @@
 defmodule Exampple.Xmpp.Jid do
   alias Exampple.Xmpp.Jid
 
-  defstruct node: "", server: "", resource: ""
+  defstruct node: "", server: "", resource: "", original: nil
 
   @type t :: %__MODULE__{node: binary, server: binary, resource: binary}
 
@@ -42,16 +42,17 @@ defmodule Exampple.Xmpp.Jid do
 
   Examples:
       iex> Exampple.Xmpp.Jid.new("foo", "bar", "baz")
-      %Exampple.Xmpp.Jid{node: "foo", server: "bar", resource: "baz"}
+      %Exampple.Xmpp.Jid{node: "foo", server: "bar", resource: "baz", original: "foo@bar/baz"}
 
       iex> Exampple.Xmpp.Jid.new("FOO", "BAR", "BAZ")
-      %Exampple.Xmpp.Jid{node: "foo", server: "bar", resource: "baz"}
+      %Exampple.Xmpp.Jid{node: "foo", server: "bar", resource: "BAZ", original: "FOO@BAR/BAZ"}
   """
   def new(node, server, resource) do
+    original = to_string(%Jid{node: node || "", server: server, resource: resource || ""})
     node = String.downcase(node || "")
     server = String.downcase(server)
-    resource = String.downcase(resource || "")
-    %Jid{node: node, server: server, resource: resource}
+    resource = resource || ""
+    %Jid{node: node, server: server, resource: resource, original: original}
   end
 
   @spec to_bare(binary | t()) :: binary
@@ -86,28 +87,28 @@ defmodule Exampple.Xmpp.Jid do
 
   Examples:
       iex> Exampple.Xmpp.Jid.parse("alice@example.com/resource")
-      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "resource"}
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "resource", original: "alice@example.com/resource"}
 
       iex> Exampple.Xmpp.Jid.parse("AlicE@Example.Com/Resource")
-      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "resource"}
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "Resource", original: "AlicE@Example.Com/Resource"}
 
       iex> Exampple.Xmpp.Jid.parse("alice@example.com")
-      %Exampple.Xmpp.Jid{node: "alice", server: "example.com"}
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", original: "alice@example.com"}
 
       iex> Exampple.Xmpp.Jid.parse("AlicE@Example.Com")
-      %Exampple.Xmpp.Jid{node: "alice", server: "example.com"}
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", original: "AlicE@Example.Com"}
 
       iex> Exampple.Xmpp.Jid.parse("example.com/resource")
-      %Exampple.Xmpp.Jid{server: "example.com", resource: "resource"}
+      %Exampple.Xmpp.Jid{server: "example.com", resource: "resource", original: "example.com/resource"}
 
       iex> Exampple.Xmpp.Jid.parse("Example.Com/Resource")
-      %Exampple.Xmpp.Jid{server: "example.com", resource: "resource"}
+      %Exampple.Xmpp.Jid{server: "example.com", resource: "Resource", original: "Example.Com/Resource"}
 
       iex> Exampple.Xmpp.Jid.parse("example.com")
-      %Exampple.Xmpp.Jid{server: "example.com"}
+      %Exampple.Xmpp.Jid{server: "example.com", original: "example.com"}
 
       iex> Exampple.Xmpp.Jid.parse("Example.Com")
-      %Exampple.Xmpp.Jid{server: "example.com"}
+      %Exampple.Xmpp.Jid{server: "example.com", original: "Example.Com"}
 
       iex> Exampple.Xmpp.Jid.parse(nil)
       nil
@@ -122,13 +123,14 @@ defmodule Exampple.Xmpp.Jid do
 
     case Regex.run(~r/^(?:([^@]+)@)?([^\/]+)(?:\/(.*))?$/, jid, opts) do
       [node, server] ->
-        %Jid{node: String.downcase(node), server: String.downcase(server)}
+        node = String.downcase(node)
+        server = String.downcase(server)
+        %Jid{node: node, server: server, original: jid}
 
       [node, server, res] ->
         node = String.downcase(node)
         server = String.downcase(server)
-        res = String.downcase(res)
-        %Jid{node: node, server: server, resource: res}
+        %Jid{node: node, server: server, resource: res, original: jid}
 
       nil ->
         {:error, :enojid}
@@ -142,7 +144,7 @@ defmodule Exampple.Xmpp.Jid do
   Examples:
       iex> import Exampple.Xmpp.Jid
       iex> ~j[alice@example.com/ios]
-      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "ios"}
+      %Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "ios", original: "alice@example.com/ios"}
   """
   def sigil_j(binary, _opts) do
     parse(binary)
@@ -165,6 +167,7 @@ defmodule Exampple.Xmpp.Jid do
       iex> to_string(%Exampple.Xmpp.Jid{node: "alice", server: "example.com", resource: "ios"})
       "alice@example.com/ios"
     """
+    def to_string(%Jid{original: original}) when is_binary(original), do: original
     def to_string(%Jid{node: "", server: server, resource: ""}), do: server
     def to_string(%Jid{node: "", server: server, resource: res}), do: "#{server}/#{res}"
     def to_string(%Jid{node: node, server: server, resource: ""}), do: "#{node}@#{server}"

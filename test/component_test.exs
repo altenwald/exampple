@@ -49,13 +49,13 @@ defmodule Exampple.ComponentTest do
       DummyTcp.subscribe()
 
       DummyTcp.received(~x[
-        <iq type='get' to='test.example.com' from='user@example.com/res1' id='1'>
+        <iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>
           <query xmlns='jabber:iq:ping'/>
         </iq>
       ])
 
       recv = ~x[
-        <iq from="test.example.com" id="1" to="user@example.com/res1" type="result">
+        <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
       ]
