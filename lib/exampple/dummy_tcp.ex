@@ -25,6 +25,10 @@ defmodule Exampple.DummyTcp do
     stop(__MODULE__)
   end
 
+  def dump() do
+    GenServer.cast(__MODULE__, :dump)
+  end
+
   def stop(pid) do
     GenServer.stop(pid)
   end
@@ -92,6 +96,10 @@ defmodule Exampple.DummyTcp do
 
   def handle_cast({:subscribe, pid}, data) do
     {:noreply, Map.put(data, :subscribed, pid)}
+  end
+
+  def handle_cast(:dump, data) do
+    {:noreply, %{data | stream: []}}
   end
 
   @impl GenServer
