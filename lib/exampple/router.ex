@@ -136,7 +136,7 @@ defmodule Exampple.Router do
           |> Enum.join(".")
 
         raise ArgumentError, """
-        The module #{module_name} was not found to create the route,
+        \nThe module #{module_name} was not found to create the route,
         use absolute paths or aliases to be sure all of the modules
         are reachable.
         """
@@ -154,7 +154,7 @@ defmodule Exampple.Router do
         |> Enum.join(".")
 
       raise ArgumentError, """
-      The function #{module_name}.#{function}/2 was not found to create
+      \nThe function #{module_name}.#{function}/2 was not found to create
       the route, check the function exists and have 2 parameters to
       receive "conn" and "stanza".
       """

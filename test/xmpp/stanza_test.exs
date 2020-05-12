@@ -1,5 +1,6 @@
 defmodule Exampple.Xmpp.StanzaTest do
   use ExUnit.Case
+  doctest Exampple.Xmpp.Stanza
 
   defmodule Person do
     use Exampple.Xmpp.Stanza

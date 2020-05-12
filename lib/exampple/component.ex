@@ -25,6 +25,8 @@ defmodule Exampple.Component do
               subscribed: nil
   end
 
+  defguard not_ready(state) when state != :ready
+
   defp xml_init(domain) do
     "<?xml version='1.0' encoding='UTF-8'?>" <>
       "<stream:stream to='#{domain}' " <>
@@ -104,6 +106,7 @@ defmodule Exampple.Component do
 
     unless otp_app do
       raise """
+
       *****************
       You have to provide :otp_app to the Exampple.Component
       configuration!!!
@@ -220,7 +223,7 @@ defmodule Exampple.Component do
     {:keep_state_and_data, timeout_action(data)}
   end
 
-  def ready(:info, {:send, packet}, %Data{set_from: true} = data) do
+  def ready(:cast, {:send, packet}, %Data{set_from: true} = data) do
     packet
     |> Xmlel.parse()
     |> Xmlel.put_attr("from", data.domain)
@@ -301,6 +304,10 @@ defmodule Exampple.Component do
 
   def handle_event(:cast, {:subscribe, pid}, _state, data) do
     {:keep_state, %Data{data | subscribed: pid}}
+  end
+
+  def handle_event(:cast, {:send, _packet}, state, _data) when not_ready(state) do
+    {:keep_state_and_data, [:postpone]}
   end
 
   def handle_event(type, content, state, data) do

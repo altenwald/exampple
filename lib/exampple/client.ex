@@ -4,10 +4,9 @@ defmodule Exampple.Client do
 
   import Kernel, except: [send: 2]
 
-  alias Exampple.Xml.Stream, as: XmlStream
-  alias Exampple.Xmpp.Jid
   alias Exampple.Router.Conn
   alias Exampple.Router
+  alias Exampple.Xml.Stream, as: XmlStream
 
   @default_tcp_handler Exampple.Tcp
 
@@ -63,15 +62,13 @@ defmodule Exampple.Client do
     defstruct socket: nil,
               stream: nil,
               host: nil,
-              user_jid: nil,
-              password: nil,
               domain: nil,
               port: 5280,
               trimmed: false,
               set_from: false,
               ping: false,
               tcp_handler: Tcp,
-              stored_conns: [],
+              send_pid: nil,
               templates: []
   end
 
@@ -86,11 +83,11 @@ defmodule Exampple.Client do
   defp xml_terminate(), do: "</stream:stream>"
 
   def start_link(args) do
-    GenStateMachine.start_link(__MODULE__, args, name: __MODULE__)
+    start_link(__MODULE__, args)
   end
 
   def start_link(name, args) do
-    GenStateMachine.start_link(__MODULE__, args, name: name)
+    GenStateMachine.start_link(__MODULE__, [self(), args], name: name)
   end
 
   @spec connect() :: :ok
@@ -100,6 +97,11 @@ defmodule Exampple.Client do
 
   @spec disconnect() :: :ok
   def disconnect() do
+    :ok = GenStateMachine.cast(__MODULE__, :disconnect)
+  end
+
+  @spec stop() :: :ok
+  def stop() do
     :ok = GenStateMachine.stop(__MODULE__)
   end
 
@@ -133,24 +135,27 @@ defmodule Exampple.Client do
     :ok = GenStateMachine.cast(__MODULE__, {:add_template, key, fun})
   end
 
-  def get_conn() do
-    GenStateMachine.call(__MODULE__, :get_conn)
+  def get_conn(timeout \\ 5_000) do
+    receive do
+      {:packet, packet} -> packet
+    after
+      timeout -> nil
+    end
   end
 
   @impl GenStateMachine
-  def init(%{host: host, port: port, domain: domain} = cfg) do
+  def init([pid, %{host: host, port: port, domain: domain} = cfg]) do
     state_data = %Data{
       stream: nil,
       host: host,
-      user_jid: Jid.new(Map.get(cfg, :user), domain, Map.get(cfg, :resource)),
-      password: Map.get(cfg, :password),
       domain: domain,
       port: port,
       trimmed: Map.get(cfg, :trimmed, false),
       set_from: Map.get(cfg, :set_from, false),
       ping: Map.get(cfg, :ping, false),
       tcp_handler: Map.get(cfg, :tcp_handler, @default_tcp_handler),
-      templates: default_templates()
+      templates: default_templates(),
+      send_pid: pid
     }
 
     {:ok, :disconnected, state_data}
@@ -183,8 +188,9 @@ defmodule Exampple.Client do
 
   def connected(:info, {:xmlelement, xmlel}, data) do
     conn = Router.build_conn(xmlel)
+    Kernel.send(data.send_pid, {:conn, conn})
     Logger.info("received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}")
-    data = %Data{data | stored_conns: data.stored_conns ++ [conn], stream: XmlStream.new()}
+    data = %Data{data | stream: XmlStream.new()}
     {:keep_state, data}
   end
 
@@ -201,10 +207,6 @@ defmodule Exampple.Client do
     data.tcp_handler.send(packet, data.socket)
     Logger.info("sent: #{IO.ANSI.yellow()}#{packet}#{IO.ANSI.reset()}")
     :keep_state_and_data
-  end
-
-  def connected({:call, from}, :get_conn, %Data{stored_conns: [conn | conns]} = data) do
-    {:keep_state, %Data{data | stored_conns: conns}, [{:reply, from, conn}]}
   end
 
   def connected({:timeout, :ping}, :send_ping, data) do
@@ -248,6 +250,14 @@ defmodule Exampple.Client do
   def handle_event({:call, from}, {:get_template, template}, _state, data) do
     reply = Keyword.fetch(data.templates, template)
     {:keep_state_and_data, [{:reply, from, reply}]}
+  end
+
+  def handle_event(:cast, :disconnect, _state, data) do
+    data.tcp_handler.send(xml_terminate(), data.socket)
+    Logger.info("sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
+    data.tcp_handler.stop(data.socket)
+    data = %{data | socket: nil, stream: nil}
+    {:next_state, :disconnected, data}
   end
 
   def handle_event(type, content, state, data) do

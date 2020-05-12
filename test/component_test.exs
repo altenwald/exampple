@@ -7,26 +7,24 @@ defmodule Exampple.ComponentTest do
   alias Exampple.Xmpp.Stanza
 
   defmodule TestingRouter do
-    require Logger
-
-    def route(xmlel, _domain, _otp_app) do
+    def route(xmlel, domain, _otp_app) do
       xmlel
-      |> Router.build_conn()
+      |> Router.build_conn(domain)
       |> Stanza.iq_resp()
       |> Component.send()
     end
   end
 
+  setup do
+    config =
+      :exampple
+      |> Application.get_env(Exampple.Component)
+      |> Keyword.put(:router_handler, TestingRouter)
+
+    Application.put_env(:exampple, Exampple.Component, config)
+  end
+
   describe "connectivity" do
-    setup do
-      config =
-        :exampple
-        |> Application.get_env(Exampple.Component)
-        |> Keyword.put(:router_handler, TestingRouter)
-
-      Application.put_env(:exampple, Exampple.Component, config)
-    end
-
     test "starting" do
       Exampple.start_link(otp_app: :exampple)
       assert {:disconnected, %Component.Data{}} = :sys.get_state(Component)
@@ -36,10 +34,28 @@ defmodule Exampple.ComponentTest do
     test "connecting" do
       Exampple.start_link(otp_app: :exampple)
       Component.connect()
-      Process.sleep(500)
+      Component.wait_for_ready()
       assert {:ready, %Component.Data{}} = :sys.get_state(Component)
       assert nil == DummyTcp.sent()
+      DummyTcp.dump()
       Component.stop()
+    end
+
+    test "checking postpone when disconnected" do
+      Exampple.start_link(otp_app: :exampple)
+
+      iq = ~x[<iq type='get' from='test.example.com' to='you' id='1'/>]
+
+      Component.send(to_string(iq))
+      assert {:disconnected, %Component.Data{}} = :sys.get_state(Component)
+
+      Component.connect()
+      Component.wait_for_ready()
+      Process.sleep(500)
+
+      assert iq == parse(DummyTcp.sent())
+      DummyTcp.dump()
+      DummyTcp.stop()
     end
 
     test "ping" do
@@ -63,6 +79,7 @@ defmodule Exampple.ComponentTest do
       assert recv == DummyTcp.wait_for_sent_xml()
       assert recv == parse(DummyTcp.sent())
       Component.stop()
+      DummyTcp.dump()
       DummyTcp.stop()
     end
   end
