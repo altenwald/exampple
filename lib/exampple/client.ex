@@ -187,7 +187,7 @@ defmodule Exampple.Client do
   end
 
   def connected(:info, {:xmlelement, xmlel}, data) do
-    conn = Router.build_conn(xmlel)
+    conn = Conn.new(xmlel)
     Kernel.send(data.send_pid, {:conn, conn})
     Logger.info("received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}")
     data = %Data{data | stream: XmlStream.new()}

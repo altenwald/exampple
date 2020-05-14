@@ -91,7 +91,7 @@ defmodule Exampple.Xmpp.Stanza do
     iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
     iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1"}
     iex> message = Exampple.Xml.Xmlel.new("message", attrs, payload)
-    iex> conn = Exampple.Router.build_conn(message)
+    iex> conn = Exampple.Router.Conn.new(message)
     iex> |> Exampple.Xmpp.Stanza.message_error("item-not-found")
     iex> conn.response
     "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
@@ -112,7 +112,7 @@ defmodule Exampple.Xmpp.Stanza do
     iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
     iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "chat"}
     iex> message = Exampple.Xml.Xmlel.new("message", attrs, payload)
-    iex> conn = Exampple.Router.build_conn(message)
+    iex> conn = Exampple.Router.Conn.new(message)
     iex> |> Exampple.Xmpp.Stanza.message_resp([])
     iex> conn.response
     "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"chat\\"/>"
@@ -154,7 +154,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> }
       iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
       iex> iq = Exampple.Xml.Xmlel.new("iq", attrs, [payload])
-      iex> conn = Exampple.Router.build_conn(iq)
+      iex> conn = Exampple.Router.Conn.new(iq)
       iex> |> Exampple.Xmpp.Stanza.iq_resp()
       iex> conn.response
       "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"><query xmlns=\\"jabber:iq:roster\\"/></iq>"
@@ -166,7 +166,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> }
       iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
       iex> iq = Exampple.Xml.Xmlel.new("iq", attrs, [payload])
-      iex> conn = Exampple.Router.build_conn(iq)
+      iex> conn = Exampple.Router.Conn.new(iq)
       iex> |> Exampple.Xmpp.Stanza.iq_resp([])
       iex> conn.response
       "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"result\\"/>"
@@ -252,7 +252,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "get"}
       iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
       iex> xmlel = Exampple.Xml.Xmlel.new("iq", attrs, [payload])
-      iex> conn = Exampple.Router.build_conn(xmlel)
+      iex> conn = Exampple.Router.Conn.new(xmlel)
       iex> |> Exampple.Xmpp.Stanza.iq_error("item-not-found")
       iex> conn.response
       "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"

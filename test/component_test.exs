@@ -3,13 +3,14 @@ defmodule Exampple.ComponentTest do
 
   import Exampple.Xml.Xmlel
 
-  alias Exampple.{Component, DummyTcp, Router}
+  alias Exampple.{Component, DummyTcp}
+  alias Exampple.Router.Conn
   alias Exampple.Xmpp.Stanza
 
   defmodule TestingRouter do
     def route(xmlel, domain, _otp_app) do
       xmlel
-      |> Router.build_conn(domain)
+      |> Conn.new(domain)
       |> Stanza.iq_resp()
       |> Component.send()
     end

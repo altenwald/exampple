@@ -1,52 +1,11 @@
 defmodule Exampple.Router do
   require Logger
 
-  alias Exampple.Xml.Xmlel
-  alias Exampple.Xmpp.Jid
-
-  defmodule Conn do
-    @moduledoc false
-    defstruct domain: nil,
-              from_jid: nil,
-              to_jid: nil,
-              id: nil,
-              type: nil,
-              xmlns: nil,
-              stanza_type: nil,
-              stanza: nil,
-              response: nil
-
-    @type t() :: %__MODULE__{}
-  end
-
-  def build_conn(%Xmlel{} = xmlel, domain \\ nil) do
-    xmlns =
-      case xmlel.children do
-        [%Xmlel{} = subel | _] -> Xmlel.get_attr(subel, "xmlns")
-        _ -> nil
-      end
-
-    %Conn{
-      domain: domain,
-      from_jid: Jid.parse(Xmlel.get_attr(xmlel, "from")),
-      to_jid: Jid.parse(Xmlel.get_attr(xmlel, "to")),
-      id: Xmlel.get_attr(xmlel, "id"),
-      type: Xmlel.get_attr(xmlel, "type", "normal"),
-      xmlns: xmlns,
-      stanza_type: xmlel.name,
-      stanza: xmlel
-    }
-  end
+  alias Exampple.Router.Task, as: RouterTask
 
   def route(xmlel, domain, otp_app) do
     Logger.debug("[router] processing: #{inspect(xmlel)}")
-    # TODO: add this task under a DynamicSupervisor
-    Task.start(fn ->
-      module = Application.get_env(otp_app, :router)
-      conn = build_conn(xmlel, domain)
-      query = xmlel.children
-      apply(module, :route, [conn, query])
-    end)
+    RouterTask.start(xmlel, domain, otp_app)
   end
 
   defmacro __using__(_opts) do
