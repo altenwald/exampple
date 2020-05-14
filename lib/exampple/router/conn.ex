@@ -12,7 +12,8 @@ defmodule Exampple.Router.Conn do
             xmlns: nil,
             stanza_type: nil,
             stanza: nil,
-            response: nil
+            response: nil,
+            envelope: nil
 
   @type t() :: %__MODULE__{}
 
@@ -33,5 +34,12 @@ defmodule Exampple.Router.Conn do
       stanza_type: xmlel.name,
       stanza: xmlel
     }
+  end
+
+  def get_response(%Conn{envelope: nil, response: response}) when response != nil do
+    to_string(response)
+  end
+  def get_response(%Conn{envelope: envelope, response: response}) when response != nil do
+    get_response(envelope.(response))
   end
 end

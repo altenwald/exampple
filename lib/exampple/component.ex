@@ -74,8 +74,8 @@ defmodule Exampple.Component do
     GenStateMachine.cast(__MODULE__, {:send, data})
   end
 
-  def send(%Conn{response: response} = conn) when response != nil do
-    data = to_string(conn.response)
+  def send(%Conn{} = conn) do
+    data = Conn.get_response(conn)
     GenStateMachine.cast(__MODULE__, {:send, data})
   end
 

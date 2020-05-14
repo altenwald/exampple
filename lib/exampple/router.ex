@@ -12,12 +12,14 @@ defmodule Exampple.Router do
     quote do
       import Exampple.Router
       Module.register_attribute(__MODULE__, :routes, accumulate: true)
+      @envelopes []
       @before_compile Exampple.Router
     end
   end
 
   defmacro __before_compile__(env) do
     routes = Module.get_attribute(env.module, :routes)
+    envelopes = Module.get_attribute(env.module, :envelopes)
 
     route_functions =
       for route <- routes do
@@ -55,7 +57,33 @@ defmodule Exampple.Router do
         []
       end
 
-    [route_info_function | route_functions] ++ [fallback]
+    envelope_functions =
+      for envelope_xmlns <- envelopes do
+        quote do
+          def route(
+                %Exampple.Router.Conn{
+                  xmlns: unquote(envelope_xmlns),
+                } = conn,
+                stanza
+              ) do
+            {conn, stanza} = Exampple.Xmpp.Envelope.handle(conn, stanza)
+            route(conn, stanza)
+          end
+        end
+      end
+
+    [route_info_function | envelope_functions] ++ route_functions ++ [fallback]
+  end
+
+  defmacro envelope(xmlns) do
+    xmlns_list = if is_list(xmlns), do: xmlns, else: [xmlns]
+    quote location: :keep do
+      Module.put_attribute(
+        __MODULE__,
+        :envelopes,
+        unquote(xmlns_list)
+      )
+    end
   end
 
   defmacro iq(xmlns_partial \\ "", do: block) do
@@ -120,7 +148,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro error(xmlns, controller, function) do
+  defmacro error(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -136,7 +164,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro unavailable(xmlns, controller, function) do
+  defmacro unavailable(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -152,7 +180,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro subscribe(xmlns, controller, function) do
+  defmacro subscribe(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -168,7 +196,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro subscribed(xmlns, controller, function) do
+  defmacro subscribed(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -184,7 +212,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro unsubscribe(xmlns, controller, function) do
+  defmacro unsubscribe(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -200,7 +228,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro unsubscribed(xmlns, controller, function) do
+  defmacro unsubscribed(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -216,7 +244,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro probe(xmlns, controller, function) do
+  defmacro probe(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -232,7 +260,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro normal(xmlns, controller, function) do
+  defmacro normal(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -248,7 +276,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro headline(xmlns, controller, function) do
+  defmacro headline(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -264,7 +292,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro groupchat(xmlns, controller, function) do
+  defmacro groupchat(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
@@ -280,7 +308,7 @@ defmodule Exampple.Router do
     end
   end
 
-  defmacro chat(xmlns, controller, function) do
+  defmacro chat(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
