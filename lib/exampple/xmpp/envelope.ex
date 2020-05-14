@@ -3,7 +3,7 @@ defmodule Exampple.Xmpp.Envelope do
   alias Exampple.Xml.Xmlel
   alias Exampple.Xmpp.Stanza
 
-  def handle(%Conn{stanza_type: "message"}) do
+  def handle(%Conn{stanza_type: "message"}, _query) do
     nil
   end
 
