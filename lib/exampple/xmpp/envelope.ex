@@ -3,7 +3,11 @@ defmodule Exampple.Xmpp.Envelope do
   alias Exampple.Xml.Xmlel
   alias Exampple.Xmpp.Stanza
 
-  def handle(%Conn{stanza_type: stanza_type} = conn, query) do
+  def handle(%Conn{stanza_type: "message"}) do
+    nil
+  end
+
+  def handle(%Conn{stanza_type: "iq" = stanza_type} = conn, query) do
     base = get_when(query, stanza_type)
     envelope = fn(internal_stanza) ->
       payload = insert_when(query, stanza_type, internal_stanza)

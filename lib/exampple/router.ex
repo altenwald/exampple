@@ -66,8 +66,10 @@ defmodule Exampple.Router do
                 } = conn,
                 stanza
               ) do
-            {conn, stanza} = Exampple.Xmpp.Envelope.handle(conn, stanza)
-            route(conn, stanza)
+            case Exampple.Xmpp.Envelope.handle(conn, stanza) do
+              {conn, stanza} -> route(conn, stanza)
+              nil -> :ok
+            end
           end
         end
       end
