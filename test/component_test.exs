@@ -5,12 +5,22 @@ defmodule Exampple.ComponentTest do
 
   alias Exampple.{Component, DummyTcp}
   alias Exampple.Router.Conn
-  alias Exampple.Xmpp.Stanza
+  alias Exampple.Xmpp.{Envelope, Stanza}
 
   defmodule TestingRouter do
+    def maybe_envelope(%Conn{xmlns: "urn:xmpp:delegation:1"} = conn) do
+      stanza = conn.stanza.children
+      case Envelope.handle(conn, stanza) do
+        {conn, _stanza} -> conn
+        nil -> conn
+      end
+    end
+    def maybe_envelope(conn), do: conn
+
     def route(xmlel, domain, _otp_app) do
       xmlel
       |> Conn.new(domain)
+      |> maybe_envelope()
       |> Stanza.iq_resp()
       |> Component.send()
     end
@@ -23,28 +33,23 @@ defmodule Exampple.ComponentTest do
       |> Keyword.put(:router_handler, TestingRouter)
 
     Application.put_env(:exampple, Exampple.Component, config)
+    Exampple.start_link(otp_app: :exampple)
+    on_exit(fn -> DummyTcp.dump() end)
   end
 
   describe "connectivity" do
     test "starting" do
-      Exampple.start_link(otp_app: :exampple)
       assert {:disconnected, %Component.Data{}} = :sys.get_state(Component)
-      Component.stop()
     end
 
     test "connecting" do
-      Exampple.start_link(otp_app: :exampple)
       Component.connect()
       Component.wait_for_ready()
       assert {:ready, %Component.Data{}} = :sys.get_state(Component)
       assert nil == DummyTcp.sent()
-      DummyTcp.dump()
-      Component.stop()
     end
 
     test "checking postpone when disconnected" do
-      Exampple.start_link(otp_app: :exampple)
-
       iq = ~x[<iq type='get' from='test.example.com' to='you' id='1'/>]
 
       Component.send(to_string(iq))
@@ -55,12 +60,9 @@ defmodule Exampple.ComponentTest do
       Process.sleep(500)
 
       assert iq == parse(DummyTcp.sent())
-      DummyTcp.dump()
-      DummyTcp.stop()
     end
 
     test "ping" do
-      Exampple.start_link(otp_app: :exampple)
       Component.connect()
       Component.wait_for_ready()
       DummyTcp.subscribe()
@@ -79,9 +81,45 @@ defmodule Exampple.ComponentTest do
 
       assert recv == DummyTcp.wait_for_sent_xml()
       assert recv == parse(DummyTcp.sent())
-      Component.stop()
-      DummyTcp.dump()
-      DummyTcp.stop()
+    end
+
+    test "envelope with register" do
+      Component.connect()
+      Component.wait_for_ready()
+      DummyTcp.subscribe()
+
+      DummyTcp.received(~x[
+        <iq from="example.com"
+            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
+            to="test.example.com"
+            type="set">
+          <delegation xmlns="urn:xmpp:delegation:1">
+            <forwarded xmlns="urn:xmpp:forward:0">
+              <iq id="aab6a" to="example.com" type="get" xml:lang="en" xmlns="jabber:client">
+                <query xmlns="jabber:iq:register"/>
+              </iq>
+            </forwarded>
+          </delegation>
+        </iq>
+      ])
+
+      recv = ~x[
+        <iq to="example.com"
+            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
+            from="test.example.com"
+            type="result">
+          <delegation xmlns='urn:xmpp:delegation:1'>
+            <forwarded xmlns='urn:xmpp:forward:0'>
+              <iq id="aab6a" from="example.com" type="result">
+                <query xmlns="jabber:iq:register"/>
+              </iq>
+            </forwarded>
+          </delegation>
+        </iq>
+      ]
+
+      assert recv == DummyTcp.wait_for_sent_xml()
+      assert recv == parse(DummyTcp.sent())
     end
   end
 end
