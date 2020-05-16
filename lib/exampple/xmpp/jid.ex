@@ -113,11 +113,14 @@ defmodule Exampple.Xmpp.Jid do
       iex> Exampple.Xmpp.Jid.parse(nil)
       nil
 
+      iex> Exampple.Xmpp.Jid.parse("")
+      ""
+
       iex> Exampple.Xmpp.Jid.parse("/example.com/resource")
       {:error, :enojid}
   """
   def parse(nil), do: nil
-
+  def parse(""), do: ""
   def parse(jid) when is_binary(jid) do
     opts = [capture: :all_but_first]
 
