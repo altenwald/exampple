@@ -14,6 +14,11 @@ defmodule Exampple.RouterTest do
     def groupchat(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
     def headline(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
     def normal(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
+
+    def register(conn, stanza) do
+      conn2 = Stanza.iq_resp(conn, stanza)
+      send(:test_get_and_set, {:ok, conn, conn2.response})
+    end
   end
 
   defmodule TestingRouter do
@@ -24,6 +29,10 @@ defmodule Exampple.RouterTest do
     iq "urn:exampple:test:" do
       get("get:0", Exampple.RouterTest.TestingController, :get)
       set("set:0", Exampple.RouterTest.TestingController, :set)
+    end
+
+    iq "jabber:iq:" do
+      get("register", Exampple.RouterTest.TestingController, :register)
     end
 
     message do
@@ -71,6 +80,7 @@ defmodule Exampple.RouterTest do
         {"message", "headline", "", Exampple.RouterTest.TestingController, :headline},
         {"message", "groupchat", "", Exampple.RouterTest.TestingController, :groupchat},
         {"message", "chat", "", Exampple.RouterTest.TestingController, :chat},
+        {"iq", "get", "jabber:iq:register", Exampple.RouterTest.TestingController, :register},
         {"iq", "set", "urn:exampple:test:set:0", TestingController, :set},
         {"iq", "get", "urn:exampple:test:get:0", TestingController, :get}
       ]
@@ -129,6 +139,52 @@ defmodule Exampple.RouterTest do
           </delegation>
         </iq>
       ]
+
+      assert reply == parse(Conn.get_response(Stanza.iq_resp(conn)))
+    end
+
+    test "check envelope without from or to" do
+      Application.put_env(:exampple, :router, TestingRouter)
+
+      stanza = ~x[
+        <iq from="example.com"
+            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
+            to="component.example.com"
+            type="set">
+          <delegation xmlns="urn:xmpp:delegation:1">
+            <forwarded xmlns="urn:xmpp:forward:0">
+              <iq id="aab6a" to="example.com" type="get" xml:lang="en" xmlns="jabber:client">
+                <query xmlns="jabber:iq:register"/>
+              </iq>
+            </forwarded>
+          </delegation>
+        </iq>
+      ]
+      domain = "example.com"
+
+      Process.register(self(), :test_get_and_set)
+      assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
+
+      reply = ~x[
+        <iq to="example.com"
+            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
+            from="component.example.com"
+            type="result">
+          <delegation xmlns='urn:xmpp:delegation:1'>
+            <forwarded xmlns='urn:xmpp:forward:0'>
+              <iq id="aab6a" from="example.com" type="result">
+                <query xmlns="jabber:iq:register"/>
+              </iq>
+            </forwarded>
+          </delegation>
+        </iq>
+      ]
+      iq = ~x[
+        <iq id="aab6a" from="example.com" type="result">
+          <query xmlns="jabber:iq:register"/>
+        </iq>
+      ]
+      assert_receive {:ok, conn, ^iq}
 
       assert reply == parse(Conn.get_response(Stanza.iq_resp(conn)))
     end

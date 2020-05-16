@@ -367,6 +367,7 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   defp maybe_add(attrs, _name, nil), do: attrs
+  defp maybe_add(attrs, _name, ""), do: attrs
   defp maybe_add(attrs, name, value), do: Map.put(attrs, name, value)
 
   @doc """
