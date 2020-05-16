@@ -6,27 +6,8 @@ defmodule Exampple do
   """
 
   @doc false
-  def start_link(otp_app: otp_app) when is_atom(otp_app) do
-    args =
-      otp_app
-      |> Application.get_env(Exampple.Component)
-      |> Enum.into(%{})
-      |> Map.put(:otp_app, otp_app)
-
-    GenStateMachine.start_link(Exampple.Component, args, name: Exampple.Component)
-  end
-
-  def start_link([args]) do
-    GenStateMachine.start_link(Exampple.Component, args, name: Exampple.Component)
-  end
+  defdelegate start_link(args), to: Exampple.Component
 
   @doc false
-  def child_spec(args) do
-    %{
-      id: Exampple,
-      start: {Exampple, :start_link, [args]},
-      restart: :permanent,
-      shutdown: 5_000
-    }
-  end
+  defdelegate child_spec(args), to: Exampple.Component
 end

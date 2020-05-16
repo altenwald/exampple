@@ -57,6 +57,16 @@ defmodule Exampple.Component do
     GenStateMachine.start_link(__MODULE__, args, name: name)
   end
 
+  def start_link(otp_app: otp_app) when is_atom(otp_app) do
+    args =
+      otp_app
+      |> Application.get_env(__MODULE__)
+      |> Enum.into(%{})
+      |> Map.put(:otp_app, otp_app)
+
+    start_link(args)
+  end
+
   def start_link(args), do: start_link(__MODULE__, args)
 
   @spec connect() :: :ok
