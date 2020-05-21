@@ -55,6 +55,29 @@ defmodule Exampple.Xml.Parser.SenderTest do
       assert events == receive_all()
     end
 
+    test "correctly step by step in the middle of an attribute" do
+      Application.put_env(:exampple, :debug_xml, false)
+
+      assert {:ok, ""} =
+               XmlStream.new()
+               |> XmlStream.parse("<foo id='cef83a10-4084-4b94-afe9-")
+               |> XmlStream.parse("5b528e8db468'")
+               |> XmlStream.parse(">Hello world!<bar>")
+               |> XmlStream.parse("more data</bar>")
+               |> XmlStream.parse("</foo>")
+               |> XmlStream.terminate()
+
+      events = [
+        {:xmlstreamstart, "foo", [{"id", "cef83a10-4084-4b94-afe9-5b528e8db468"}]},
+        {:xmlstreamstart, "bar", []},
+        {:xmlelement, ~x[
+          <foo id="cef83a10-4084-4b94-afe9-5b528e8db468">Hello world!<bar>more data</bar></foo>
+        ]}
+      ]
+
+      assert events == receive_all()
+    end
+
     test "incorrect XML step by step" do
       assert {:error, _} =
                XmlStream.new()
