@@ -84,9 +84,12 @@ defmodule Exampple.Component do
     GenStateMachine.cast(__MODULE__, {:send, data})
   end
 
+  def send(%Xmlel{} = xmlel) do
+    send(to_string(xmlel))
+  end
+
   def send(%Conn{} = conn) do
-    data = Conn.get_response(conn)
-    GenStateMachine.cast(__MODULE__, {:send, data})
+    send(Conn.get_response(conn))
   end
 
   @spec subscribe() :: :ok
