@@ -167,6 +167,10 @@ defmodule Exampple.Component do
     {:next_state, :disconnected, data, [{:state_timeout, 3_000, :connect}]}
   end
 
+  def retrying(:info, {:xmlelement, _xmlel}, _data) do
+    {:keep_state_and_data, [postpone: true]}
+  end
+
   def connected(:cast, :stream_init, %Data{} = data) do
     stream = XmlStream.new()
     {:next_state, :stream_init, %Data{data | stream: stream}, [{:next_event, :cast, :init}]}
@@ -195,6 +199,10 @@ defmodule Exampple.Component do
     end
   end
 
+  def stream_init(:info, {:xmlelement, _xmlel}, _data) do
+    {:keep_state_and_data, [postpone: true]}
+  end
+
   def authenticate(:internal, {:handshake, stream_id}, data) do
     stream_id
     |> get_handshake(data.password)
@@ -221,6 +229,10 @@ defmodule Exampple.Component do
     """
 
     {:stop, :normal, data}
+  end
+
+  def authenticate(:info, {:xmlelement, _xmlel}, _data) do
+    {:keep_state_and_data, [postpone: true]}
   end
 
   defp get_handshake(stream_id, secret) do
