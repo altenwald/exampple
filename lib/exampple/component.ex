@@ -268,15 +268,13 @@ defmodule Exampple.Component do
     |> Xmlel.clean_spaces()
     |> data.router_handler.route(data.domain, data.otp_app)
 
-    stream = XmlStream.new()
-    {:keep_state, %Data{data | stream: stream}, timeout_action(data)}
+    {:keep_state_and_data, timeout_action(data)}
   end
 
   def ready(:info, {:xmlelement, packet}, %Data{trimmed: false} = data) do
     Logger.debug("received packet: #{inspect(packet)}")
     data.router_handler.route(packet, data.domain, data.otp_app)
-    stream = XmlStream.new()
-    {:keep_state, %Data{data | stream: stream}, timeout_action(data)}
+    {:keep_state_and_data, timeout_action(data)}
   end
 
   @impl GenStateMachine

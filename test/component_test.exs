@@ -48,7 +48,9 @@ defmodule Exampple.ComponentTest do
       assert {:ready, %Component.Data{}} = :sys.get_state(Component)
       assert nil == DummyTcp.sent()
     end
+  end
 
+  describe "handling stanzas" do
     test "checking postpone when disconnected" do
       iq = ~x[<iq type='get' from='test.example.com' to='you' id='1'/>]
 
@@ -83,7 +85,62 @@ defmodule Exampple.ComponentTest do
       assert recv == parse(DummyTcp.sent())
     end
 
-    test "envelope with register" do
+    test "stanzas" do
+      Component.connect()
+      Component.wait_for_ready()
+      DummyTcp.subscribe()
+
+      DummyTcp.received(~x[
+        <iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>
+          <query xmlns='jabber:iq:ping'/>
+        </iq>
+      ])
+      DummyTcp.received(~x[
+        <iq type='get' to='test.example.com' from='User@example.com/res1' id='2'>
+          <query xmlns='jabber:iq:ping'/>
+        </iq>
+      ])
+
+      assert ~x[
+        <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
+          <query xmlns="jabber:iq:ping"/>
+        </iq>
+      ] == DummyTcp.wait_for_sent_xml()
+
+      assert ~x[
+        <iq from="test.example.com" id="2" to="User@example.com/res1" type="result">
+          <query xmlns="jabber:iq:ping"/>
+        </iq>
+      ] == DummyTcp.wait_for_sent_xml()
+    end
+
+    test "chunks stanzas" do
+      Component.connect()
+      Component.wait_for_ready()
+      DummyTcp.subscribe()
+
+      DummyTcp.received(
+        "<iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
+        "<query xmlns='jabber:iq:ping'/>" <>
+        "</iq><iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
+        "<query xmlns='jabbe"
+      )
+      Process.sleep(500)
+      DummyTcp.received("r:iq:ping'/></iq>")
+
+      recv = ~x[
+        <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
+          <query xmlns="jabber:iq:ping"/>
+        </iq>
+      ]
+
+      assert recv == DummyTcp.wait_for_sent_xml()
+      assert recv == DummyTcp.wait_for_sent_xml()
+    end
+  end
+
+  describe "envelope" do
+    test "with register" do
       Component.connect()
       Component.wait_for_ready()
       DummyTcp.subscribe()
