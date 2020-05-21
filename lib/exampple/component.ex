@@ -291,6 +291,7 @@ defmodule Exampple.Component do
         {:keep_state, %Data{data | stream: stream}, actions}
 
       {:error, error} ->
+        Logger.error("failing packet: #{inspect(packet)}")
         Logger.error("parsing error: #{inspect(error)}")
         data.tcp_handler.stop(data.socket)
         {:next_state, :retrying, data, [{:next_event, :cast, :connect}]}
