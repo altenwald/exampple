@@ -275,4 +275,95 @@ defmodule Exampple.Xml.Xmlel do
 
     %Xmlel{xmlel | children: children}
   end
+
+  @behaviour Access
+
+  defp split_children(children, name) do
+    children
+    |> Enum.reduce(
+      %{match: [], nonmatch: []},
+      fn
+        %Xmlel{name: ^name} = el, acc ->
+          %{acc | match: [el | acc.match]}
+
+        el, acc ->
+          %{acc | nonmatch: [el | acc.nonmatch]}
+      end
+    )
+    |> Enum.map(fn {k,v} -> {k, Enum.reverse(v)} end)
+    |> Enum.into(%{})
+  end
+
+  @impl Access
+  @doc """
+  Access the value stored under key
+
+  Examples:
+      iex> import Exampple.Xml.Xmlel
+      iex> el = ~x(<foo><c1 v="1"/><c1 v="2"/><c2/></foo>)
+      iex> fetch(el, "c1")
+      {:ok, [%Exampple.Xml.Xmlel{attrs: %{"v" => "1"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{"v" => "2"}, children: [], name: "c1"}]}
+      iex> fetch(el, "nonexistent")
+      :error
+  """
+  def fetch(%Xmlel{children: children}, key) do
+    %{match: values} = split_children(children, key)
+
+    if Enum.empty?(values) do
+      :error
+    else
+      {:ok, values}
+    end
+  end
+
+  @impl Access
+  @doc """
+  Access the value under key and update it at the same time
+
+  Examples:
+      iex> import Exampple.Xml.Xmlel
+      iex> el = ~x(<foo><c1 v="1"/><c1 v="2"/><c2/></foo>)
+      iex> fun = fn els ->
+      iex> values = Enum.map(els, fn %Exampple.Xml.Xmlel{attrs: %{"v" => v}} = el -> %Exampple.Xml.Xmlel{el | attrs: %{"v" => "v" <> v}} end)
+      iex> {els, values}
+      iex> end
+      iex> get_and_update(el, "c1", fun)
+      {[%Exampple.Xml.Xmlel{attrs: %{"v" => "1"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{"v" => "2"}, children: [], name: "c1"}], %Exampple.Xml.Xmlel{attrs: %{}, children: [%Exampple.Xml.Xmlel{attrs: %{"v" => "v1"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{"v" => "v2"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "c2"}], name: "foo"}}
+      iex> fun = fn _els -> :pop end
+      iex> get_and_update(el, "c1", fun)
+      {[%Exampple.Xml.Xmlel{attrs: %{"v" => "1"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{"v" => "2"}, children: [], name: "c1"}], %Exampple.Xml.Xmlel{attrs: %{}, children: [%Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "c2"}], name: "foo"}}
+  """
+  def get_and_update(%Xmlel{children: children} = el, key, function) do
+    %{match: match, nonmatch: nonmatch} = split_children(children, key)
+
+    case function.(if Enum.empty?(match), do: nil, else: match) do
+      :pop ->
+        {match, %Xmlel{el | children: nonmatch}}
+
+      {get_value, update_value} ->
+        {get_value, %Xmlel{el | children: update_value ++ nonmatch}}
+    end
+  end
+
+  @impl Access
+  @doc """
+  Pop the value under key
+
+  Examples:
+      iex> import Exampple.Xml.Xmlel
+      iex> el = ~x(<foo><c1 v="1"/><c1 v="2"/><c2/></foo>)
+      iex> pop(el, "c1")
+      {[%Exampple.Xml.Xmlel{attrs: %{"v" => "1"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{"v" => "2"}, children: [], name: "c1"}], %Exampple.Xml.Xmlel{attrs: %{}, children: [%Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "c2"}], name: "foo"}}
+      iex> pop(el, "nonexistent")
+      {[], %Exampple.Xml.Xmlel{attrs: %{}, children: [%Exampple.Xml.Xmlel{attrs: %{"v" => "1"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{"v" => "2"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "c2"}], name: "foo"}}
+  """
+  def pop(%Xmlel{children: children} = el, key) do
+    case split_children(children, key) do
+      %{match: []} ->
+        {[], el}
+
+      %{match: match, nonmatch: nonmatch} ->
+        {match, %Xmlel{el | children: nonmatch}}
+    end
+  end
 end
