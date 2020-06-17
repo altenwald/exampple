@@ -101,17 +101,18 @@ defmodule Exampple.ComponentTest do
         </iq>
       ])
 
-      assert ~x[
+      assert DummyTcp.are_all_sent?([
+        ~x[
         <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
-      ] == DummyTcp.wait_for_sent_xml()
-
-      assert ~x[
+        ],
+        ~x[
         <iq from="test.example.com" id="2" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
-      ] == DummyTcp.wait_for_sent_xml()
+        ]
+      ])
     end
 
     test "chunks stanzas" do
