@@ -53,21 +53,24 @@ defmodule Exampple.DummyTcp do
     end
   end
 
-  def are_all_sent?(stanzas, tries \\ 3, timeout \\ 500)
+  def are_all_sent?(stanzas, timeout \\ 500)
 
-  def are_all_sent?([], _tries, _timeout), do: true
+  def are_all_sent?([], _timeout), do: true
 
-  def are_all_sent?(stanzas, 0, _timeut), do: {false, stanzas}
+  def are_all_sent?(stanzas, timeout) do
+    case wait_for_sent_xml(timeout) do
+      %Xmlel{} = stanza ->
+        if stanza in stanzas do
+          Logger.debug("stanza found: #{to_string(stanza)}")
+          are_all_sent?(stanzas -- [stanza], timeout)
+        else
+          throw({:unknown_stanza, to_string(stanza)})
+        end
 
-  def are_all_sent?([stanza|stanzas], tries, timeout) do
-    receive do
-      ^stanza ->
-        are_all_sent?(stanzas, tries, timeout)
-    after timeout ->
-      are_all_sent?(stanzas ++ [stanza], tries - 1, timeout)
+      nil ->
+        throw({:missing_stanzas, for(i <- stanzas, do: to_string(i))})
     end
   end
-
 
   def received(%Xmlel{} = packet) do
     received(to_string(packet))

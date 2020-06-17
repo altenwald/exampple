@@ -10,11 +10,13 @@ defmodule Exampple.ComponentTest do
   defmodule TestingRouter do
     def maybe_envelope(%Conn{xmlns: "urn:xmpp:delegation:1"} = conn) do
       stanza = conn.stanza.children
+
       case Envelope.handle(conn, stanza) do
         {conn, _stanza} -> conn
         nil -> conn
       end
     end
+
     def maybe_envelope(conn), do: conn
 
     def route(xmlel, domain, _otp_app) do
@@ -102,17 +104,17 @@ defmodule Exampple.ComponentTest do
       ])
 
       assert DummyTcp.are_all_sent?([
-        ~x[
+               ~x[
         <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
         ],
-        ~x[
+               ~x[
         <iq from="test.example.com" id="2" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
         ]
-      ])
+             ])
     end
 
     test "chunks stanzas" do
@@ -122,10 +124,11 @@ defmodule Exampple.ComponentTest do
 
       DummyTcp.received(
         "<iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
-        "<query xmlns='jabber:iq:ping'/>" <>
-        "</iq><iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
-        "<query xmlns='jabbe"
+          "<query xmlns='jabber:iq:ping'/>" <>
+          "</iq><iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
+          "<query xmlns='jabbe"
       )
+
       Process.sleep(500)
       DummyTcp.received("r:iq:ping'/></iq>")
 

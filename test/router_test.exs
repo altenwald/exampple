@@ -24,7 +24,7 @@ defmodule Exampple.RouterTest do
   defmodule TestingRouter do
     use Exampple.Router
 
-    envelope ["urn:xmpp:delegation:1", "urn:xmpp:forward:0"]
+    envelope(["urn:xmpp:delegation:1", "urn:xmpp:forward:0"])
 
     iq "urn:exampple:test:" do
       get("get:0", Exampple.RouterTest.TestingController, :get)

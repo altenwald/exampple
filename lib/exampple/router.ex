@@ -62,7 +62,7 @@ defmodule Exampple.Router do
         quote do
           def route(
                 %Exampple.Router.Conn{
-                  xmlns: unquote(envelope_xmlns),
+                  xmlns: unquote(envelope_xmlns)
                 } = conn,
                 stanza
               ) do
@@ -79,6 +79,7 @@ defmodule Exampple.Router do
 
   defmacro envelope(xmlns) do
     xmlns_list = if is_list(xmlns), do: xmlns, else: [xmlns]
+
     quote location: :keep do
       Module.put_attribute(
         __MODULE__,

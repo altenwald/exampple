@@ -39,6 +39,7 @@ defmodule Exampple.Router.Conn do
   def get_response(%Conn{envelope: nil, response: response}) when response != nil do
     to_string(response)
   end
+
   def get_response(%Conn{envelope: envelope, response: response}) when response != nil do
     get_response(envelope.(response))
   end

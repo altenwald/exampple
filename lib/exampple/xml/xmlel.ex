@@ -290,7 +290,7 @@ defmodule Exampple.Xml.Xmlel do
           %{acc | nonmatch: [el | acc.nonmatch]}
       end
     )
-    |> Enum.map(fn {k,v} -> {k, Enum.reverse(v)} end)
+    |> Enum.map(fn {k, v} -> {k, Enum.reverse(v)} end)
     |> Enum.into(%{})
   end
 

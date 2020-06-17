@@ -121,6 +121,7 @@ defmodule Exampple.Xmpp.Jid do
   """
   def parse(nil), do: nil
   def parse(""), do: ""
+
   def parse(jid) when is_binary(jid) do
     opts = [capture: :all_but_first]
 
