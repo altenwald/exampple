@@ -5,7 +5,7 @@ defmodule Exampple.Router.Task do
 
   def start(xmlel, domain, otp_app) do
     options = [
-      restart: :trasient,
+      restart: :transient,
       shutdown: 5_000
     ]
 
