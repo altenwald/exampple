@@ -1,8 +1,10 @@
 defmodule Exampple.RouterTest do
   use ExUnit.Case
+  require Logger
 
   import Exampple.Xml.Xmlel
 
+  alias Exampple.{Component, DummyTcp}
   alias Exampple.Router.Conn
   alias Exampple.Xmpp.Stanza
 
@@ -23,6 +25,10 @@ defmodule Exampple.RouterTest do
 
   defmodule TestingRouter do
     use Exampple.Router
+
+    discovery do
+      identity category: "component", type: "generic", name: "Testing component"
+    end
 
     envelope(["urn:xmpp:delegation:1", "urn:xmpp:forward:0"])
 
@@ -85,7 +91,7 @@ defmodule Exampple.RouterTest do
         {"iq", "get", "urn:exampple:test:get:0", TestingController, :get}
       ]
 
-      assert info == TestingRouter.route_info()
+      assert info == TestingRouter.route_info(:paths)
     end
 
     test "check get and set" do
@@ -108,6 +114,40 @@ defmodule Exampple.RouterTest do
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
 
       assert_receive {:ok, ^conn, ^query}
+    end
+
+    test "disco#info" do
+      config =
+        :exampple
+        |> Application.get_env(Exampple.Component)
+        |> Keyword.put(:router_handler, Exampple.Router)
+
+      Application.put_env(:exampple, Exampple.Component, config)
+      Application.put_env(:exampple, :router, TestingRouter)
+      Exampple.start_link(otp_app: :exampple)
+      Component.connect()
+      Component.wait_for_ready()
+      DummyTcp.subscribe()
+
+      ~x[
+        <iq from='you' to='test.example.com' type='get'>
+          <query xmlns='http://jabber.org/protocol/disco#info'/>
+        </iq>
+      ]
+      |> DummyTcp.received()
+
+      assert ~x[
+        <iq from='test.example.com' to='you' type='result'>
+          <query xmlns='http://jabber.org/protocol/disco#info'>
+            <identity category="component" name="Testing component" type="generic"/>
+            <feature var="jabber:iq:register"/>
+            <feature var="urn:exampple:test:set:0"/>
+            <feature var="urn:exampple:test:get:0"/>
+            <feature var="urn:xmpp:forward:0"/>
+            <feature var="urn:xmpp:delegation:1"/>
+          </query>
+        </iq>
+      ] == DummyTcp.wait_for_sent_xml()
     end
 
     test "check envelope" do

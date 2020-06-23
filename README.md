@@ -46,7 +46,7 @@ children = [
 
 And a new module should be created, as mention the first part of the configuration, to define the router, in this example, something like `lib/myapp/router.ex`:
 
-```
+```elixir
 defmodule Myapp.Router do
   use Exampple.Router
 
@@ -60,9 +60,9 @@ end
 
 This is a very small example with only two controllers. The construction tries to match as much as possible with the data provided in the incoming stanza:
 
-- stanza type: iq, presence or message
-- namespace: this is split in two putting the base in the container matching the stanza type and the other part with the type. In the above example, we have matching for "jabber:iq:roster".
-- type: which is defined in the type attribute of the stanza, for iq: get, set or error.
+- **stanza type**: iq, presence or message
+- **namespace**: this is split in two putting the base in the container matching the stanza type and the other part with the type. In the above example, we have matching for "jabber:iq:roster".
+- **type**: which is defined in the type attribute of the stanza, for iq: get, set or error.
 
 And that's choosing a module and a function to be called. Which we call a controller.
 

@@ -2,6 +2,7 @@ defmodule Exampple.Router do
   require Logger
 
   alias Exampple.Router.Task, as: RouterTask
+  alias Exampple.Xml.Xmlel
 
   def route(xmlel, domain, otp_app) do
     Logger.debug("[router] processing: #{inspect(xmlel)}")
@@ -12,6 +13,8 @@ defmodule Exampple.Router do
     quote do
       import Exampple.Router
       Module.register_attribute(__MODULE__, :routes, accumulate: true)
+      Module.register_attribute(__MODULE__, :namespaces, accumulate: true)
+      Module.register_attribute(__MODULE__, :identities, accumulate: true)
       @envelopes []
       @before_compile Exampple.Router
     end
@@ -20,6 +23,7 @@ defmodule Exampple.Router do
   defmacro __before_compile__(env) do
     routes = Module.get_attribute(env.module, :routes)
     envelopes = Module.get_attribute(env.module, :envelopes)
+    disco = Module.get_attribute(env.module, :disco, false)
 
     route_functions =
       for route <- routes do
@@ -37,11 +41,6 @@ defmodule Exampple.Router do
             unquote(controller).unquote(function)(conn, stanza)
           end
         end
-      end
-
-    route_info_function =
-      quote do
-        def route_info(), do: unquote(routes)
       end
 
     fallback =
@@ -74,18 +73,64 @@ defmodule Exampple.Router do
         end
       end
 
-    [route_info_function | envelope_functions] ++ route_functions ++ [fallback]
+    namespaces =
+      for ns <- Enum.uniq(Module.get_attribute(env.module, :namespaces)), ns != "", do: ns
+
+    disco_info =
+      if disco do
+        namespaces =
+          for namespace <- namespaces do
+            Macro.escape(Xmlel.new("feature", %{"var" => namespace}))
+          end
+
+        identity =
+          for identity <- Module.get_attribute(env.module, :identities) do
+            {{category, type, name}, []} = Code.eval_quoted(identity)
+            Macro.escape(Xmlel.new("identity", %{
+              "category" => category,
+              "type" => type,
+              "name" => name
+            }))
+          end
+
+        identity ++ namespaces
+      else
+        []
+      end
+
+    discovery =
+      quote do
+        def route(
+              %Exampple.Router.Conn{
+                xmlns: "http://jabber.org/protocol/disco#info"
+              } = conn,
+              [stanza]
+            ) do
+          payload = %Xmlel{stanza | children: unquote(disco_info)}
+          conn
+          |> Exampple.Xmpp.Stanza.iq_resp([payload])
+          |> Exampple.Component.send()
+        end
+      end
+
+    route_info_function =
+      quote do
+        def route_info(:paths), do: unquote(routes)
+        def route_info(:namespaces), do: unquote(namespaces)
+      end
+
+    [route_info_function | envelope_functions] ++ route_functions ++ [discovery] ++ [fallback]
   end
 
   defmacro envelope(xmlns) do
     xmlns_list = if is_list(xmlns), do: xmlns, else: [xmlns]
 
     quote location: :keep do
-      Module.put_attribute(
-        __MODULE__,
-        :envelopes,
-        unquote(xmlns_list)
-      )
+      xmlns_list = unquote(xmlns_list)
+      Module.put_attribute(__MODULE__, :envelopes, xmlns_list)
+      for xmlns <- xmlns_list do
+        Module.put_attribute(__MODULE__, :namespaces, xmlns)
+      end
     end
   end
 
@@ -151,6 +196,46 @@ defmodule Exampple.Router do
     end
   end
 
+  defmacro discovery(block \\ nil) do
+    if block do
+      quote do
+        Module.put_attribute(__MODULE__, :disco, true)
+        unquote(block)
+      end
+    else
+      quote do
+        Module.put_attribute(__MODULE__, :disco, true)
+      end
+    end
+  end
+
+  defmacro identity(opts) do
+    quote do
+      opts = unquote(opts)
+      unless Module.get_attribute(__MODULE__, :disco, false) do
+        raise """
+        identity MUST be inside of a discovery block.
+        """
+      end
+      unless category = opts[:category] do
+        raise """
+        identity MUST contain a category option.
+        """
+      end
+      unless type = opts[:type] do
+        raise """
+        identity MUST contain a type option.
+        """
+      end
+      unless name = opts[:name] do
+        raise """
+        identity MUST contain a name option.
+        """
+      end
+      Module.put_attribute(__MODULE__, :identities, Macro.escape({category, type, name}))
+    end
+  end
+
   defmacro error(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
@@ -164,6 +249,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -180,6 +266,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -196,6 +283,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -212,6 +300,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -228,6 +317,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -244,6 +334,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -260,6 +351,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -276,6 +368,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -292,6 +385,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -308,6 +402,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -324,6 +419,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -340,6 +436,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 
@@ -356,6 +453,7 @@ defmodule Exampple.Router do
            unquote(function)}
         )
       )
+      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
     end
   end
 

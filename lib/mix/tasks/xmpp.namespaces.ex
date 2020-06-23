@@ -1,12 +1,12 @@
-defmodule Mix.Tasks.Xmpp.Routes do
+defmodule Mix.Tasks.Xmpp.Namespaces do
   use Mix.Task
 
-  @shortdoc "Prints all routes"
+  @shortdoc "Prints all namespaces"
 
   @moduledoc """
-  Prints all routes for the router.
+  Prints all namespaces for the router.
 
-      $ mix xmpp.routes
+      $ mix xmpp.namespaces
 
   The default router is inflected from the application
   name.
@@ -22,7 +22,7 @@ defmodule Mix.Tasks.Xmpp.Routes do
       |> Application.get_env(:router)
 
     if router do
-      IO.inspect(router.route_info(:paths))
+      IO.inspect(router.route_info(:namespaces))
     else
       IO.puts("No router configured!")
     end
