@@ -22,9 +22,13 @@ defmodule Mix.Tasks.Xmpp.Namespaces do
       |> Application.get_env(:router)
 
     if router do
-      IO.inspect(router.route_info(:namespaces))
+      for namespace <- router.route_info(:namespaces), do: pretty_print(namespace)
     else
       IO.puts("No router configured!")
     end
+  end
+
+  defp pretty_print(namespace) do
+    IO.puts(namespace)
   end
 end

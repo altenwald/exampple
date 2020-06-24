@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Xmpp.RoutesTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import ExUnit.CaptureIO
 
   describe "run/1" do
@@ -26,11 +26,16 @@ defmodule Mix.Tasks.Xmpp.RoutesTest do
           Mix.Tasks.Xmpp.Routes.run([])
         end)
 
-      expected = """
-      [{"iq", "get", "urn:exampple:test:get:0", TestingController, :get}]
-      """
+      expected = [
+        IO.ANSI.blue(), "iq ",
+        IO.ANSI.yellow(), "get ",
+        IO.ANSI.green(), "urn:exampple:test:get:0 ",
+        IO.ANSI.white(), "TestingController ",
+        IO.ANSI.red(), "get",
+        IO.ANSI.reset(), "\n"
+      ]
 
-      assert expected == output
+      assert to_string(expected) == output
     end
   end
 end

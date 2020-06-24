@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Xmpp.NamespacesTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import ExUnit.CaptureIO
 
   describe "run/1" do
@@ -27,7 +27,7 @@ defmodule Mix.Tasks.Xmpp.NamespacesTest do
         end)
 
       expected = """
-      ["urn:exampple:test:get:0"]
+      urn:exampple:test:get:0
       """
 
       assert expected == output
