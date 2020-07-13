@@ -5,7 +5,6 @@ defmodule Exampple.Client do
   import Kernel, except: [send: 2]
 
   alias Exampple.Router.Conn
-  alias Exampple.Router
   alias Exampple.Xml.Stream, as: XmlStream
 
   @default_tcp_handler Exampple.Tcp

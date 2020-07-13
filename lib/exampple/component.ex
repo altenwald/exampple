@@ -79,7 +79,7 @@ defmodule Exampple.Component do
     :ok = GenStateMachine.stop(__MODULE__)
   end
 
-  @spec send(binary | Conn.t()) :: :ok
+  @spec send(binary | Xmlel.t() | Conn.t()) :: :ok
   def send(data) when is_binary(data) do
     GenStateMachine.cast(__MODULE__, {:send, data})
   end
