@@ -10,7 +10,7 @@ defmodule Exampple.Xml.Xmlel do
   @type attr_value :: binary
   @type attrs :: %{attr_name => attr_value}
 
-  @type t :: %__MODULE__{name: binary, attrs: attrs, children: [t]}
+  @type t :: %__MODULE__{name: binary, attrs: attrs, children: [t | binary | struct]}
   @type children :: [t] | [String.t()]
 
   defstruct name: nil, attrs: %{}, children: []

@@ -109,7 +109,7 @@ defmodule Exampple.Client do
     send(:starttls, [])
   end
 
-  @spec send(binary | Router.Conn.t()) :: :ok
+  @spec send(binary | Conn.t()) :: :ok
   def send(data) when is_binary(data) do
     GenStateMachine.cast(__MODULE__, {:send, data})
   end

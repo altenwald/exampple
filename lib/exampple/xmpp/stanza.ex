@@ -7,7 +7,7 @@ defmodule Exampple.Xmpp.Stanza do
 
   @xmpp_stanzas "urn:ietf:params:xml:ns:xmpp-stanzas"
 
-  @callback render(Map.t()) :: Xmlel.t()
+  @callback render(map()) :: Xmlel.t()
 
   @doc false
   defmacro __using__(_) do
