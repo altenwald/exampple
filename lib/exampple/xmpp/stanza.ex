@@ -83,7 +83,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> bob = "bob@example.com"
       iex> Exampple.Xmpp.Stanza.message_error(payload, "item-not-found", alice, "1", bob)
       iex> |> to_string()
-      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
+      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
   """
   def message_error(payload, error, from, id, to) do
     message(payload ++ [error_tag(error)], from, id, to, "error")
@@ -100,7 +100,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> Exampple.Xmpp.Stanza.message_error("item-not-found")
       iex> conn.response
       iex> |> to_string()
-      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
+      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
   """
   def message_error(%Conn{} = conn, error) do
     from_jid = to_string(conn.from_jid)
@@ -249,7 +249,7 @@ defmodule Exampple.Xmpp.Stanza do
   error like this:
 
   ```xml
-  <error code="404" type="cancel">
+  <error type="cancel">
     <item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
     <text lang="en" xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">item was not found in database</text>
   </error>
@@ -261,7 +261,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> xmlel = Exampple.Xml.Xmlel.new("iq", attrs, [payload])
       iex> Exampple.Xmpp.Stanza.iq_error(xmlel, "item-not-found")
       iex> |> to_string()
-      "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
+      "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
 
       iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "get"}
       iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
@@ -270,7 +270,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> Exampple.Xmpp.Stanza.iq_error("item-not-found")
       iex> conn.response
       iex> |> to_string()
-      "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
+      "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
   """
   def iq_error(%Xmlel{name: "iq", children: payload} = xmlel, error) do
     get = &Xmlel.get_attr(xmlel, &1)
@@ -304,7 +304,7 @@ defmodule Exampple.Xmpp.Stanza do
   error like this:
 
   ```xml
-  <error code="404" type="cancel">
+  <error type="cancel">
     <item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
     <text lang="en" xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">item was not found in database</text>
   </error>
@@ -317,7 +317,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> payload = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})
       iex> Exampple.Xmpp.Stanza.iq_error([payload], "item-not-found", from, id, to)
       iex> |> to_string()
-      "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
+      "<iq from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><query xmlns=\\"jabber:iq:roster\\"/><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
   """
   def iq_error(payload, error, from, id, to) do
     iq(payload ++ [error_tag(error)], from, id, to, "error")
@@ -341,7 +341,7 @@ defmodule Exampple.Xmpp.Stanza do
   error like this:
 
   ```xml
-  <error code="404" type="cancel">
+  <error type="cancel">
     <item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
     <text lang="en" xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">item was not found in database</text>
   </error>
@@ -349,21 +349,21 @@ defmodule Exampple.Xmpp.Stanza do
 
   Examples:
       iex> Exampple.Xmpp.Stanza.error_tag("item-not-found") |> to_string()
-      "<error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error>"
+      "<error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error>"
       iex> Exampple.Xmpp.Stanza.error_tag({"item-not-found", "en", "item was not found in database"}) |> to_string()
-      "<error code=\\"404\\" type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/><text lang=\\"en\\" xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\">item was not found in database</text></error>"
+      "<error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/><text lang=\\"en\\" xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\">item was not found in database</text></error>"
   """
   def error_tag(error) when is_binary(error) do
-    {code, type} = get_error(error)
+    type = get_error(error)
     err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
-    Xmlel.new("error", %{"code" => code, "type" => type}, [err_tag])
+    Xmlel.new("error", %{"type" => type}, [err_tag])
   end
 
   def error_tag({error, lang, text}) do
-    {code, type} = get_error(error)
+    type = get_error(error)
     err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
     text_tag = Xmlel.new("text", %{"xmlns" => @xmpp_stanzas, "lang" => lang}, [text])
-    Xmlel.new("error", %{"code" => code, "type" => type}, [err_tag, text_tag])
+    Xmlel.new("error", %{"type" => type}, [err_tag, text_tag])
   end
 
   defp maybe_add(attrs, _name, nil), do: attrs
@@ -396,25 +396,25 @@ defmodule Exampple.Xmpp.Stanza do
 
   @doc false
   ## took from: https://xmpp.org/extensions/xep-0086.html
-  def get_error("gone"), do: {"302", "modify"}
-  def get_error("redirect"), do: {"302", "modify"}
-  def get_error("bad-request"), do: {"400", "modify"}
-  def get_error("jid-malformed"), do: {"400", "modify"}
-  def get_error("unexpected-request"), do: {"400", "wait"}
-  def get_error("not-authorized"), do: {"401", "auth"}
-  def get_error("payment-required"), do: {"402", "auth"}
-  def get_error("forbidden"), do: {"403", "auth"}
-  def get_error("item-not-found"), do: {"404", "cancel"}
-  def get_error("recipient-unavailable"), do: {"404", "cancel"}
-  def get_error("remote-server-not-found"), do: {"404", "cancel"}
-  def get_error("not-allowed"), do: {"405", "cancel"}
-  def get_error("not-acceptable"), do: {"406", "modify"}
-  def get_error("registration-required"), do: {"407", "auth"}
-  def get_error("subscription-required"), do: {"407", "auth"}
-  def get_error("conflict"), do: {"409", "cancel"}
-  def get_error("internal-server-error"), do: {"500", "wait"}
-  def get_error("resource-constraint"), do: {"500", "wait"}
-  def get_error("feature-not-implemented"), do: {"501", "cancel"}
-  def get_error("service-unavailable"), do: {"503", "cancel"}
-  def get_error("remote-server-timeout"), do: {"504", "wait"}
+  def get_error("gone"), do: "modify"
+  def get_error("redirect"), do: "modify"
+  def get_error("bad-request"), do: "modify"
+  def get_error("jid-malformed"), do: "modify"
+  def get_error("unexpected-request"), do: "wait"
+  def get_error("not-authorized"), do: "auth"
+  def get_error("payment-required"), do: "auth"
+  def get_error("forbidden"), do: "auth"
+  def get_error("item-not-found"), do: "cancel"
+  def get_error("recipient-unavailable"), do: "cancel"
+  def get_error("remote-server-not-found"), do: "cancel"
+  def get_error("not-allowed"), do: "cancel"
+  def get_error("not-acceptable"), do: "modify"
+  def get_error("registration-required"), do: "auth"
+  def get_error("subscription-required"), do: "auth"
+  def get_error("conflict"), do: "cancel"
+  def get_error("internal-server-error"), do: "wait"
+  def get_error("resource-constraint"), do: "wait"
+  def get_error("feature-not-implemented"), do: "cancel"
+  def get_error("service-unavailable"), do: "cancel"
+  def get_error("remote-server-timeout"), do: "wait"
 end
