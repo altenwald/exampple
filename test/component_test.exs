@@ -2,6 +2,7 @@ defmodule Exampple.ComponentTest do
   use ExUnit.Case
 
   import Exampple.Xml.Xmlel
+  import Exampple.Router.ConnCase
 
   alias Exampple.{Component, DummyTcp}
   alias Exampple.Router.Conn
@@ -71,20 +72,20 @@ defmodule Exampple.ComponentTest do
       Component.wait_for_ready()
       DummyTcp.subscribe()
 
-      DummyTcp.received(~x[
+      component_received(~x[
         <iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>
           <query xmlns='jabber:iq:ping'/>
         </iq>
       ])
 
-      recv = ~x[
+      stanza = ~x[
         <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
       ]
 
-      assert recv == DummyTcp.wait_for_sent_xml()
-      assert recv == parse(DummyTcp.sent())
+      assert_stanza_receive ^stanza
+      assert_stanza_received ^stanza
     end
 
     test "stanzas" do
@@ -92,29 +93,29 @@ defmodule Exampple.ComponentTest do
       Component.wait_for_ready()
       DummyTcp.subscribe()
 
-      DummyTcp.received(~x[
+      component_received(~x[
         <iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>
           <query xmlns='jabber:iq:ping'/>
         </iq>
       ])
-      DummyTcp.received(~x[
+      component_received(~x[
         <iq type='get' to='test.example.com' from='User@example.com/res1' id='2'>
           <query xmlns='jabber:iq:ping'/>
         </iq>
       ])
 
-      assert DummyTcp.are_all_sent?([
-               ~x[
+      assert_all_stanza_receive [
+        ~x[
         <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
         ],
-               ~x[
+        ~x[
         <iq from="test.example.com" id="2" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
         ]
-             ])
+      ]
     end
 
     test "chunks stanzas" do
@@ -122,24 +123,24 @@ defmodule Exampple.ComponentTest do
       Component.wait_for_ready()
       DummyTcp.subscribe()
 
-      DummyTcp.received(
+      component_received(
         "<iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
           "<query xmlns='jabber:iq:ping'/>" <>
           "</iq><iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
           "<query xmlns='jabbe"
       )
 
-      Process.sleep(500)
-      DummyTcp.received("r:iq:ping'/></iq>")
+      Process.sleep(100)
+      component_received("r:iq:ping'/></iq>")
 
-      recv = ~x[
+      stanza = ~x[
         <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
       ]
 
-      assert recv == DummyTcp.wait_for_sent_xml()
-      assert recv == DummyTcp.wait_for_sent_xml()
+      assert_stanza_receive ^stanza
+      assert_stanza_receive ^stanza
     end
   end
 
@@ -149,7 +150,7 @@ defmodule Exampple.ComponentTest do
       Component.wait_for_ready()
       DummyTcp.subscribe()
 
-      DummyTcp.received(~x[
+      component_received(~x[
         <iq from="example.com"
             id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
             to="test.example.com"
@@ -164,7 +165,7 @@ defmodule Exampple.ComponentTest do
         </iq>
       ])
 
-      recv = ~x[
+      stanza = ~x[
         <iq to="example.com"
             id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
             from="test.example.com"
@@ -179,8 +180,8 @@ defmodule Exampple.ComponentTest do
         </iq>
       ]
 
-      assert recv == DummyTcp.wait_for_sent_xml()
-      assert recv == parse(DummyTcp.sent())
+      assert_stanza_receive ^stanza
+      assert_stanza_received ^stanza
     end
   end
 end
