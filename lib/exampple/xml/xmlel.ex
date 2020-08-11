@@ -137,7 +137,7 @@ defmodule Exampple.Xml.Xmlel do
 
     struct
     |> builder.build()
-    |> Saxy.encode!(nil)
+    |> Saxy.encode!()
   end
 
   defimpl String.Chars, for: __MODULE__ do
