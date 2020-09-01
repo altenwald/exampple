@@ -1,12 +1,15 @@
 defmodule Exampple.Router do
   require Logger
 
-  alias Exampple.Router.Task, as: RouterTask
   alias Exampple.Xml.Xmlel
 
-  def route(xmlel, domain, otp_app) do
+  @dynsup Exampple.Router.Task.Monitor.Supervisor
+  @monitor Exampple.Router.Task.Monitor
+  @default_timeout 5_000
+
+  def route(xmlel, domain, otp_app, timeout \\ @default_timeout) do
     Logger.debug("[router] processing: #{inspect(xmlel)}")
-    RouterTask.start(xmlel, domain, otp_app)
+    DynamicSupervisor.start_child(@dynsup, {@monitor, [xmlel, domain, otp_app, timeout]})
   end
 
   defmacro __using__(_opts) do

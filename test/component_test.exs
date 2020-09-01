@@ -84,8 +84,8 @@ defmodule Exampple.ComponentTest do
         </iq>
       ]
 
-      assert_stanza_receive ^stanza
-      assert_stanza_received ^stanza
+      assert_stanza_receive stanza
+      assert_stanza_received stanza
     end
 
     test "stanzas" do
@@ -139,8 +139,8 @@ defmodule Exampple.ComponentTest do
         </iq>
       ]
 
-      assert_stanza_receive ^stanza
-      assert_stanza_receive ^stanza
+      assert_stanza_receive stanza
+      assert_stanza_receive stanza
     end
   end
 
@@ -180,8 +180,8 @@ defmodule Exampple.ComponentTest do
         </iq>
       ]
 
-      assert_stanza_receive ^stanza
-      assert_stanza_received ^stanza
+      assert_stanza_receive stanza
+      assert_stanza_received stanza
     end
   end
 end

@@ -10,4 +10,10 @@ if Mix.env() == :test do
     set_from: true,
     trimmed: true,
     tcp_handler: Exampple.DummyTcp
+
+  config :exampple, router: TestingRouter
+
+  config :logger, :console,
+    format: "$time $metadata[$level] $levelpad$message\n",
+    metadata: [:ellapsed_time, :stanza_id, :stanza_type, :type]
 end

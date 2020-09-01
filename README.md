@@ -494,6 +494,31 @@ We hav different functions to use to generate responses:
 
 You can check the module to get even more functionalities regarding stanzas.
 
+## Tracing
+
+At the moment we have the possibility to see in the logs (info and error) the amount of time each stanza is taking. To get this information we have to configure properly the output for logger:
+
+```elixir
+  config :logger, :console,
+    format: "$time $metadata[$level] $levelpad$message\n",
+    metadata: [:ellapsed_time, :stanza_id, :stanza_type, :type]
+```
+
+The provided metadata available is:
+
+- `ellapsed_time`: the amount of time measured when the stanza came in until the process in charge of the request ended (successfully or due to an error).
+- `stanza_id`: the ID which came inside of the stanza.
+- `stanza_type`: it could be (mainly): message, presence or iq.
+- `type`: the type defined specifically for the stanza: normal, chat, groupchat, set, get, error, ...
+
+The output will be in the form:
+
+```
+00:20:42.717 ellapsed_time=1ms stanza_type=iq type=set [info]  success
+```
+
+The time could appear in milliseconds (ms) if the amount is less than 1 second or in seconds (s) otherwise.
+
 ## Testing
 
 Finally, but maybe the most important topic, we have facilities to perform the testing part of our component. Thanks to `Exampply.DummyTcp` we can easily use the following macros to test our systems.

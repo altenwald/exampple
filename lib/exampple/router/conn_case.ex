@@ -5,10 +5,16 @@ defmodule Exampple.Router.ConnCase do
       import Exampple.Router.ConnCase
 
       setup do
-        DummyTcp.dump()
-        Component.wait_for_ready()
-        DummyTcp.subscribe()
+        start_tcp()
       end
+    end
+  end
+
+  defmacro start_tcp() do
+    quote do
+      Exampple.DummyTcp.dump()
+      Exampple.Component.wait_for_ready()
+      Exampple.DummyTcp.subscribe()
     end
   end
 
@@ -26,7 +32,7 @@ defmodule Exampple.Router.ConnCase do
 
   defmacro assert_stanza_receive(stanza, timeout \\ 5_000) do
     quote do
-      assert unquote(stanza) = Exampple.DummyTcp.wait_for_sent_xml(unquote(timeout))
+      assert unquote(stanza) == Exampple.DummyTcp.wait_for_sent_xml(unquote(timeout))
     end
   end
 

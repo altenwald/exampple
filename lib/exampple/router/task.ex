@@ -4,14 +4,13 @@ defmodule Exampple.Router.Task do
   @task_sup Exampple.Router.Task.Supervisor
 
   def start(xmlel, domain, otp_app) do
-    options = [
-      restart: :transient,
-      shutdown: 5_000
-    ]
-
     args = [xmlel, domain, otp_app]
 
-    Task.Supervisor.start_child(@task_sup, __MODULE__, :run, args, options)
+    Task.Supervisor.start_child(@task_sup, __MODULE__, :run, args)
+  end
+
+  def stop(pid) do
+    Task.Supervisor.terminate_child(@task_sup, pid)
   end
 
   def run(xmlel, domain, otp_app) do

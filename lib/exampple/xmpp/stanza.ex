@@ -66,12 +66,63 @@ defmodule Exampple.Xmpp.Stanza do
 
   Examples:
       iex> alice = "alice@example.com"
-      iex> Exampple.Xmpp.Stanza.presence([], alice, "1")
+      iex> Exampple.Xmpp.Stanza.presence([], alice)
       iex> |> to_string()
-      "<presence from=\\"alice@example.com\\" id=\\"1\\"/>"
+      "<presence from=\\"alice@example.com\\"/>"
   """
-  def presence(payload, from, id, to \\ nil, type \\ nil) do
+  def presence(payload, from, id \\ nil, to \\ nil, type \\ nil) do
     stanza(payload, "presence", from, id, to, type)
+  end
+
+  @doc """
+  Creates error presence stanzas.
+
+  Examples:
+      iex> payload = [Exampple.Xml.Xmlel.new("status", %{}, ["away"])]
+      iex> alice = "alice@example.com"
+      iex> bob = "bob@example.com"
+      iex> Exampple.Xmpp.Stanza.presence_error(payload, "item-not-found", alice, nil, bob)
+      iex> |> to_string()
+      "<presence from=\\"alice@example.com\\" to=\\"bob@example.com\\" type=\\"error\\"><status>away</status><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></presence>"
+  """
+  def presence_error(payload, error, from, id, to) do
+    presence(payload ++ [error_tag(error)], from, id, to, "error")
+  end
+
+  @doc """
+  Creates a response error presence inside of the Exampple.Router.Conn struct
+  (response) or sending back directly the XML struct if Exampple.Xml.Xmlel is
+  used.
+
+  Examples:
+      iex> payload = [Exampple.Xml.Xmlel.new("status", %{}, ["away"])]
+      iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com"}
+      iex> presence = Exampple.Xml.Xmlel.new("presence", attrs, payload)
+      iex> conn = Exampple.Router.Conn.new(presence)
+      iex> |> Exampple.Xmpp.Stanza.presence_error("item-not-found")
+      iex> conn.response
+      iex> |> to_string()
+      "<presence from=\\"alice@example.com\\" to=\\"bob@example.com\\" type=\\"error\\"><status>away</status><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></presence>"
+
+      iex> payload = [Exampple.Xml.Xmlel.new("status", %{}, ["away"])]
+      iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com"}
+      iex> Exampple.Xml.Xmlel.new("presence", attrs, payload)
+      iex> |> Exampple.Xmpp.Stanza.presence_error("item-not-found")
+      iex> |> to_string()
+      "<presence from=\\"alice@example.com\\" to=\\"bob@example.com\\" type=\\"error\\"><status>away</status><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></presence>"
+  """
+  def presence_error(%Conn{} = conn, error) do
+    from_jid = to_string(conn.from_jid)
+    to_jid = to_string(conn.to_jid)
+    response = presence_error(conn.stanza.children, error, from_jid, conn.id, to_jid)
+    %Conn{conn | response: response}
+  end
+
+  def presence_error(%Xmlel{attrs: attrs, children: children}, error) do
+    from_jid = attrs["from"]
+    to_jid = attrs["to"]
+    id = attrs["id"]
+    presence_error(children, error, from_jid, id, to_jid)
   end
 
   @doc """
@@ -90,9 +141,16 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Creates a response error message inside of the Router.Conn struct (response).
+  Creates a response error message.
 
   Examples:
+      iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
+      iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1"}
+      iex> Exampple.Xml.Xmlel.new("message", attrs, payload)
+      iex> |> Exampple.Xmpp.Stanza.message_error("item-not-found")
+      iex> |> to_string()
+      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
+
       iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
       iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1"}
       iex> message = Exampple.Xml.Xmlel.new("message", attrs, payload)
@@ -102,6 +160,13 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> to_string()
       "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
   """
+  def message_error(%Xmlel{attrs: attrs, children: children}, error) do
+    from_jid = attrs["from"]
+    to_jid = attrs["to"]
+    id = attrs["id"]
+    message_error(children, error, from_jid, id, to_jid)
+  end
+
   def message_error(%Conn{} = conn, error) do
     from_jid = to_string(conn.from_jid)
     to_jid = to_string(conn.to_jid)
@@ -392,6 +457,37 @@ defmodule Exampple.Xmpp.Stanza do
       |> maybe_add("type", type)
 
     Xmlel.new(stanza_type, attrs, payload)
+  end
+
+  @doc """
+  Agnostic to the type of stanza it generates an error for the incoming stanza.
+  The supported types are: iq, presence and message.
+
+  Examples:
+      iex> Exampple.Xmpp.Stanza.stanza([], "presence", nil, nil, nil, nil)
+      iex> |> Exampple.Xmpp.Stanza.error("forbidden")
+      iex> |> to_string()
+      "<presence type=\\"error\\"><error type=\\"auth\\"><forbidden xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></presence>"
+
+      iex> Exampple.Xmpp.Stanza.stanza([], "message", nil, nil, nil, nil)
+      iex> |> Exampple.Xmpp.Stanza.error("forbidden")
+      iex> |> to_string()
+      "<message type=\\"error\\"><error type=\\"auth\\"><forbidden xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
+
+      iex> Exampple.Xmpp.Stanza.stanza([], "iq", nil, nil, nil, nil)
+      iex> |> Exampple.Xmpp.Stanza.error("forbidden")
+      iex> |> to_string()
+      "<iq type=\\"error\\"><error type=\\"auth\\"><forbidden xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
+  """
+  def error(%Xmlel{name: "iq"} = xml, error), do: iq_error(xml, error)
+  def error(%Xmlel{name: "message"} = xml, error), do: message_error(xml, error)
+  def error(%Xmlel{name: "presence"} = xml, error), do: presence_error(xml, error)
+  def error(%Conn{} = conn, error) do
+    case conn.stanza_type do
+      "iq" -> iq_error(conn, error)
+      "message" -> message_error(conn, error)
+      "presence" -> presence_error(conn, error)
+    end
   end
 
   @doc false
