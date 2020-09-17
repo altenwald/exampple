@@ -132,7 +132,7 @@ defmodule Exampple.Client do
       {:ok, xml_fn} ->
         xml_fn
         |> apply(args)
-        |> send()
+        |> send(name)
 
       :error ->
         :not_found
