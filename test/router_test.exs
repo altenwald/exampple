@@ -55,6 +55,7 @@ defmodule Exampple.RouterTest do
   describe "using routes" do
     setup do
       Application.put_env(:exampple, :router, TestingFullRouter)
+
       on_exit(:router, fn ->
         Application.put_env(:exampple, :router, TestingRouter)
       end)
@@ -98,7 +99,7 @@ defmodule Exampple.RouterTest do
       ]
       |> component_received()
 
-      assert_stanza_receive ~x[
+      assert_stanza_receive(~x[
         <iq from='test.example.com' to='you' type='result' id='5'>
           <query xmlns='http://jabber.org/protocol/disco#info'>
             <identity category="component" name="Testing component" type="generic"/>
@@ -109,7 +110,7 @@ defmodule Exampple.RouterTest do
             <feature var="urn:xmpp:delegation:1"/>
           </query>
         </iq>
-      ]
+      ])
     end
 
     test "check envelope" do

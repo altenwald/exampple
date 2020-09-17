@@ -27,12 +27,18 @@ defmodule Mix.Tasks.Xmpp.RoutesTest do
         end)
 
       expected = [
-        IO.ANSI.blue(), "iq ",
-        IO.ANSI.yellow(), "get ",
-        IO.ANSI.green(), "urn:exampple:test:get:0 ",
-        IO.ANSI.white(), "TestingController ",
-        IO.ANSI.red(), "get",
-        IO.ANSI.reset(), "\n"
+        IO.ANSI.blue(),
+        "iq ",
+        IO.ANSI.yellow(),
+        "get ",
+        IO.ANSI.green(),
+        "urn:exampple:test:get:0 ",
+        IO.ANSI.white(),
+        "TestingController ",
+        IO.ANSI.red(),
+        "get",
+        IO.ANSI.reset(),
+        "\n"
       ]
 
       assert to_string(expected) == output

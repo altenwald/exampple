@@ -482,6 +482,7 @@ defmodule Exampple.Xmpp.Stanza do
   def error(%Xmlel{name: "iq"} = xml, error), do: iq_error(xml, error)
   def error(%Xmlel{name: "message"} = xml, error), do: message_error(xml, error)
   def error(%Xmlel{name: "presence"} = xml, error), do: presence_error(xml, error)
+
   def error(%Conn{} = conn, error) do
     case conn.stanza_type do
       "iq" -> iq_error(conn, error)

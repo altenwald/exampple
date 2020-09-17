@@ -2,7 +2,7 @@ defmodule TestingFullRouter do
   use Exampple.Router
 
   discovery do
-    identity category: "component", type: "generic", name: "Testing component"
+    identity(category: "component", type: "generic", name: "Testing component")
   end
 
   envelope(["urn:xmpp:delegation:1", "urn:xmpp:forward:0"])

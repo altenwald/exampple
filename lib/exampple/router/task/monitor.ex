@@ -40,17 +40,20 @@ defmodule Exampple.Router.Task.Monitor do
     {:ok, pid} = RouterTask.start(xmlel, domain, otp_app)
     _monitor_ref = Process.monitor(pid)
     timer_ref = Process.send_after(self(), :timeout, timeout)
-    {:ok, %Data{
-      timeout: timeout,
-      xmlel: xmlel,
-      domain: domain,
-      otp_app: otp_app,
-      task_pid: pid,
-      timer_ref: timer_ref
-    }}
+
+    {:ok,
+     %Data{
+       timeout: timeout,
+       xmlel: xmlel,
+       domain: domain,
+       otp_app: otp_app,
+       task_pid: pid,
+       timer_ref: timer_ref
+     }}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, reason}, %Data{task_pid: pid} = state) when reason in [:normal, :noproc] do
+  def handle_info({:DOWN, _ref, :process, pid, reason}, %Data{task_pid: pid} = state)
+      when reason in [:normal, :noproc] do
     sucess(state)
     {:stop, :normal, state}
   end
@@ -67,12 +70,14 @@ defmodule Exampple.Router.Task.Monitor do
 
   defp prepare_logger(%Data{xmlel: xmlel, domain: domain}, diff_time) do
     conn = Conn.new(xmlel, domain)
+
     Logger.metadata(
       stanza_id: conn.id,
       type: conn.type,
       stanza_type: conn.stanza_type,
       ellapsed_time: diff_time
     )
+
     conn
   end
 
@@ -93,18 +98,25 @@ defmodule Exampple.Router.Task.Monitor do
     RouterTask.stop(task_pid)
     conn = prepare_logger(state, "#{timeout}ms")
     Logger.error("error timeout", @format)
-    Stanza.error(conn, {"remote-server-timeout", "en", "silent error or too much time to process the request"})
+
+    Stanza.error(
+      conn,
+      {"remote-server-timeout", "en", "silent error or too much time to process the request"}
+    )
   end
 
   defp diff_time(%Data{timer_ref: timer_ref, timeout: timeout}) do
     msecs = timeout - Process.cancel_timer(timer_ref)
+
     if msecs >= 1_000 do
       secs = div(msecs, 1_000)
+
       msecs =
         msecs
         |> rem(1_000)
         |> to_string()
         |> String.pad_leading(3, "0")
+
       "#{secs}.#{msecs}s"
     else
       "#{msecs}ms"
