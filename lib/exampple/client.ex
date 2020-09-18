@@ -273,7 +273,7 @@ defmodule Exampple.Client do
   end
 
   def handle_event({:call, from}, :is_connected?, state, _data) do
-    {:keep_state_and_data, [{:reply, from, state == :ready}]}
+    {:keep_state_and_data, [{:reply, from, state == :connected}]}
   end
 
   def handle_event(:cast, :disconnect, _state, data) do
