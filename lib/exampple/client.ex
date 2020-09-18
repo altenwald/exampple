@@ -68,7 +68,8 @@ defmodule Exampple.Client do
               ping: false,
               tcp_handler: Tcp,
               send_pid: nil,
-              templates: []
+              templates: [],
+              name: nil
   end
 
   defp xml_init(domain) do
@@ -82,7 +83,7 @@ defmodule Exampple.Client do
   defp xml_terminate(), do: "</stream:stream>"
 
   def start_link(name \\ __MODULE__, args) do
-    GenStateMachine.start_link(__MODULE__, [self(), args], name: name)
+    GenStateMachine.start_link(__MODULE__, [name, self(), args], name: name)
   end
 
   @spec connect() :: :ok
@@ -143,20 +144,20 @@ defmodule Exampple.Client do
     :ok = GenStateMachine.cast(name, {:add_template, key, fun})
   end
 
-  def get_conn(timeout \\ 5_000) do
+  def get_conn(name, timeout \\ 5_000) do
     receive do
-      {:packet, packet} -> packet
+      {:conn, ^name, packet} -> packet
     after
       timeout -> :timeout
     end
   end
 
-  def get_conns(num, timeout \\ 5_000) do
+  def get_conns(name, num, timeout \\ 5_000) do
     receive do
-      {:packet, packet} when num > 1 ->
+      {:conn, ^name, packet} when num > 1 ->
         [packet | get_conns(num - 1, timeout)]
 
-      {:packet, packet} when num == 1 ->
+      {:conn, ^name, packet} when num == 1 ->
         [packet]
     after
       timeout -> [:timeout]
@@ -164,8 +165,9 @@ defmodule Exampple.Client do
   end
 
   @impl GenStateMachine
-  def init([pid, %{host: host, port: port, domain: domain} = cfg]) do
+  def init([name, pid, %{host: host, port: port, domain: domain} = cfg]) do
     state_data = %Data{
+      name: name,
       stream: nil,
       host: host,
       domain: domain,
@@ -208,7 +210,7 @@ defmodule Exampple.Client do
 
   def connected(:info, {:xmlelement, xmlel}, data) do
     conn = Conn.new(xmlel)
-    Kernel.send(data.send_pid, {:conn, conn})
+    Kernel.send(data.send_pid, {:conn, data.name, conn})
     Logger.info("received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}")
     data = %Data{data | stream: XmlStream.new()}
     {:keep_state, data}
