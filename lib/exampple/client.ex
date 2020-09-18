@@ -189,7 +189,7 @@ defmodule Exampple.Client do
         stream = XmlStream.new()
         xml_init = xml_init(data.domain)
         data.tcp_handler.send(xml_init, socket)
-        Logger.info("sent: #{IO.ANSI.yellow()}#{xml_init}#{IO.ANSI.reset()}")
+        Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_init}#{IO.ANSI.reset()}")
         data = %Data{data | socket: socket, stream: stream}
         {:next_state, :connected, data, timeout_action(data)}
 
@@ -211,7 +211,7 @@ defmodule Exampple.Client do
   def connected(:info, {:xmlelement, xmlel}, data) do
     conn = Conn.new(xmlel)
     Kernel.send(data.send_pid, {:conn, data.name, conn})
-    Logger.info("received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}")
     data = %Data{data | stream: XmlStream.new()}
     {:keep_state, data}
   end
@@ -227,7 +227,7 @@ defmodule Exampple.Client do
 
   def connected(:cast, {:send, packet}, data) when is_binary(packet) do
     data.tcp_handler.send(packet, data.socket)
-    Logger.info("sent: #{IO.ANSI.yellow()}#{packet}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{packet}#{IO.ANSI.reset()}")
     :keep_state_and_data
   end
 
@@ -242,14 +242,14 @@ defmodule Exampple.Client do
 
   def terminate(_reason, _state, data) do
     data.tcp_handler.send(xml_terminate(), data.socket)
-    Logger.info("sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
     data.tcp_handler.stop(data.socket)
     :ok
   end
 
   @impl GenStateMachine
   def handle_event(:info, {:tcp, _socket, packet}, _state, data) do
-    Logger.info("received (packet): #{IO.ANSI.cyan()}#{packet}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) received (packet): #{IO.ANSI.cyan()}#{packet}#{IO.ANSI.reset()}")
     stream = XmlStream.parse(data.stream, packet)
     {:keep_state, %Data{data | stream: stream}}
   end
@@ -280,7 +280,7 @@ defmodule Exampple.Client do
 
   def handle_event(:cast, :disconnect, _state, data) do
     data.tcp_handler.send(xml_terminate(), data.socket)
-    Logger.info("sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
     data.tcp_handler.stop(data.socket)
     data = %{data | socket: nil, stream: nil}
     {:next_state, :disconnected, data}
