@@ -148,6 +148,7 @@ defmodule Exampple.Router do
       quote do
         def route(
               %Exampple.Router.Conn{
+                to_jid: %Exampple.Xmpp.Jid{node: "", resource: ""},
                 xmlns: "http://jabber.org/protocol/disco#info"
               } = conn,
               [stanza]
