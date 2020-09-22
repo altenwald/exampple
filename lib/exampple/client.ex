@@ -111,11 +111,9 @@ defmodule Exampple.Client do
     :ok = GenStateMachine.stop(name)
   end
 
-  def starttls() do
-    send(:starttls, [])
-  end
-
   @spec send(binary | Conn.t()) :: :ok
+  @spec send(binary | Conn.t(), GenServer.server()) :: :ok
+
   def send(data_or_conn, name \\ __MODULE__)
 
   def send(data, name) when is_binary(data) do
@@ -211,7 +209,11 @@ defmodule Exampple.Client do
   def connected(:info, {:xmlelement, xmlel}, data) do
     conn = Conn.new(xmlel)
     Kernel.send(data.send_pid, {:conn, data.name, conn})
-    Logger.info("(#{data.name}) received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}")
+
+    Logger.info(
+      "(#{data.name}) received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}"
+    )
+
     data = %Data{data | stream: XmlStream.new()}
     {:keep_state, data}
   end

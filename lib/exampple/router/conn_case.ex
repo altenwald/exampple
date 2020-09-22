@@ -41,4 +41,16 @@ defmodule Exampple.Router.ConnCase do
       Exampple.DummyTcp.are_all_sent?(unquote(stanzas), unquote(timeout))
     end
   end
+
+  defmacro stanza_receive(timeout \\ 5_000) do
+    quote do
+      Exampple.DummyTcp.wait_for_sent_xml(unquote(timeout))
+    end
+  end
+
+  defmacro stanza_received() do
+    quote do
+      Exampple.DummyTcp.sent()
+    end
+  end
 end
