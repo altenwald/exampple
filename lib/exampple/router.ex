@@ -18,6 +18,7 @@ defmodule Exampple.Router do
       Module.register_attribute(__MODULE__, :routes, accumulate: true)
       Module.register_attribute(__MODULE__, :namespaces, accumulate: true)
       Module.register_attribute(__MODULE__, :identities, accumulate: true)
+      Module.register_attribute(__MODULE__, :includes, accumulate: true)
       @envelopes []
       @namespace_separator ":"
       @before_compile Exampple.Router
@@ -25,14 +26,26 @@ defmodule Exampple.Router do
   end
 
   defmacro __before_compile__(env) do
-    routes = Module.get_attribute(env.module, :routes)
     envelopes = Module.get_attribute(env.module, :envelopes)
     disco = Module.get_attribute(env.module, :disco, false)
+    includes = Module.get_attribute(env.module, :includes, [])
+    routes =
+      for route <- Module.get_attribute(env.module, :routes) do
+        {route, _} = Code.eval_quoted(route)
+        route
+      end
+
+    inc_routes =
+      for module <- includes do
+        Code.ensure_compiled(module)
+        for route <- module.route_info(:paths) do
+          {module, route}
+        end
+      end
+      |> List.flatten()
 
     route_functions =
-      for route <- routes do
-        {{stanza_type, type, xmlns, controller, function}, []} = Code.eval_quoted(route)
-
+      for {stanza_type, type, xmlns, controller, function} <- routes do
         quote do
           def route(
                 %Exampple.Router.Conn{
@@ -47,13 +60,33 @@ defmodule Exampple.Router do
         end
       end
 
+    inc_route_functions =
+      for {route, {stanza_type, type, xmlns, _, _}} <- inc_routes do
+        quote do
+          def route(
+                %Exampple.Router.Conn{
+                  stanza_type: unquote(stanza_type),
+                  xmlns: unquote(xmlns),
+                  type: unquote(type)
+                } = conn,
+                stanza
+              ) do
+            unquote(route).route(conn, stanza)
+          end
+        end
+      end
+
+    all_routes = routes ++ for {_, route} <- inc_routes, do: route
+
     fallback =
       if fback = Module.get_attribute(env.module, :fallback) do
         {{controller, function}, []} = Code.eval_quoted(fback)
 
         [
           quote do
-            def route(conn, stanza), do: unquote(controller).unquote(function)(conn, stanza)
+            def route(conn, stanza) do
+              unquote(controller).unquote(function)(conn, stanza)
+            end
           end
         ]
       else
@@ -80,10 +113,16 @@ defmodule Exampple.Router do
     namespaces =
       for ns <- Enum.uniq(Module.get_attribute(env.module, :namespaces)), ns != "", do: ns
 
+    inc_namespaces =
+      for module <- includes do
+        module.route_info(:namespaces)
+      end
+      |> List.flatten()
+
     disco_info =
       if disco do
         namespaces =
-          for namespace <- namespaces do
+          for namespace <- namespaces ++ inc_namespaces do
             Macro.escape(Xmlel.new("feature", %{"var" => namespace}))
           end
 
@@ -123,16 +162,32 @@ defmodule Exampple.Router do
 
     route_info_function =
       quote do
-        def route_info(:paths), do: unquote(routes)
+        def route_info(:paths), do: unquote(Macro.escape(all_routes))
         def route_info(:namespaces), do: unquote(namespaces)
       end
 
-    [route_info_function | envelope_functions] ++ route_functions ++ [discovery] ++ [fallback]
+    [route_info_function | envelope_functions] ++
+      route_functions ++
+      inc_route_functions ++
+      [discovery] ++
+      [fallback]
   end
 
   defmacro join_with(separator) when is_binary(separator) do
     quote do
       @namespace_separator unquote(separator)
+    end
+  end
+  defmacro join_with(other) do
+    raise """
+    join_with only accepts String as parameter #{inspect(other)} is
+    not permitted. Default is ":".
+    """
+  end
+
+  defmacro includes(module) do
+    quote do
+      @includes unquote(module)
     end
   end
 

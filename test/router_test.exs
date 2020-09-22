@@ -45,7 +45,7 @@ defmodule Exampple.RouterTest do
         {"message", "chat", "", TestingFullController, :chat},
         {"iq", "get", "jabber:iq:register", TestingFullController, :register},
         {"iq", "set", "urn:exampple:test:set:0", TestingFullController, :set},
-        {"iq", "get", "urn:exampple:test:get:0", TestingFullController, :get}
+        {"iq", "get", "urn:exampple:test:get:0", TestingController, :get}
       ]
 
       assert info == TestingFullRouter.route_info(:paths)
@@ -105,9 +105,9 @@ defmodule Exampple.RouterTest do
             <identity category="component" name="Testing component" type="generic"/>
             <feature var="jabber:iq:register"/>
             <feature var="urn:exampple:test:set:0"/>
-            <feature var="urn:exampple:test:get:0"/>
             <feature var="urn:xmpp:forward:0"/>
             <feature var="urn:xmpp:delegation:1"/>
+            <feature var="urn:exampple:test:get:0"/>
           </query>
         </iq>
       ])

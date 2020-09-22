@@ -446,6 +446,25 @@ end
 
 Using this code we say to the router we are going to implement as wrapper the namespaces `urn:xmpp:delegation:1` and the `urn:xmpp:forward:0` implicitly because is in use by the [XEP-0355](https://xmpp.org/extensions/xep-0355.html). Everything regarding the envelope is configured inside of the connection variable passed to the controlled so, every response we perform using that connection will be using the same envelop to send it via the XMPP Server.
 
+### Including other Routers
+
+It is possible to include other routers. This could be made to include other controllers and routes from a dependency or in order to split the router in different applications (umbrella) inside of our project.
+
+This could be performed as:
+
+```elixir
+defmodule MyMainApp.Router do
+  use Exampple.Router
+
+  includes MySubApp1.Router
+  includes MySubApp2.Router
+end
+```
+
+This way the `MyMainApp.Router` will have the content (routes and namespaces) from the other routes.
+
+Note that the information regarding discovery is copied only for namespaces, the identity, category and other information is not copied and should be defined.
+
 ## Controllers
 
 The controllers are the place where we are going to implement all of these functions we indicate during the routing writing process. For example:
