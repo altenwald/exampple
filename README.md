@@ -51,7 +51,7 @@ And a new module should be created, as mention the first part of the configurati
 defmodule Myapp.Router do
   use Exampple.Router
 
-  iq "jabber:iq:" do
+  iq "jabber:iq" do
     get "roster", Myapp.Xmpp.RosterController, :get
   end
 
@@ -182,9 +182,15 @@ With these we can route the stanzas to a specific module and function: the **con
 defmodule Myapp.Router do
   use Exampple.Router
 
-  iq "urn:xmpp:" do
+  iq "urn:xmpp" do
     get "ping", Myapp.Xmpp.PingController, :ping
     get "mam:2", Myapp.Xmpp.ArchivingController, :get
+  end
+
+  iq "http://jabber.org/" do
+    join_with "/"
+    get "disco#info", Myapp.Xmpp.DiscoController, :info
+    get "disco#items", Myapp.Xmpp.DiscoController, :items
   end
 
   fallback Myapp.Xmpp.ErrorController, :error
@@ -216,7 +222,7 @@ In the configuration for the router we can specify different kind of routes. For
 defmodule Myapp.Router do
   use Exampple.Router
 
-  iq "urn:xmpp:" do
+  iq "urn:xmpp" do
     get "ping", Myapp.Xmpp.PingController, :ping
   end
 
@@ -232,7 +238,13 @@ defmodule Myapp.Router do
 end
 ```
 
-As you can see the namespace is optional, we can set the base for the namespace in the message, presence or iq main sections and then specify the completion for the namespace inside of the specific type. The way to perform the match is:
+The namespace is defined in two parts, in the stanza type we can set the base (e.g. in the first block defining `"urn:xmpp"`) and in the type sentence, inside of the stanza block where we can see the last part (e.g. in the first block we can see inside `"ping"`). Both parts are merged using the _connector_ which is by default `:`. If we need to change to another connector, like `/`, we can use inside of the stanza block:
+
+```elixir
+join_with "/"
+```
+
+In addition, the namespace is optional, we can set the base for the namespace in the message, presence or iq main sections and then specify the completion for the namespace inside of the specific type. The way to perform the match is:
 
 ```xml
 <iq type='get'>
@@ -529,7 +541,7 @@ The definition of the test should be:
 use Exampple.ConnCase
 ```
 
-This macro let us to include and configure the basics to run all of the necessary tests for us and provide us more macros for assertion.
+This macro let us to include and configure the basics to run all of the necessary tests for us and provide us more macros for assertion (see below).
 
 ### Configuration
 
@@ -585,6 +597,10 @@ assert_stanza_receive ~x[
 ```
 
 - `assert_all_stanza_receive/2`: similar to `assert_stanza_receive/2` but is accepting a list of stanzas a first parameter. It is waiting for the time passed as second parameter (or 5 seconds by default). If one stanza is not matching with the rest, it is failing, if one stanza from the list have not its match fails. All of the stanzas have to match.
+
+- `stanza_receive/2`: this is not an assertion but let us to retrieve the stanza directly to handle the information inside of it. As the previous assert it let us to define a timeout.
+
+- `stanza_received/1`: as the previous one, this is a way to retrieve the stanza which should arrived to us previously.
 
 ## Collaboration
 

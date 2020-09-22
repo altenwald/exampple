@@ -19,6 +19,7 @@ defmodule Exampple.Router do
       Module.register_attribute(__MODULE__, :namespaces, accumulate: true)
       Module.register_attribute(__MODULE__, :identities, accumulate: true)
       @envelopes []
+      @namespace_separator ":"
       @before_compile Exampple.Router
     end
   end
@@ -127,6 +128,12 @@ defmodule Exampple.Router do
       end
 
     [route_info_function | envelope_functions] ++ route_functions ++ [discovery] ++ [fallback]
+  end
+
+  defmacro join_with(separator) when is_binary(separator) do
+    quote do
+      @namespace_separator unquote(separator)
+    end
   end
 
   defmacro envelope(xmlns) do
@@ -249,21 +256,30 @@ defmodule Exampple.Router do
     end
   end
 
+  def ns_join([], _separator), do: ""
+  def ns_join(["" | chunks], separator), do: ns_join(chunks, separator)
+  def ns_join(chunks, separator) do
+    chunks
+    |> Enum.map(&String.trim(&1, separator))
+    |> Enum.join(separator)
+  end
+
   defmacro error(xmlns \\ "", controller, function) do
     validate_controller!(controller)
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "error", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "error", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -272,16 +288,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "unavailable", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "unavailable", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -290,16 +307,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "subscribe", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "subscribe", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -308,16 +326,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "subscribed", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "subscribed", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -326,16 +345,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "unsubscribe", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "unsubscribe", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -344,16 +364,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "unsubscribed", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "unsubscribed", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -362,16 +383,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "probe", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "probe", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -380,16 +402,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "normal", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "normal", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -398,16 +421,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "headline", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "headline", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -416,16 +440,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "groupchat", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "groupchat", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -434,16 +459,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "chat", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "chat", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -452,16 +478,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "get", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "get", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
@@ -470,16 +497,17 @@ defmodule Exampple.Router do
     validate_function!(controller, function)
 
     quote location: :keep do
+      namespace = Exampple.Router.ns_join([@xmlns_partial, unquote(xmlns)], @namespace_separator)
       Module.put_attribute(
         __MODULE__,
         :routes,
         Macro.escape(
-          {@stanza_type, "set", @xmlns_partial <> unquote(xmlns), unquote(controller),
+          {@stanza_type, "set", namespace, unquote(controller),
            unquote(function)}
         )
       )
 
-      Module.put_attribute(__MODULE__, :namespaces, @xmlns_partial <> unquote(xmlns))
+      Module.put_attribute(__MODULE__, :namespaces, namespace)
     end
   end
 
