@@ -4,13 +4,24 @@ defmodule Exampple.MixProject do
   def project do
     [
       app: :exampple,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
       deps: deps(),
-      dialyzer: [plt_add_apps: [:mix]]
+      dialyzer: [plt_add_apps: [:mix]],
+      aliases: aliases(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.json": :test,
+        "coveralls.html": :test,
+        "coveralls.post": :test,
+        "coveralls.travis": :test,
+        "travis-ci": :test
+      ]
     ]
   end
 
@@ -32,7 +43,19 @@ defmodule Exampple.MixProject do
       {:ex_doc, "~> 0.21.3", optional: true, only: :dev},
       ## TODO: check if the PR was merged: https://github.com/qcam/saxy/pull/57
       {:saxy, github: "manuel-rubio/saxy", branch: "master"},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:excoveralls, "~> 0.13.1", only: [:test]}
+    ]
+  end
+
+  defp aliases do
+    [
+      "travis-ci": [
+        "local.hex --force",
+        "local.rebar --force",
+        "deps.get",
+        "coveralls.travis"
+      ]
     ]
   end
 end

@@ -68,7 +68,8 @@ defmodule Exampple.Client do
               ping: false,
               tcp_handler: Tcp,
               send_pid: nil,
-              templates: []
+              templates: [],
+              name: nil
   end
 
   defp xml_init(domain) do
@@ -81,70 +82,90 @@ defmodule Exampple.Client do
 
   defp xml_terminate(), do: "</stream:stream>"
 
-  def start_link(args) do
-    start_link(__MODULE__, args)
-  end
-
-  def start_link(name, args) do
-    GenStateMachine.start_link(__MODULE__, [self(), args], name: name)
+  def start_link(name \\ __MODULE__, args) do
+    GenStateMachine.start_link(__MODULE__, [name, self(), args], name: name)
   end
 
   @spec connect() :: :ok
-  def connect() do
-    :ok = GenStateMachine.cast(__MODULE__, :connect)
+  def connect(name \\ __MODULE__) do
+    :ok = GenStateMachine.cast(name, :connect)
   end
 
   @spec disconnect() :: :ok
-  def disconnect() do
-    :ok = GenStateMachine.cast(__MODULE__, :disconnect)
+  def disconnect(name \\ __MODULE__) do
+    :ok = GenStateMachine.cast(name, :disconnect)
+  end
+
+  def is_connected?(name \\ __MODULE__) do
+    with pid <- Process.whereis(name),
+         true <- is_pid(pid),
+         true <- Process.alive?(pid) do
+      GenStateMachine.call(name, :is_connected?)
+    else
+      _ -> false
+    end
   end
 
   @spec stop() :: :ok
-  def stop() do
-    :ok = GenStateMachine.stop(__MODULE__)
-  end
-
-  def starttls() do
-    send(:starttls, [])
+  def stop(name \\ __MODULE__) do
+    :ok = GenStateMachine.stop(name)
   end
 
   @spec send(binary | Conn.t()) :: :ok
-  def send(data) when is_binary(data) do
-    GenStateMachine.cast(__MODULE__, {:send, data})
+  @spec send(binary | Conn.t(), GenServer.server()) :: :ok
+
+  def send(data_or_conn, name \\ __MODULE__)
+
+  def send(data, name) when is_binary(data) do
+    GenStateMachine.cast(name, {:send, data})
   end
 
-  def send(%Conn{response: response} = conn) when response != nil do
+  def send(%Conn{response: response} = conn, name) when response != nil do
     data = to_string(conn.response)
-    GenStateMachine.cast(__MODULE__, {:send, data})
+    GenStateMachine.cast(name, {:send, data})
   end
 
-  def send(template, args) do
-    case GenServer.call(__MODULE__, {:get_template, template}) do
+  def send_template(template, args \\ [], name \\ __MODULE__)
+      when is_atom(template) and is_list(args) do
+    case GenServer.call(name, {:get_template, template}) do
       {:ok, xml_fn} ->
         xml_fn
         |> apply(args)
-        |> send()
+        |> send(name)
 
       :error ->
         :not_found
     end
   end
 
-  def add_template(key, fun) do
-    :ok = GenStateMachine.cast(__MODULE__, {:add_template, key, fun})
+  def add_template(name \\ __MODULE__, key, fun) do
+    :ok = GenStateMachine.cast(name, {:add_template, key, fun})
   end
 
-  def get_conn(timeout \\ 5_000) do
+  def get_conn(name, timeout \\ 5_000) do
     receive do
-      {:packet, packet} -> packet
+      {:conn, ^name, packet} -> packet
     after
-      timeout -> nil
+      timeout -> :timeout
+    end
+  end
+
+  def get_conns(name, num, timeout \\ 5_000) do
+    receive do
+      {:conn, ^name, packet} when num > 1 ->
+        [packet | get_conns(num - 1, timeout)]
+
+      {:conn, ^name, packet} when num == 1 ->
+        [packet]
+    after
+      timeout -> [:timeout]
     end
   end
 
   @impl GenStateMachine
-  def init([pid, %{host: host, port: port, domain: domain} = cfg]) do
+  def init([name, pid, %{host: host, port: port, domain: domain} = cfg]) do
     state_data = %Data{
+      name: name,
       stream: nil,
       host: host,
       domain: domain,
@@ -166,7 +187,7 @@ defmodule Exampple.Client do
         stream = XmlStream.new()
         xml_init = xml_init(data.domain)
         data.tcp_handler.send(xml_init, socket)
-        Logger.info("sent: #{IO.ANSI.yellow()}#{xml_init}#{IO.ANSI.reset()}")
+        Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_init}#{IO.ANSI.reset()}")
         data = %Data{data | socket: socket, stream: stream}
         {:next_state, :connected, data, timeout_action(data)}
 
@@ -187,8 +208,12 @@ defmodule Exampple.Client do
 
   def connected(:info, {:xmlelement, xmlel}, data) do
     conn = Conn.new(xmlel)
-    Kernel.send(data.send_pid, {:conn, conn})
-    Logger.info("received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}")
+    Kernel.send(data.send_pid, {:conn, data.name, conn})
+
+    Logger.info(
+      "(#{data.name}) received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}"
+    )
+
     data = %Data{data | stream: XmlStream.new()}
     {:keep_state, data}
   end
@@ -204,7 +229,7 @@ defmodule Exampple.Client do
 
   def connected(:cast, {:send, packet}, data) when is_binary(packet) do
     data.tcp_handler.send(packet, data.socket)
-    Logger.info("sent: #{IO.ANSI.yellow()}#{packet}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{packet}#{IO.ANSI.reset()}")
     :keep_state_and_data
   end
 
@@ -219,14 +244,14 @@ defmodule Exampple.Client do
 
   def terminate(_reason, _state, data) do
     data.tcp_handler.send(xml_terminate(), data.socket)
-    Logger.info("sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
     data.tcp_handler.stop(data.socket)
     :ok
   end
 
   @impl GenStateMachine
   def handle_event(:info, {:tcp, _socket, packet}, _state, data) do
-    Logger.info("received (packet): #{IO.ANSI.cyan()}#{packet}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) received (packet): #{IO.ANSI.cyan()}#{packet}#{IO.ANSI.reset()}")
     stream = XmlStream.parse(data.stream, packet)
     {:keep_state, %Data{data | stream: stream}}
   end
@@ -251,9 +276,13 @@ defmodule Exampple.Client do
     {:keep_state_and_data, [{:reply, from, reply}]}
   end
 
+  def handle_event({:call, from}, :is_connected?, state, _data) do
+    {:keep_state_and_data, [{:reply, from, state == :connected}]}
+  end
+
   def handle_event(:cast, :disconnect, _state, data) do
     data.tcp_handler.send(xml_terminate(), data.socket)
-    Logger.info("sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
+    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
     data.tcp_handler.stop(data.socket)
     data = %{data | socket: nil, stream: nil}
     {:next_state, :disconnected, data}

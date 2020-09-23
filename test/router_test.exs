@@ -1,56 +1,13 @@
 defmodule Exampple.RouterTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   require Logger
 
+  import Exampple.Router.ConnCase
   import Exampple.Xml.Xmlel
 
-  alias Exampple.{Component, DummyTcp}
+  alias Exampple.Component
   alias Exampple.Router.Conn
   alias Exampple.Xmpp.Stanza
-
-  defmodule TestingController do
-    def get(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
-    def set(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
-    def error(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
-    def chat(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
-    def groupchat(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
-    def headline(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
-    def normal(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
-
-    def register(conn, stanza) do
-      conn2 = Stanza.iq_resp(conn, stanza)
-      send(:test_get_and_set, {:ok, conn, conn2.response})
-    end
-  end
-
-  defmodule TestingRouter do
-    use Exampple.Router
-
-    discovery do
-      identity category: "component", type: "generic", name: "Testing component"
-    end
-
-    envelope(["urn:xmpp:delegation:1", "urn:xmpp:forward:0"])
-
-    iq "urn:exampple:test:" do
-      get("get:0", Exampple.RouterTest.TestingController, :get)
-      set("set:0", Exampple.RouterTest.TestingController, :set)
-    end
-
-    iq "jabber:iq:" do
-      get("register", Exampple.RouterTest.TestingController, :register)
-    end
-
-    message do
-      chat(Exampple.RouterTest.TestingController, :chat)
-      groupchat(Exampple.RouterTest.TestingController, :groupchat)
-      headline(Exampple.RouterTest.TestingController, :headline)
-      normal(Exampple.RouterTest.TestingController, :normal)
-      error(Exampple.RouterTest.TestingController, :error)
-    end
-
-    fallback(Exampple.RouterTest.TestingController, :error)
-  end
 
   describe "defining routes" do
     test "wrong controller module for router definition" do
@@ -72,8 +29,8 @@ defmodule Exampple.RouterTest do
           use Exampple.Router
 
           iq "urn:exampple:test:" do
-            get("get:0", Exampple.RouterTest.TestingController, :no_get)
-            set("set:0", Exampple.RouterTest.TestingController, :no_set)
+            get("get:0", TestingController, :no_get)
+            set("set:0", TestingController, :no_set)
           end
         end
       end
@@ -81,22 +38,30 @@ defmodule Exampple.RouterTest do
 
     test "check info" do
       info = [
-        {"message", "error", "", Exampple.RouterTest.TestingController, :error},
-        {"message", "normal", "", Exampple.RouterTest.TestingController, :normal},
-        {"message", "headline", "", Exampple.RouterTest.TestingController, :headline},
-        {"message", "groupchat", "", Exampple.RouterTest.TestingController, :groupchat},
-        {"message", "chat", "", Exampple.RouterTest.TestingController, :chat},
-        {"iq", "get", "jabber:iq:register", Exampple.RouterTest.TestingController, :register},
-        {"iq", "set", "urn:exampple:test:set:0", TestingController, :set},
+        {"message", "error", "", TestingFullController, :error},
+        {"message", "normal", "", TestingFullController, :normal},
+        {"message", "headline", "", TestingFullController, :headline},
+        {"message", "groupchat", "", TestingFullController, :groupchat},
+        {"message", "chat", "", TestingFullController, :chat},
+        {"iq", "get", "jabber:iq:register", TestingFullController, :register},
+        {"iq", "set", "urn:exampple:test:set:0", TestingFullController, :set},
         {"iq", "get", "urn:exampple:test:get:0", TestingController, :get}
       ]
 
-      assert info == TestingRouter.route_info(:paths)
+      assert info == TestingFullRouter.route_info(:paths)
+    end
+  end
+
+  describe "using routes" do
+    setup do
+      Application.put_env(:exampple, :router, TestingFullRouter)
+
+      on_exit(:router, fn ->
+        Application.put_env(:exampple, :router, TestingRouter)
+      end)
     end
 
     test "check get and set" do
-      Application.put_env(:exampple, :router, TestingRouter)
-
       stanza = ~x[<iq type='set'><query xmlns="urn:exampple:test:set:0"/></iq>]
       domain = "example.com"
 
@@ -116,6 +81,23 @@ defmodule Exampple.RouterTest do
       assert_receive {:ok, ^conn, ^query}
     end
 
+    test "error inside of task, monitor" do
+      Process.register(self(), Exampple.Component)
+      stanza = ~x[<message><body>hello</body></message>]
+      domain = "example.com"
+      error = {"internal-server-error", "en", "An error happened"}
+
+      response =
+        stanza
+        |> Exampple.Xmpp.Stanza.error(error)
+        |> to_string()
+
+      assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
+
+      assert_receive {:"$gen_cast", {:send, ^response}}
+      Process.unregister(Exampple.Component)
+    end
+
     test "disco#info" do
       config =
         :exampple
@@ -123,36 +105,32 @@ defmodule Exampple.RouterTest do
         |> Keyword.put(:router_handler, Exampple.Router)
 
       Application.put_env(:exampple, Exampple.Component, config)
-      Application.put_env(:exampple, :router, TestingRouter)
       Exampple.start_link(otp_app: :exampple)
       Component.connect()
-      Component.wait_for_ready()
-      DummyTcp.subscribe()
+      start_tcp()
 
       ~x[
-        <iq from='you' to='test.example.com' type='get'>
+        <iq from='you' to='test.example.com' type='get' id='5'>
           <query xmlns='http://jabber.org/protocol/disco#info'/>
         </iq>
       ]
-      |> DummyTcp.received()
+      |> component_received()
 
-      assert ~x[
-        <iq from='test.example.com' to='you' type='result'>
+      assert_stanza_receive(~x[
+        <iq from='test.example.com' to='you' type='result' id='5'>
           <query xmlns='http://jabber.org/protocol/disco#info'>
             <identity category="component" name="Testing component" type="generic"/>
             <feature var="jabber:iq:register"/>
             <feature var="urn:exampple:test:set:0"/>
-            <feature var="urn:exampple:test:get:0"/>
             <feature var="urn:xmpp:forward:0"/>
             <feature var="urn:xmpp:delegation:1"/>
+            <feature var="urn:exampple:test:get:0"/>
           </query>
         </iq>
-      ] == DummyTcp.wait_for_sent_xml()
+      ])
     end
 
     test "check envelope" do
-      Application.put_env(:exampple, :router, TestingRouter)
-
       stanza = ~x[
         <iq from='you' to='me' type='set'>
           <delegation xmlns='urn:xmpp:delegation:1'>
@@ -184,8 +162,6 @@ defmodule Exampple.RouterTest do
     end
 
     test "check envelope without from or to" do
-      Application.put_env(:exampple, :router, TestingRouter)
-
       stanza = ~x[
         <iq from="example.com"
             id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 

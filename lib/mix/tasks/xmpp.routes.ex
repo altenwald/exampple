@@ -31,10 +31,11 @@ defmodule Mix.Tasks.Xmpp.Routes do
   end
 
   defp calc_sizes([], sizes), do: sizes
+
   defp calc_sizes(
-    [{stanza_type, type, xmlns, controller, function}|routes],
-    {stanza_type_size, type_size, xmlns_size, controller_size, function_size}
-  ) do
+         [{stanza_type, type, xmlns, controller, function} | routes],
+         {stanza_type_size, type_size, xmlns_size, controller_size, function_size}
+       ) do
     stanza_type = to_string(stanza_type)
     type = to_string(type)
     "Elixir." <> controller = to_string(controller)
@@ -49,20 +50,26 @@ defmodule Mix.Tasks.Xmpp.Routes do
   end
 
   defp pretty_print(
-    {stanza_type_size, type_size, xmlns_size, controller_size, function_size},
-    {stanza_type, type, xmlns, controller, function}
-  ) do
+         {stanza_type_size, type_size, xmlns_size, controller_size, function_size},
+         {stanza_type, type, xmlns, controller, function}
+       ) do
     stanza_type = to_string(stanza_type)
     type = to_string(type)
     "Elixir." <> controller = to_string(controller)
     function = to_string(function)
-    IO.puts [
-      IO.ANSI.blue(), String.pad_trailing(stanza_type, stanza_type_size + 1),
-      IO.ANSI.yellow(), String.pad_trailing(type, type_size + 1),
-      IO.ANSI.green(), String.pad_trailing(xmlns, xmlns_size + 1),
-      IO.ANSI.white(), String.pad_trailing(controller, controller_size + 1),
-      IO.ANSI.red(), String.pad_trailing(function, function_size),
+
+    IO.puts([
+      IO.ANSI.blue(),
+      String.pad_trailing(stanza_type, stanza_type_size + 1),
+      IO.ANSI.yellow(),
+      String.pad_trailing(type, type_size + 1),
+      IO.ANSI.green(),
+      String.pad_trailing(xmlns, xmlns_size + 1),
+      IO.ANSI.white(),
+      String.pad_trailing(controller, controller_size + 1),
+      IO.ANSI.red(),
+      String.pad_trailing(function, function_size),
       IO.ANSI.reset()
-    ]
+    ])
   end
 end

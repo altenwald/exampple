@@ -1,5 +1,5 @@
 defmodule Exampple.ComponentTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   import Exampple.Xml.Xmlel
   import Exampple.Router.ConnCase
@@ -84,8 +84,8 @@ defmodule Exampple.ComponentTest do
         </iq>
       ]
 
-      assert_stanza_receive ^stanza
-      assert_stanza_received ^stanza
+      assert_stanza_receive(stanza)
+      assert_stanza_received(stanza)
     end
 
     test "stanzas" do
@@ -104,7 +104,7 @@ defmodule Exampple.ComponentTest do
         </iq>
       ])
 
-      assert_all_stanza_receive [
+      assert_all_stanza_receive([
         ~x[
         <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
@@ -115,7 +115,7 @@ defmodule Exampple.ComponentTest do
           <query xmlns="jabber:iq:ping"/>
         </iq>
         ]
-      ]
+      ])
     end
 
     test "chunks stanzas" do
@@ -139,8 +139,8 @@ defmodule Exampple.ComponentTest do
         </iq>
       ]
 
-      assert_stanza_receive ^stanza
-      assert_stanza_receive ^stanza
+      assert_stanza_receive(stanza)
+      assert_stanza_receive(stanza)
     end
   end
 
@@ -180,8 +180,8 @@ defmodule Exampple.ComponentTest do
         </iq>
       ]
 
-      assert_stanza_receive ^stanza
-      assert_stanza_received ^stanza
+      assert_stanza_receive(stanza)
+      assert_stanza_received(stanza)
     end
   end
 end

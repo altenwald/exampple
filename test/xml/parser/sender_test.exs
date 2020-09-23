@@ -1,5 +1,5 @@
 defmodule Exampple.Xml.Parser.SenderTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   alias Exampple.Xml.Stream, as: XmlStream
   import Exampple.Xml.Xmlel, only: [sigil_x: 2]

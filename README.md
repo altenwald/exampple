@@ -1,5 +1,9 @@
 # Exampple
 
+[![Build Status](https://img.shields.io/travis/altenwald/exampple/master.svg)](https://travis-ci.org/altenwald/exampple)
+[![Coverage Status](https://coveralls.io/repos/github/altenwald/exampple/badge.svg)](https://coveralls.io/github/altenwald/exampple)
+[![License: LGPL 2.1](https://img.shields.io/github/license/altenwald/exampple.svg)](https://raw.githubusercontent.com/altenwald/exampple/master/COPYING)
+
 eXaMPPle is a XMPP framework to build components using a router, controllers
 and an easy way to generate stanzas. It also has facilities to perform 
 functional and system tests.
@@ -51,7 +55,7 @@ And a new module should be created, as mention the first part of the configurati
 defmodule Myapp.Router do
   use Exampple.Router
 
-  iq "jabber:iq:" do
+  iq "jabber:iq" do
     get "roster", Myapp.Xmpp.RosterController, :get
   end
 
@@ -182,9 +186,15 @@ With these we can route the stanzas to a specific module and function: the **con
 defmodule Myapp.Router do
   use Exampple.Router
 
-  iq "urn:xmpp:" do
+  iq "urn:xmpp" do
     get "ping", Myapp.Xmpp.PingController, :ping
     get "mam:2", Myapp.Xmpp.ArchivingController, :get
+  end
+
+  iq "http://jabber.org/" do
+    join_with "/"
+    get "disco#info", Myapp.Xmpp.DiscoController, :info
+    get "disco#items", Myapp.Xmpp.DiscoController, :items
   end
 
   fallback Myapp.Xmpp.ErrorController, :error
@@ -216,7 +226,7 @@ In the configuration for the router we can specify different kind of routes. For
 defmodule Myapp.Router do
   use Exampple.Router
 
-  iq "urn:xmpp:" do
+  iq "urn:xmpp" do
     get "ping", Myapp.Xmpp.PingController, :ping
   end
 
@@ -232,7 +242,13 @@ defmodule Myapp.Router do
 end
 ```
 
-As you can see the namespace is optional, we can set the base for the namespace in the message, presence or iq main sections and then specify the completion for the namespace inside of the specific type. The way to perform the match is:
+The namespace is defined in two parts, in the stanza type we can set the base (e.g. in the first block defining `"urn:xmpp"`) and in the type sentence, inside of the stanza block where we can see the last part (e.g. in the first block we can see inside `"ping"`). Both parts are merged using the _connector_ which is by default `:`. If we need to change to another connector, like `/`, we can use inside of the stanza block:
+
+```elixir
+join_with "/"
+```
+
+In addition, the namespace is optional, we can set the base for the namespace in the message, presence or iq main sections and then specify the completion for the namespace inside of the specific type. The way to perform the match is:
 
 ```xml
 <iq type='get'>
@@ -434,6 +450,25 @@ end
 
 Using this code we say to the router we are going to implement as wrapper the namespaces `urn:xmpp:delegation:1` and the `urn:xmpp:forward:0` implicitly because is in use by the [XEP-0355](https://xmpp.org/extensions/xep-0355.html). Everything regarding the envelope is configured inside of the connection variable passed to the controlled so, every response we perform using that connection will be using the same envelop to send it via the XMPP Server.
 
+### Including other Routers
+
+It is possible to include other routers. This could be made to include other controllers and routes from a dependency or in order to split the router in different applications (umbrella) inside of our project.
+
+This could be performed as:
+
+```elixir
+defmodule MyMainApp.Router do
+  use Exampple.Router
+
+  includes MySubApp1.Router
+  includes MySubApp2.Router
+end
+```
+
+This way the `MyMainApp.Router` will have the content (routes and namespaces) from the other routes.
+
+Note that the information regarding discovery is copied only for namespaces, the identity, category and other information is not copied and should be defined.
+
 ## Controllers
 
 The controllers are the place where we are going to implement all of these functions we indicate during the routing writing process. For example:
@@ -494,6 +529,31 @@ We hav different functions to use to generate responses:
 
 You can check the module to get even more functionalities regarding stanzas.
 
+## Tracing
+
+At the moment we have the possibility to see in the logs (info and error) the amount of time each stanza is taking. To get this information we have to configure properly the output for logger:
+
+```elixir
+  config :logger, :console,
+    format: "$time $metadata[$level] $levelpad$message\n",
+    metadata: [:ellapsed_time, :stanza_id, :stanza_type, :type]
+```
+
+The provided metadata available is:
+
+- `ellapsed_time`: the amount of time measured when the stanza came in until the process in charge of the request ended (successfully or due to an error).
+- `stanza_id`: the ID which came inside of the stanza.
+- `stanza_type`: it could be (mainly): message, presence or iq.
+- `type`: the type defined specifically for the stanza: normal, chat, groupchat, set, get, error, ...
+
+The output will be in the form:
+
+```
+00:20:42.717 ellapsed_time=1ms stanza_type=iq type=set [info]  success
+```
+
+The time could appear in milliseconds (ms) if the amount is less than 1 second or in seconds (s) otherwise.
+
 ## Testing
 
 Finally, but maybe the most important topic, we have facilities to perform the testing part of our component. Thanks to `Exampply.DummyTcp` we can easily use the following macros to test our systems.
@@ -504,7 +564,7 @@ The definition of the test should be:
 use Exampple.ConnCase
 ```
 
-This macro let us to include and configure the basics to run all of the necessary tests for us and provide us more macros for assertion.
+This macro let us to include and configure the basics to run all of the necessary tests for us and provide us more macros for assertion (see below).
 
 ### Configuration
 
@@ -560,6 +620,10 @@ assert_stanza_receive ~x[
 ```
 
 - `assert_all_stanza_receive/2`: similar to `assert_stanza_receive/2` but is accepting a list of stanzas a first parameter. It is waiting for the time passed as second parameter (or 5 seconds by default). If one stanza is not matching with the rest, it is failing, if one stanza from the list have not its match fails. All of the stanzas have to match.
+
+- `stanza_receive/2`: this is not an assertion but let us to retrieve the stanza directly to handle the information inside of it. As the previous assert it let us to define a timeout.
+
+- `stanza_received/1`: as the previous one, this is a way to retrieve the stanza which should arrived to us previously.
 
 ## Collaboration
 
