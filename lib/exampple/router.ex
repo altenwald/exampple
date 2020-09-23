@@ -209,6 +209,7 @@ defmodule Exampple.Router do
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, "iq")
       Module.put_attribute(__MODULE__, :xmlns_partial, unquote(xmlns_partial))
+      @namespace_separator ":"
       unquote(block)
     end
   end
@@ -217,6 +218,7 @@ defmodule Exampple.Router do
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, "message")
       Module.put_attribute(__MODULE__, :xmlns_partial, unquote(xmlns_partial))
+      @namespace_separator ":"
       unquote(block)
     end
   end
@@ -225,6 +227,7 @@ defmodule Exampple.Router do
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, "presence")
       Module.put_attribute(__MODULE__, :xmlns_partial, unquote(xmlns_partial))
+      @namespace_separator ":"
       unquote(block)
     end
   end
