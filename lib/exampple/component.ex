@@ -321,6 +321,10 @@ defmodule Exampple.Component do
     :keep_state_and_data
   end
 
+  def handle_event(:info, :xmlenddoc, _state, _data) do
+    :keep_state_and_data
+  end
+
   def handle_event(:cast, {:subscribe, pid}, :ready, data) do
     send(pid, :ready)
     {:keep_state, %Data{data | subscribed: pid}}
