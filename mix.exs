@@ -15,7 +15,7 @@ defmodule Exampple.MixProject do
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
-        "coveralls.xml": :test,
+        "coveralls.json": :test,
         "coveralls.html": :test,
         "travis-ci": :test
       ]
@@ -51,7 +51,7 @@ defmodule Exampple.MixProject do
         "local.hex --force",
         "local.rebar --force",
         "deps.get",
-        "coveralls.xml"
+        "coveralls.json"
       ]
     ]
   end
