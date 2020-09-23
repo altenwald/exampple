@@ -1,0 +1,13 @@
+language: elixir
+script: "mix coveralls.xml"
+install: "sudo pip install codecov"
+after_success: "codecov --file cover/excoveralls.xml"
+otp_release:
+  - 23.0
+  - 22.3
+  - 22.2
+  - 22.1
+  - 22.0
+elixir:
+  - 1.10
+  - 1.9

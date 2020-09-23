@@ -10,12 +10,14 @@ defmodule Exampple.MixProject do
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
       deps: deps(),
+      aliases: aliases(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
+        "coveralls.xml": :test,
+        "coveralls.html": :test,
+        "travis-ci": :test
       ]
     ]
   end
@@ -40,6 +42,15 @@ defmodule Exampple.MixProject do
       {:saxy, github: "manuel-rubio/saxy", branch: "master"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:excoveralls, "~> 0.13.1", only: [:test]}
+    ]
+  end
+
+  defp aliases do
+    [
+      "travis-ci": [
+        "local.hex --force",
+        "coveralls.xml"
+      ]
     ]
   end
 end
