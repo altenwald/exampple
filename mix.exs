@@ -17,6 +17,7 @@ defmodule Exampple.MixProject do
         "coveralls.detail": :test,
         "coveralls.json": :test,
         "coveralls.html": :test,
+        "coveralls.post": :test,
         "travis-ci": :test
       ]
     ]
@@ -51,7 +52,7 @@ defmodule Exampple.MixProject do
         "local.hex --force",
         "local.rebar --force",
         "deps.get",
-        "coveralls.json"
+        "coveralls.post"
       ]
     ]
   end

@@ -1,7 +1,7 @@
 # Exampple
 
 [![Build Status](https://img.shields.io/travis/altenwald/exampple/master.svg)](https://travis-ci.org/altenwald/exampple)
-[![Codecov](https://img.shields.io/codecov/c/github/altenwald/exampple.svg)](https://codecov.io/gh/altenwald/exampple)
+[![Coverage Status](https://coveralls.io/repos/github/altenwald/exampple/badge.svg)](https://coveralls.io/github/altenwald/exampple)
 [![License: LGPL 2.1](https://img.shields.io/github/license/altenwald/exampple.svg)](https://raw.githubusercontent.com/altenwald/exampple/master/COPYING)
 
 eXaMPPle is a XMPP framework to build components using a router, controllers
