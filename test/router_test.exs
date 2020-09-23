@@ -81,6 +81,23 @@ defmodule Exampple.RouterTest do
       assert_receive {:ok, ^conn, ^query}
     end
 
+    test "error inside of task, monitor" do
+      Process.register(self(), Exampple.Component)
+      stanza = ~x[<message><body>hello</body></message>]
+      domain = "example.com"
+      error = {"internal-server-error", "en", "An error happened"}
+
+      response =
+        stanza
+        |> Exampple.Xmpp.Stanza.error(error)
+        |> to_string()
+
+      assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
+
+      assert_receive {:"$gen_cast", {:send, ^response}}
+      Process.unregister(Exampple.Component)
+    end
+
     test "disco#info" do
       config =
         :exampple

@@ -5,7 +5,7 @@ defmodule TestingFullController do
   def chat(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
   def groupchat(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
   def headline(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
-  def normal(conn, stanza), do: send(:test_get_and_set, {:ok, conn, stanza})
+  def normal(_conn, _stanza), do: raise(ArgumentError)
 
   def register(conn, stanza) do
     conn2 = Exampple.Xmpp.Stanza.iq_resp(conn, stanza)

@@ -9,7 +9,7 @@ defmodule Exampple.Router.Conn do
             to_jid: nil,
             id: nil,
             type: nil,
-            xmlns: nil,
+            xmlns: "",
             stanza_type: nil,
             stanza: nil,
             response: nil,
@@ -20,8 +20,8 @@ defmodule Exampple.Router.Conn do
   def new(%Xmlel{} = xmlel, domain \\ nil) do
     xmlns =
       case xmlel.children do
-        [%Xmlel{} = subel | _] -> Xmlel.get_attr(subel, "xmlns")
-        _ -> nil
+        [%Xmlel{} = subel | _] -> Xmlel.get_attr(subel, "xmlns", "")
+        _ -> ""
       end
 
     %Conn{

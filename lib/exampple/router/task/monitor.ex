@@ -2,6 +2,7 @@ defmodule Exampple.Router.Task.Monitor do
   use GenServer, restart: :temporary
   require Logger
 
+  alias Exampple.Component
   alias Exampple.Router.Conn
   alias Exampple.Router.Task, as: RouterTask
   alias Exampple.Xmpp.Stanza
@@ -91,7 +92,10 @@ defmodule Exampple.Router.Task.Monitor do
     diff_time = diff_time(state)
     conn = prepare_logger(state, diff_time)
     Logger.error("error: #{inspect(reason)}", @format)
-    Stanza.error(conn, {"internal-server-error", "en", "#{inspect(reason)}"})
+
+    conn
+    |> Stanza.error({"internal-server-error", "en", "An error happened"})
+    |> Component.send()
   end
 
   defp timeout(%Data{task_pid: task_pid, timeout: timeout} = state) do

@@ -5,8 +5,9 @@ defmodule Exampple.Router.Task do
 
   def start(xmlel, domain, otp_app) do
     args = [xmlel, domain, otp_app]
+    opts = [restart: :temporary]
 
-    Task.Supervisor.start_child(@task_sup, __MODULE__, :run, args)
+    Task.Supervisor.start_child(@task_sup, __MODULE__, :run, args, opts)
   end
 
   def stop(pid) do
@@ -17,6 +18,6 @@ defmodule Exampple.Router.Task do
     module = Application.get_env(otp_app, :router)
     conn = Conn.new(xmlel, domain)
     query = xmlel.children
-    apply(module, :route, [conn, query])
+    module.route(conn, query)
   end
 end

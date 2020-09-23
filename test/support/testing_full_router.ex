@@ -7,7 +7,7 @@ defmodule TestingFullRouter do
 
   envelope(["urn:xmpp:delegation:1", "urn:xmpp:forward:0"])
 
-  includes TestingRouter
+  includes(TestingRouter)
 
   iq "urn:exampple:test" do
     set("set:0", TestingFullController, :set)
