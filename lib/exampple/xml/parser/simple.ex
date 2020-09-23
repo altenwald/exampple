@@ -24,7 +24,7 @@ defmodule Exampple.Xml.Parser.Simple do
 
     case stack do
       [] ->
-        {:ok, [current]}
+        {:halt, [current]}
 
       [%Xmlel{children: parent_content} = parent | rest] ->
         parent = %Xmlel{parent | children: [current | parent_content]}

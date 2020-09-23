@@ -158,7 +158,7 @@ defmodule Exampple.RouterTest do
         </iq>
       ]
 
-      assert reply == parse(Conn.get_response(Stanza.iq_resp(conn)))
+      assert {^reply, _} = parse(Conn.get_response(Stanza.iq_resp(conn)))
     end
 
     test "check envelope without from or to" do
@@ -202,7 +202,7 @@ defmodule Exampple.RouterTest do
       ]
       assert_receive {:ok, conn, ^iq}
 
-      assert reply == parse(Conn.get_response(Stanza.iq_resp(conn)))
+      assert {^reply, _} = parse(Conn.get_response(Stanza.iq_resp(conn)))
     end
   end
 end

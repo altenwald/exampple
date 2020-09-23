@@ -251,6 +251,7 @@ defmodule Exampple.Component do
   def ready(:cast, {:send, packet}, %Data{set_from: true} = data) do
     packet
     |> Xmlel.parse()
+    |> elem(0)
     |> Xmlel.put_attr("from", data.domain)
     |> to_string()
     |> data.tcp_handler.send(data.socket)

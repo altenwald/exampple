@@ -14,8 +14,10 @@ defmodule Exampple.Xml.Stream do
 
   def parse({:cont, partial}, chunk), do: parse(partial, chunk)
 
-  def parse({:halt, state, rest}, chunk) do
-    {:halt, state, rest <> chunk}
+  def parse({:halt, pid, rest}, chunk) do
+    pid
+    |> new()
+    |> parse(rest <> chunk)
   end
 
   def parse(%Partial{} = partial, chunk) do

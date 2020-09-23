@@ -26,7 +26,7 @@ defmodule Exampple.Router.ConnCase do
 
   defmacro assert_stanza_received(stanza) do
     quote do
-      assert unquote(stanza) = Exampple.Xml.Xmlel.parse(Exampple.DummyTcp.sent())
+      assert {unquote(stanza), _} = Exampple.Xml.Xmlel.parse(Exampple.DummyTcp.sent())
     end
   end
 

@@ -47,7 +47,9 @@ defmodule Exampple.DummyTcp do
 
   def wait_for_sent_xml(timeout \\ 5_000) do
     receive do
-      packet when is_binary(packet) -> Xmlel.parse(packet)
+      packet when is_binary(packet) ->
+        {xmlel, _rest} = Xmlel.parse(packet)
+        xmlel
     after
       timeout -> nil
     end

@@ -24,8 +24,7 @@ defmodule Exampple.Xml.Parser.SenderTest do
         {:xmlcdata, "more data"},
         {:xmlstreamend, "bar"},
         {:xmlstreamend, "foo"},
-        {:xmlelement, ~x[<foo id="1">Hello world!<bar>more data</bar></foo>]},
-        :xmlenddoc
+        {:xmlelement, ~x[<foo id="1">Hello world!<bar>more data</bar></foo>]}
       ]
 
       assert events == receive_all()
@@ -88,7 +87,7 @@ defmodule Exampple.Xml.Parser.SenderTest do
     test "more than one stanza" do
       Application.put_env(:exampple, :debug_xml, false)
 
-      assert {:ok, "<bar>more data</bar><baz>and more</baz>"} =
+      assert {:ok, ""} =
                XmlStream.new()
                |> XmlStream.parse("<foo id='1'")
                |> XmlStream.parse(">Hello world!")
@@ -99,7 +98,11 @@ defmodule Exampple.Xml.Parser.SenderTest do
 
       events = [
         {:xmlstreamstart, "foo", [{"id", "1"}]},
-        {:xmlelement, ~x[<foo id='1'>Hello world!</foo>]}
+        {:xmlelement, ~x[<foo id='1'>Hello world!</foo>]},
+        {:xmlstreamstart, "bar", []},
+        {:xmlelement, ~x[<bar>more data</bar>]},
+        {:xmlstreamstart, "baz", []},
+        {:xmlelement, ~x[<baz>and more</baz>]}
       ]
 
       assert events == receive_all()

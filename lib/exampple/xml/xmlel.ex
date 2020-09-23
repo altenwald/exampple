@@ -50,7 +50,8 @@ defmodule Exampple.Xml.Xmlel do
       %Exampple.Xml.Xmlel{attrs: %{}, children: ["\\n "], name: "foo"}
   """
   def sigil_X(string, _addons) do
-    parse(string)
+    {xml, _rest} = parse(string)
+    xml
   end
 
   @doc """
@@ -75,17 +76,20 @@ defmodule Exampple.Xml.Xmlel do
 
   Examples:
       iex> Exampple.Xml.Xmlel.parse("<foo/>")
-      %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}
+      {%Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}, ""}
 
       iex> Exampple.Xml.Xmlel.parse("<foo bar='10'>hello world!</foo>")
-      %Exampple.Xml.Xmlel{name: "foo", attrs: %{"bar" => "10"}, children: ["hello world!"]}
+      {%Exampple.Xml.Xmlel{name: "foo", attrs: %{"bar" => "10"}, children: ["hello world!"]}, ""}
 
       iex> Exampple.Xml.Xmlel.parse("<foo><bar>hello world!</bar></foo>")
-      %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: [%Exampple.Xml.Xmlel{name: "bar", attrs: %{}, children: ["hello world!"]}]}
+      {%Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: [%Exampple.Xml.Xmlel{name: "bar", attrs: %{}, children: ["hello world!"]}]}, ""}
+
+      iex> Exampple.Xml.Xmlel.parse("<foo/><bar/>")
+      {%Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}, "<bar/>"}
   """
   def parse(xml) when is_binary(xml) do
-    {:ok, [xmlel]} = Saxy.parse_string(xml, Exampple.Xml.Parser.Simple, [])
-    decode(xmlel)
+    {:halt, [xmlel], more} = Saxy.parse_string(xml, Exampple.Xml.Parser.Simple, [])
+    {decode(xmlel), more}
   end
 
   @doc """
@@ -164,7 +168,8 @@ defmodule Exampple.Xml.Xmlel do
       xmlel
       |> Xmlel.encode()
       |> Builder.build()
-      |> Encoder.encode_to_binary()
+      |> Encoder.encode_to_iodata(nil)
+      |> IO.chardata_to_string()
     end
   end
 
@@ -259,6 +264,8 @@ defmodule Exampple.Xml.Xmlel do
       iex> |> to_string()
       "<foo><bar>Hello<br/>world!</bar></foo>"
   """
+  def clean_spaces({xmlel, _rest}), do: clean_spaces(xmlel)
+
   def clean_spaces(%Xmlel{children: []} = xmlel), do: xmlel
 
   def clean_spaces(%Xmlel{children: children} = xmlel) do

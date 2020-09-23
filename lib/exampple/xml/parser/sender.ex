@@ -4,7 +4,6 @@ defmodule Exampple.Xml.Parser.Sender do
   @behaviour Saxy.Handler
 
   alias Exampple.Xml.Parser.Simple
-  alias Exampple.Xml.Xmlel
 
   defmodule Data do
     defstruct pid: nil, stack: [], debug_xml: false
@@ -30,14 +29,14 @@ defmodule Exampple.Xml.Parser.Sender do
 
   def handle_event(:end_element, tag_name, data) do
     if data.debug_xml, do: send(data.pid, {:xmlstreamend, tag_name})
-    {:ok, stack} = Simple.handle_event(:end_element, tag_name, data.stack)
+    case Simple.handle_event(:end_element, tag_name, data.stack) do
+      {:ok, stack} ->
+        {:ok, %Data{data | stack: stack}}
 
-    case stack do
-      [%Xmlel{name: ^tag_name} = xmlel] -> send(data.pid, {:xmlelement, xmlel})
-      _ -> :ok
+      {:halt, [xmlel]} ->
+        send(data.pid, {:xmlelement, xmlel})
+        {:halt, data.pid}
     end
-
-    {:ok, %Data{data | stack: stack}}
   end
 
   def handle_event(:end_document, _, data) do

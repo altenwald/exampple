@@ -64,7 +64,7 @@ defmodule Exampple.ComponentTest do
       Component.wait_for_ready()
       Process.sleep(500)
 
-      assert iq == parse(DummyTcp.sent())
+      assert {^iq, _} = parse(DummyTcp.sent())
     end
 
     test "ping" do

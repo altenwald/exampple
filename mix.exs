@@ -4,13 +4,16 @@ defmodule Exampple.MixProject do
   def project do
     [
       app: :exampple,
-      version: "0.2.0",
+      version: "0.3.0",
+      description: "eXaMPPle is a XMPP Component Framework",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
       deps: deps(),
       aliases: aliases(),
+      package: package(),
+      docs: docs(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
@@ -40,8 +43,7 @@ defmodule Exampple.MixProject do
     [
       {:gen_state_machine, "~> 2.1.0"},
       {:ex_doc, "~> 0.21.3", optional: true, only: :dev},
-      ## TODO: check if the PR was merged: https://github.com/qcam/saxy/pull/57
-      {:saxy, github: "manuel-rubio/saxy", branch: "master"},
+      {:saxy, "~> 1.2.0"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:excoveralls, "~> 0.13.1", only: [:test]}
     ]
@@ -55,6 +57,22 @@ defmodule Exampple.MixProject do
         "deps.get",
         "coveralls.travis"
       ]
+    ]
+  end
+
+  defp package do
+    [
+      files: ["config", "lib", "mix.exs", "mix.lock", "README*", "COPYING*"],
+      maintainers: ["Manuel Rubio"],
+      licenses: ["LGPL 2.1"],
+      links: %{"GitHub" => "https://github.com/altenwald/exampple"},
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: ["README.md"]
     ]
   end
 end
