@@ -1,5 +1,5 @@
 language: elixir
-script: "mix coveralls.xml"
+script: "mix travis-ci"
 install: "sudo pip install codecov"
 after_success: "codecov --file cover/excoveralls.xml"
 otp_release:

@@ -49,6 +49,8 @@ defmodule Exampple.MixProject do
     [
       "travis-ci": [
         "local.hex --force",
+        "local.rebar --force",
+        "deps.get",
         "coveralls.xml"
       ]
     ]
