@@ -1,5 +1,5 @@
 defmodule Exampple.ComponentTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   import Exampple.Xml.Xmlel
   import Exampple.Router.ConnCase
