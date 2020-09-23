@@ -168,9 +168,9 @@ defmodule Exampple.Router do
       end
 
     [route_info_function | envelope_functions] ++
-      route_functions ++
-      inc_route_functions ++
       [discovery] ++
+      inc_route_functions ++
+      route_functions ++
       [fallback]
   end
 
