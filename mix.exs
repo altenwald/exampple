@@ -10,6 +10,7 @@ defmodule Exampple.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :test,
+      dialyzer: [plt_add_apps: [:mix]],
       deps: deps(),
       aliases: aliases(),
       package: package(),
@@ -65,7 +66,7 @@ defmodule Exampple.MixProject do
       files: ["config", "lib", "mix.exs", "mix.lock", "README*", "COPYING*"],
       maintainers: ["Manuel Rubio"],
       licenses: ["LGPL 2.1"],
-      links: %{"GitHub" => "https://github.com/altenwald/exampple"},
+      links: %{"GitHub" => "https://github.com/altenwald/exampple"}
     ]
   end
 

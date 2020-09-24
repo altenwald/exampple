@@ -29,6 +29,7 @@ defmodule Exampple.Xml.Parser.Sender do
 
   def handle_event(:end_element, tag_name, data) do
     if data.debug_xml, do: send(data.pid, {:xmlstreamend, tag_name})
+
     case Simple.handle_event(:end_element, tag_name, data.stack) do
       {:ok, stack} ->
         {:ok, %Data{data | stack: stack}}

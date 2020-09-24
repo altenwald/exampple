@@ -20,7 +20,7 @@ defmodule Exampple.Xml.Stream do
     |> parse(rest <> chunk)
   end
 
-  def parse(%Partial{} = partial, chunk) do
+  def parse(partial, chunk) do
     Partial.parse(partial, chunk)
   end
 
@@ -30,7 +30,7 @@ defmodule Exampple.Xml.Stream do
     {:ok, rest}
   end
 
-  def terminate(%Partial{} = partial) do
+  def terminate(partial) do
     {:ok, _state} = Partial.terminate(partial)
     {:ok, ""}
   end

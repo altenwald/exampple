@@ -82,7 +82,8 @@ defmodule Exampple.Router do
 
     fallback =
       if fback = Module.get_attribute(env.module, :fallback) do
-        {{controller, function}, []} = Code.eval_quoted(fback)
+        {controller, function} = fback
+        {controller, []} = Code.eval_quoted(controller)
 
         [
           quote do
@@ -129,9 +130,7 @@ defmodule Exampple.Router do
           end
 
         identity =
-          for identity <- Module.get_attribute(env.module, :identities) do
-            {{category, type, name}, []} = Code.eval_quoted(identity)
-
+          for {_, _, [category, type, name]} <- Module.get_attribute(env.module, :identities) do
             Macro.escape(
               Xmlel.new("identity", %{
                 "category" => category,
