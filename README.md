@@ -16,10 +16,12 @@ You can install the application for your project in the following way:
 ```elixir
 def deps do
   [
-    {:exampple, github: "altenwald/exampple"}
+    {:exampple, "~> 0.4.0"}
   ]
 end
 ```
+
+You can also create a new project using [phx_new](https://github.com/altenwald/exampple/blob/master/installer/README.md).
 
 ## Getting started
 
@@ -150,6 +152,7 @@ Note that you only need a server which is supporting the [XEP-0114](https://xmpp
 - [MongooseIM](https://mongooseim.readthedocs.io/en/latest/): the fork from ejabberd made by Erlang Solutions.
 - [OpenFire](https://www.igniterealtime.org/projects/openfire/): a Java server with a lot of plugins.
 - [Prosody](https://prosody.im/doc/xmpp): a Lua server with great XMPP support and very easy to extend.
+- [Tigase](https://tigase.net/xmpp-server): a Java server prepared for scalability.
 
 The configuration for the server depends on each one, you can go to their respective websites and search the configuration for the components module.
 
@@ -478,7 +481,7 @@ The controllers are the place where we are going to implement all of these funct
 defmodule Myapp.Router do
   use Exampple.Router
 
-  iq "urn:xmpp:" do
+  iq "urn:xmpp" do
     get "ping", Myapp.Xmpp.PingController, :ping
   end
 end
