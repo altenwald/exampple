@@ -37,6 +37,7 @@ defmodule Exampple.ComponentTest do
 
     Application.put_env(:exampple, Exampple.Component, config)
     Exampple.start_link(otp_app: :exampple)
+    Component.disconnect()
     on_exit(fn -> DummyTcp.dump() end)
   end
 

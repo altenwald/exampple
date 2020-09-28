@@ -74,6 +74,11 @@ defmodule Exampple.Component do
     :ok = GenStateMachine.cast(__MODULE__, :connect)
   end
 
+  @spec disconnect() :: :ok
+  def disconnect() do
+    :ok = GenStateMachine.cast(__MODULE__, :disconnect)
+  end
+
   @spec stop() :: :ok
   def stop() do
     :ok = GenStateMachine.stop(__MODULE__)
@@ -282,6 +287,15 @@ defmodule Exampple.Component do
   end
 
   @impl GenStateMachine
+  def handle_event(:cast, :disconnect, :disconnected, _data) do
+    :keep_state_and_data
+  end
+
+  def handle_event(:cast, :disconnect, _state, data) do
+    data.tcp_handler.stop(data.socket)
+    {:next_state, :disconnected, data}
+  end
+
   def handle_event(:info, {:tcp, socket, packet}, _state, data) do
     case XmlStream.parse(data.stream, packet) do
       {:cont, partial} ->
