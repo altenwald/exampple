@@ -23,6 +23,28 @@ end
 
 You can also create a new project using [phx_new](https://github.com/altenwald/exampple/blob/master/installer/README.md).
 
+## Elixir and OTP Versions
+
+We recommend to use OTP 22+ and Elixir 1.10+. You can see in the following table the tests are they are made on [Travis CI](https://travis-ci.org/github/altenwald/exampple):
+
+| Erlang | Elixir | Support            |
+|:-------|:-------|:-------------------|
+| 23.1   | 1.10   | :heavy_check_mark: |
+| 23.0   | 1.10   | :heavy_check_mark: |
+| 23.0   | 1.9    | :x:                |
+| 22.3   | 1.10   | :heavy_check_mark: |
+| 22.3   | 1.9    | :heavy_check_mark: |
+| 22.2   | 1.10   | :heavy_check_mark: |
+| 22.2   | 1.9    | :heavy_check_mark: |
+| 22.1   | 1.10   | :heavy_check_mark: |
+| 22.1   | 1.9    | :heavy_check_mark: |
+
+## Donation
+
+If you want to support the project to advance faster with the development you can make a donation. Thanks!
+
+[![paypal](https://www.paypalobjects.com/en_US/GB/i/btn/btn_donateCC_LG.gif)](https://paypal.me/altenwaldsolutions)
+
 ## Getting started
 
 To use Exampple you only need to add the following information for the `config/config.exs` file:
