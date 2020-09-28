@@ -44,7 +44,7 @@ defmodule Exampple.MixProject do
     [
       {:gen_state_machine, "~> 2.1.0"},
       {:ex_doc, "~> 0.21.3", optional: true, only: :dev},
-      {:saxy, "~> 1.2.0"},
+      {:saxy, "~> 1.2.1"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:excoveralls, "~> 0.13.1", only: [:test]}
     ]
