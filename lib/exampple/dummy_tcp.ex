@@ -13,7 +13,13 @@ defmodule Exampple.DummyTcp do
 
     case GenServer.start_link(__MODULE__, args, name: __MODULE__) do
       {:error, {:already_started, _pid}} ->
-        stop(__MODULE__)
+        try do
+          # a race condition could happens here so, we protect the
+          # stop function calling from errors of the kind "noproc".
+          stop(__MODULE__)
+        catch
+          :exit, {:noproc, _} -> :ok
+        end
         start(nil, nil)
 
       {:ok, pid} ->
