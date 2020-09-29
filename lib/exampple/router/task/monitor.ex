@@ -1,4 +1,11 @@
 defmodule Exampple.Router.Task.Monitor do
+  @moduledoc """
+  The monitor starts a task to attend the incoming request,
+  when the task is launched a timer is set. The timer is cancelled
+  when the task is terminated. If the task crashes, the monitor
+  receives a message and replies with an error. In case of timeout
+  the request is returning a timeout and the task is terminated.
+  """
   use GenServer, restart: :temporary
   require Logger
 
