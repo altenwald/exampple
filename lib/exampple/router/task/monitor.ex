@@ -21,6 +21,8 @@ defmodule Exampple.Router.Task.Monitor do
     syntax_colors: @syntax_colors
   ]
 
+  @metric_prefix [:xmpp, :request]
+
   defmodule Data do
     defstruct ~w[
       xmlel
@@ -76,22 +78,38 @@ defmodule Exampple.Router.Task.Monitor do
       stanza_id: conn.id,
       type: conn.type,
       stanza_type: conn.stanza_type,
-      ellapsed_time: diff_time
+      ellapsed_time: diff_time,
+      xmlns: conn.xmlns,
+      from_jid: to_string(conn.from_jid),
+      to_jid: to_string(conn.to_jid)
     )
 
     conn
   end
 
   defp sucess(state) do
-    diff_time = diff_time(state)
-    prepare_logger(state, diff_time)
+    {diff_time_txt, diff_time_ms} = diff_time(state)
+    conn = prepare_logger(state, diff_time_txt)
+
     Logger.info("success", @format)
+
+    :telemetry.execute(
+      @metric_prefix ++ [:success],
+      %{duration: diff_time_ms},
+      %{request_ns: conn.xmlns}
+    )
   end
 
   defp failure(state, reason) do
-    diff_time = diff_time(state)
-    conn = prepare_logger(state, diff_time)
+    {diff_time_txt, diff_time_ms} = diff_time(state)
+    conn = prepare_logger(state, diff_time_txt)
     Logger.error("error: #{inspect(reason)}", @format)
+
+    :telemetry.execute(
+      @metric_prefix ++ [:failure],
+      %{duration: diff_time_ms},
+      %{request_ns: conn.xmlns}
+    )
 
     conn
     |> Stanza.error({"internal-server-error", "en", "An error happened"})
@@ -100,8 +118,15 @@ defmodule Exampple.Router.Task.Monitor do
 
   defp timeout(%Data{task_pid: task_pid, timeout: timeout} = state) do
     RouterTask.stop(task_pid)
-    conn = prepare_logger(state, "#{timeout}ms")
+    msecs = human_readable(timeout)
+    conn = prepare_logger(state, msecs)
     Logger.error("error timeout", @format)
+
+    :telemetry.execute(
+      @metric_prefix ++ [:timeout],
+      %{duration: timeout},
+      %{request_ns: conn.xmlns}
+    )
 
     Stanza.error(
       conn,
@@ -109,21 +134,23 @@ defmodule Exampple.Router.Task.Monitor do
     )
   end
 
+  defp human_readable(msecs) when msecs >= 1_000 do
+    secs = div(msecs, 1_000)
+
+    msecs =
+      msecs
+      |> rem(1_000)
+      |> to_string()
+      |> String.pad_leading(3, "0")
+
+    "#{secs}.#{msecs}s"
+  end
+
+  defp human_readable(msecs), do: "#{msecs}ms"
+
+  # returns {human_readable_time, microseconds}
   defp diff_time(%Data{timer_ref: timer_ref, timeout: timeout}) do
     msecs = timeout - Process.cancel_timer(timer_ref)
-
-    if msecs >= 1_000 do
-      secs = div(msecs, 1_000)
-
-      msecs =
-        msecs
-        |> rem(1_000)
-        |> to_string()
-        |> String.pad_leading(3, "0")
-
-      "#{secs}.#{msecs}s"
-    else
-      "#{msecs}ms"
-    end
+    {human_readable(msecs), msecs * 1_000}
   end
 end

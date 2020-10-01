@@ -15,5 +15,5 @@ if Mix.env() == :test do
 
   config :logger, :console,
     format: "$time $metadata[$level] $levelpad$message\n",
-    metadata: [:ellapsed_time, :stanza_id, :stanza_type, :type]
+    metadata: [:ellapsed_time, :stanza_id, :stanza_type, :type, :xmlns, :from_jid, :to_jid]
 end

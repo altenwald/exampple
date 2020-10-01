@@ -104,6 +104,14 @@ defmodule Exampple.RouterTest do
         |> Application.get_env(Exampple.Component)
         |> Keyword.put(:router_handler, Exampple.Router)
 
+      metrics = [
+        [:xmpp, :request, :success],
+        [:xmpp, :request, :failure],
+        [:xmpp, :request, :timeout]
+      ]
+
+      TestingTelemetry.attach(metrics)
+
       Application.put_env(:exampple, Exampple.Component, config)
       Exampple.start_link(otp_app: :exampple)
       Component.connect()
@@ -128,6 +136,13 @@ defmodule Exampple.RouterTest do
           </query>
         </iq>
       ])
+
+      assert_receive {
+                       [:xmpp, :request, :success],
+                       %{duration: duration},
+                       %{request_ns: "http://jabber.org/protocol/disco#info"}
+                     }
+                     when duration in 0..5000
     end
 
     test "check envelope" do

@@ -562,7 +562,7 @@ At the moment we have the possibility to see in the logs (info and error) the am
 ```elixir
   config :logger, :console,
     format: "$time $metadata[$level] $levelpad$message\n",
-    metadata: [:ellapsed_time, :stanza_id, :stanza_type, :type]
+    metadata: [:ellapsed_time, :stanza_id, :stanza_type, :type, :xmlns, :from_jid, :to_jid]
 ```
 
 The provided metadata available is:
@@ -571,6 +571,9 @@ The provided metadata available is:
 - `stanza_id`: the ID which came inside of the stanza.
 - `stanza_type`: it could be (mainly): message, presence or iq.
 - `type`: the type defined specifically for the stanza: normal, chat, groupchat, set, get, error, ...
+- `xmlns`: the XML namespace for the first child inside of the stanza.
+- `from_jid`: the JID where the stanza comes from, in a string representation.
+- `to_jid`: the JID where the stanza is directed to, in a string representation.
 
 The output will be in the form:
 
@@ -579,6 +582,16 @@ The output will be in the form:
 ```
 
 The time could appear in milliseconds (ms) if the amount is less than 1 second or in seconds (s) otherwise.
+
+## Telemetry
+
+In addition to the logs regarding the stanzas we have the following information to be gathered by telemetry:
+
+- `[:xmpp, :request, :success]`
+- `[:xmpp, :request, :failure]`
+- `[:xmpp, :request, :timeout]`
+
+All of them register `duration` in milliseconds so, you can get the maximum, minimum, average, percentile and more statistics from the duration of the stanzas inside of the system based on if they are correct (success), wrong (failure) or was not attended (timeout).
 
 ## Testing
 
