@@ -60,7 +60,8 @@ defmodule Exampple.MixProject do
         "local.hex --force",
         "local.rebar --force",
         "deps.get",
-        "coveralls.travis"
+        "coveralls.travis",
+        "inch.report"
       ]
     ]
   end

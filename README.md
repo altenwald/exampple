@@ -4,6 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/altenwald/exampple/badge.svg)](https://coveralls.io/github/altenwald/exampple)
 [![License: LGPL 2.1](https://img.shields.io/github/license/altenwald/exampple.svg)](https://raw.githubusercontent.com/altenwald/exampple/master/COPYING)
 [![Hex](https://img.shields.io/hexpm/v/exampple.svg)](https://hex.pm/packages/exampple)
+[![Inline docs](http://inch-ci.org/github/altenwald/exampple.png)](http://inch-ci.org/github/altenwald/exampple)
 
 eXaMPPle is a XMPP framework to build components using a router, controllers
 and an easy way to generate stanzas. It also has facilities to perform 
