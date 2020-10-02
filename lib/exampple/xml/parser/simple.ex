@@ -5,6 +5,7 @@ defmodule Exampple.Xml.Parser.Simple do
 
   alias Exampple.Xml.Xmlel
 
+  @impl Saxy.Handler
   def handle_event(:start_document, _prolog, _state) do
     {:ok, []}
   end

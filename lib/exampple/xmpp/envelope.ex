@@ -1,8 +1,27 @@
 defmodule Exampple.Xmpp.Envelope do
+  @moduledoc """
+  Envelope helps to create a function to be stored inside of the
+  `Exampple.Router.Conn` which will be in use when a response will
+  be processed.
+
+  The idea of this module was based on handling the
+  [Namespace delegation (XEP-0355)](https://xmpp.org/extensions/xep-0355.html)
+  but also the [Stanza forwarding (XEP-0297)](https://xmpp.org/extensions/xep-0297.html).
+
+  This way we process the stanzas wrapped using the `Exampple.Router`
+  and the configuration provided by our router configuration in a
+  transparent way.
+  """
   alias Exampple.Router.Conn
   alias Exampple.Xml.Xmlel
   alias Exampple.Xmpp.Stanza
 
+  @doc """
+  Handle the stanza inside of a `Exampple.Router.Conn` and creates
+  an envelope function with it. The function is placed inside of a
+  new `Exampple.Router.Conn` parsed with the data provided from the
+  internal stanza.
+  """
   def handle(%Conn{stanza_type: "message"}, _query) do
     nil
   end

@@ -9,6 +9,7 @@ defmodule Exampple.Xml.Parser.Sender do
     defstruct pid: nil, stack: [], debug_xml: false
   end
 
+  @impl Saxy.Handler
   def handle_event(:start_document, _prolog, pid) do
     debug_xml = Application.get_env(:exampple, :debug_xml, false)
     if debug_xml, do: send(pid, :xmlstartdoc)

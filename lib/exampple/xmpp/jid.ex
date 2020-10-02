@@ -10,17 +10,17 @@ defmodule Exampple.Xmpp.Jid do
   Returns true if the JID is a full JID, false otherwise.
 
   Examples:
-    iex> Exampple.Xmpp.Jid.is_full?("alice@example.com")
-    false
+      iex> Exampple.Xmpp.Jid.is_full?("alice@example.com")
+      false
 
-    iex> Exampple.Xmpp.Jid.is_full?("comp.example.com/data")
-    true
+      iex> Exampple.Xmpp.Jid.is_full?("comp.example.com/data")
+      true
 
-    iex> Exampple.Xmpp.Jid.is_full?("bob@example.com/res")
-    true
+      iex> Exampple.Xmpp.Jid.is_full?("bob@example.com/res")
+      true
 
-    iex> Exampple.Xmpp.Jid.is_full?("/abc/xyz")
-    {:error, :enojid}
+      iex> Exampple.Xmpp.Jid.is_full?("/abc/xyz")
+      {:error, :enojid}
   """
   def is_full?(jid) when is_binary(jid) do
     jid
