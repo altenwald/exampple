@@ -17,6 +17,8 @@ defmodule TestingFullRouter do
     get("register", TestingFullController, :register)
   end
 
+  feature "jabber:iq:register#remove"
+
   message do
     chat(TestingFullController, :chat)
     groupchat(TestingFullController, :groupchat)

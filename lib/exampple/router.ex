@@ -19,6 +19,7 @@ defmodule Exampple.Router do
       Module.register_attribute(__MODULE__, :namespaces, accumulate: true)
       Module.register_attribute(__MODULE__, :identities, accumulate: true)
       Module.register_attribute(__MODULE__, :includes, accumulate: true)
+      Module.register_attribute(__MODULE__, :features, accumulate: true)
       @envelopes []
       @namespace_separator ":"
       @before_compile Exampple.Router
@@ -114,7 +115,14 @@ defmodule Exampple.Router do
       end
 
     namespaces =
-      for ns <- Enum.uniq(Module.get_attribute(env.module, :namespaces)), ns != "", do: ns
+      env.module
+      |> Module.get_attribute(:namespaces)
+      |> Enum.reject(& &1 == "")
+
+    namespaces =
+      (namespaces ++ Module.get_attribute(env.module, :features, []))
+      |> Enum.uniq()
+      |> Enum.sort()
 
     inc_namespaces =
       for module <- includes do
@@ -314,6 +322,12 @@ defmodule Exampple.Router do
       end
 
       Module.put_attribute(__MODULE__, :identities, Macro.escape({category, type, name}))
+    end
+  end
+
+  defmacro feature(namespace) do
+    quote do
+      @features unquote(namespace)
     end
   end
 

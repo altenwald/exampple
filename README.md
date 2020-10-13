@@ -457,6 +457,24 @@ About the information you can configure for identity you can see the [available 
 
 You can provide as name the name of the component or whatever which could means the mission of the component to be clear for the rest of the clients, server and components.
 
+It is also possible to indicate a feature when they are not being to be attended directly by a request. For example, inside of [XEP-0369](https://xmpp.org/extensions/xep-0355.html) we could use the namespace `urn:xmpp:mix:core:1` but also there's a new to indicate support for `urn:xmpp:mix:core:1#create`. This is not the only one XEP which includes the use of the sharp symbol to give more information about support. To add this, we can use `feature`:
+
+```elixir
+defmodule Myapp.Router do
+  use Exampple.Router
+
+  discovery do
+    identity category: "component", type: "generic", name: "myapp"
+  end
+
+  iq "urn:xmpp:mix" do
+    get "core:1", Myapp.Xmpp.MixCoreController, :core
+  end
+
+  feature "urn:xmpp:mix:core:1#create"
+end
+```
+
 ### Envelope
 
 Because we can configure XMPP to delegate using [XEP-0355](https://xmpp.org/extensions/xep-0355.html), we could configure to receive in a transparent way the incoming messages inside of their envelope and reply them just as if we were inside of the XMPP Server replying directly to the user or component asking.
