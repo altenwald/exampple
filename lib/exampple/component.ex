@@ -48,7 +48,8 @@ defmodule Exampple.Component do
           iq_resp: 1,
           iq_resp: 2,
           message_resp: 2,
-          message_error: 2
+          message_error: 2,
+          error: 2
         ]
     end
   end
