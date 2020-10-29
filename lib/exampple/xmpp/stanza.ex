@@ -187,12 +187,12 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> Exampple.Xmpp.Stanza.message_resp([])
       iex> conn.response
       iex> |> to_string()
-      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"chat\\"/>"
+      "<message from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"chat\\"/>"
   """
   def message_resp(%Conn{} = conn, payload) do
     from_jid = to_string(conn.from_jid)
     to_jid = to_string(conn.to_jid)
-    response = message(payload, from_jid, conn.id, to_jid, conn.type)
+    response = message(payload, to_jid, conn.id, from_jid, conn.type)
     %Conn{conn | response: response}
   end
 
