@@ -54,7 +54,11 @@ defmodule Exampple.Router.Conn do
       from_jid: Jid.parse(Xmlel.get_attr(xmlel, "from")),
       to_jid: Jid.parse(Xmlel.get_attr(xmlel, "to")),
       id: Xmlel.get_attr(xmlel, "id"),
-      type: Xmlel.get_attr(xmlel, "type", "normal"),
+      type: case xmlel.name do
+        "message" -> Xmlel.get_attr(xmlel, "type", "normal")
+        "presence" -> Xmlel.get_attr(xmlel, "type", "available")
+        _ -> Xmlel.get_attr(xmlel, "type", "")
+      end,
       xmlns: xmlns,
       stanza_type: xmlel.name,
       stanza: xmlel

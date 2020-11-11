@@ -612,7 +612,7 @@ In addition to the logs regarding the stanzas we have the following information 
 
 All of them register `duration` in milliseconds so, you can get the maximum, minimum, average, percentile and more statistics from the duration of the stanzas inside of the system based on if they are correct (success), wrong (failure) or was not attended (timeout).
 
-## Testing
+## Functional Testing
 
 Finally, but maybe the most important topic, we have facilities to perform the testing part of our component. Thanks to `Exampply.DummyTcp` we can easily use the following macros to test our systems.
 
@@ -682,6 +682,14 @@ assert_stanza_receive ~x[
 - `stanza_receive/2`: this is not an assertion but let us to retrieve the stanza directly to handle the information inside of it. As the previous assert it let us to define a timeout.
 
 - `stanza_received/1`: as the previous one, this is a way to retrieve the stanza which should arrived to us previously.
+
+## System Testing
+
+[bottle]: https://github.com/altenwald/bottle
+
+In addition to the possibility to create components it's possible to play with `Exampple.Client` creating a connection as a client for the XMPP environment and perform some actions.
+
+This module aims create clients for testing and in combination with [bottle][bottle] it's a good piece of code to create really complex scenarios in an easy way an perform a complete system testing. You can find more information in [Bottle][bottle] project.
 
 ## Collaboration
 

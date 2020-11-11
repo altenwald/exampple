@@ -37,6 +37,7 @@ defmodule Exampple.Client do
 
   alias Exampple.Router.Conn
   alias Exampple.Xml.Stream, as: XmlStream
+  alias Exampple.Xml.Xmlel
 
   @default_tcp_handler Exampple.Tcp
 
@@ -83,6 +84,36 @@ defmodule Exampple.Client do
           "<username>#{username}</username>" <>
           "<password>#{password}</password>" <>
           "</query></iq>"
+      end
+    ]
+  end
+
+  defp default_checks() do
+    [
+      auth: fn pname ->
+        %Conn{stanza_type: "success"} = get_conn(pname)
+      end,
+      init: fn pname ->
+        %Conn{
+          stanza_type: "stream:features",
+          stanza: stanza,
+          xmlns: "urn:ietf:params:xml:ns:xmpp-bind"
+        } = get_conn(pname)
+        [%Xmlel{}] = stanza["bind"]
+        [%Xmlel{}] = stanza["session"]
+      end,
+      bind: fn pname ->
+        %Conn{
+          stanza_type: "iq",
+          type: "result",
+          xmlns: "urn:ietf:params:xml:ns:xmpp-bind"
+        } = get_conn(pname)
+      end,
+      presence: fn pname ->
+        %Conn{
+          stanza_type: "presence",
+          type: "available"
+        } = get_conn(pname)
       end
     ]
   end
@@ -223,13 +254,13 @@ defmodule Exampple.Client do
     case GenStateMachine.call(name, {:get_check, template}) do
       {:ok, check_fn} ->
         unless apply(check_fn, args) do
-          raise "check #{name} failed!"
+          raise "check #{template} for #{name} failed!"
         end
 
         :ok
 
       :error ->
-        raise "check #{name} not found!"
+        raise "check #{template} for #{name} not found!"
     end
   end
 
@@ -300,6 +331,7 @@ defmodule Exampple.Client do
       ping: Map.get(cfg, :ping, false),
       tcp_handler: Map.get(cfg, :tcp_handler, @default_tcp_handler),
       templates: default_templates(),
+      checks: default_checks(),
       send_pid: pid
     }
 
