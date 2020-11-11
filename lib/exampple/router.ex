@@ -117,7 +117,7 @@ defmodule Exampple.Router do
     namespaces =
       env.module
       |> Module.get_attribute(:namespaces)
-      |> Enum.reject(& &1 == "")
+      |> Enum.reject(&(&1 == ""))
 
     namespaces =
       (namespaces ++ Module.get_attribute(env.module, :features, []))

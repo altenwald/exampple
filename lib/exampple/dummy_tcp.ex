@@ -20,6 +20,7 @@ defmodule Exampple.DummyTcp do
         catch
           :exit, {:noproc, _} -> :ok
         end
+
         start(nil, nil)
 
       {:ok, pid} ->

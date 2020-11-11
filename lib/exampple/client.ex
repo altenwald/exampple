@@ -100,6 +100,7 @@ defmodule Exampple.Client do
               tcp_handler: Tcp,
               send_pid: nil,
               templates: [],
+              checks: [],
               name: nil
   end
 
@@ -205,7 +206,7 @@ defmodule Exampple.Client do
   @spec send_template(atom(), [any()], atom() | pid()) :: :ok | :not_found
   def send_template(template, args \\ [], name \\ __MODULE__)
       when is_atom(template) and is_list(args) do
-    case GenServer.call(name, {:get_template, template}) do
+    case GenStateMachine.call(name, {:get_template, template}) do
       {:ok, xml_fn} ->
         xml_fn
         |> apply(args)
@@ -213,6 +214,22 @@ defmodule Exampple.Client do
 
       :error ->
         :not_found
+    end
+  end
+
+  @spec check!(atom(), [any()], atom() | pid()) :: :ok
+  def check!(template, args \\ [], name \\ __MODULE__)
+      when is_atom(template) and is_list(args) do
+    case GenStateMachine.call(name, {:get_check, template}) do
+      {:ok, check_fn} ->
+        unless apply(check_fn, args) do
+          raise "check #{name} failed!"
+        end
+
+        :ok
+
+      :error ->
+        raise "check #{name} not found!"
     end
   end
 
@@ -225,6 +242,18 @@ defmodule Exampple.Client do
   @spec add_template(atom(), atom(), (... -> String.t())) :: :ok
   def add_template(name \\ __MODULE__, key, fun) do
     :ok = GenStateMachine.cast(name, {:add_template, key, fun})
+  end
+
+  @doc """
+  Adds a check to be in use by the process when we call `check/2` or
+  `check/3`. The `name` is the name or PID for the process, the `key`
+  is the name we will use storing the template and `fun` is the function
+  which will check the incoming stanza returning true or false if the
+  check is passed.
+  """
+  @spec add_check(atom(), atom(), (... -> boolean())) :: :ok
+  def add_check(name \\ __MODULE__, key, fun) do
+    :ok = GenStateMachine.cast(name, {:add_check, key, fun})
   end
 
   @doc """
@@ -371,8 +400,18 @@ defmodule Exampple.Client do
     {:keep_state, %Data{data | templates: templates}}
   end
 
+  def handle_event(:cast, {:add_check, key, check}, _state, data) do
+    checks = Keyword.put(data.checks, key, check)
+    {:keep_state, %Data{data | checks: checks}}
+  end
+
   def handle_event({:call, from}, {:get_template, template}, _state, data) do
     reply = Keyword.fetch(data.templates, template)
+    {:keep_state_and_data, [{:reply, from, reply}]}
+  end
+
+  def handle_event({:call, from}, {:get_check, check}, _state, data) do
+    reply = Keyword.fetch(data.checks, check)
     {:keep_state_and_data, [{:reply, from, reply}]}
   end
 
