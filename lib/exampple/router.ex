@@ -1,4 +1,15 @@
 defmodule Exampple.Router do
+  @moduledoc """
+  Router implements the dynamic to define the flow where a stanza
+  will be following for find the controller and function where it
+  should be attended.
+
+  Inside of this module are defined all of the macros we can use
+  for the creation of our router template.
+
+  You can see in the general documentation information about the
+  router.
+  """
   require Logger
 
   alias Exampple.Xml.Xmlel
@@ -7,11 +18,26 @@ defmodule Exampple.Router do
   @monitor Exampple.Router.Task.Monitor
   @default_timeout 5_000
 
+  @doc """
+  Run from the component for each incoming stanza to ensuring where it
+  should go based on the routing module we have compiled. Our routing
+  module should be available through the application configuration and
+  that's because we are sending the `otp_app` here.
+
+  The first parameter provided (`xmlel`) is the stanza in
+  `Exampple.Xml.Xmlel` format. The second parameter is the XMPP `domain`
+  for the component inside of the XMPP network. The last parameter is
+  optional, `timeout` specified in milliseconds specify how much time
+  have the stanza to be processed, by default it's 5 seconds.
+
+  See the general documentation to know more about the routing process.
+  """
   def route(xmlel, domain, otp_app, timeout \\ @default_timeout) do
     Logger.debug("[router] processing: #{inspect(xmlel)}")
     DynamicSupervisor.start_child(@dynsup, {@monitor, [xmlel, domain, otp_app, timeout]})
   end
 
+  @doc false
   defmacro __using__(_opts) do
     quote do
       import Exampple.Router
@@ -26,6 +52,7 @@ defmodule Exampple.Router do
     end
   end
 
+  @doc false
   defmacro __before_compile__(env) do
     envelopes = Module.get_attribute(env.module, :envelopes)
     disco = Module.get_attribute(env.module, :disco, false)
@@ -183,6 +210,23 @@ defmodule Exampple.Router do
       [fallback]
   end
 
+  @doc """
+  Use this whenever you want to change the way a namespace will be join. For
+  some configurations like this one:
+
+  ```elixir
+  iq "http://jabber.org/protocol" do
+    join_with "/"
+    get "disco#info", MyController, :disco_info_get
+  end
+  ```
+
+  The namespace is join in this case using the slash (/) because we defined it
+  previously to define the first route.
+
+  The default value for join is `:` so for each example like which I put above
+  you have to use `join_with` and it's restarted for each block.
+  """
   defmacro join_with(separator) when is_binary(separator) do
     quote do
       @namespace_separator unquote(separator)
@@ -196,12 +240,24 @@ defmodule Exampple.Router do
     """
   end
 
+  @doc """
+  Did you split your code in different applications but still want to keep
+  only one point to connect to the XMPP server? It's possible if you define
+  different routers and then, for the main one, you use `includes/1`. This
+  macro is accepting a module containing the routes to be included.
+  """
   defmacro includes(module) do
     quote do
       @includes unquote(module)
     end
   end
 
+  @doc """
+  The envelopes are very usual in components and mainly if we are using the
+  delegation specification ([XEP-0355](https://xmpp.org/extensions/xep-0355.html)).
+  You can see more information regarding this in the general documentation about
+  routing.
+  """
   defmacro envelope(xmlns) do
     xmlns_list = if is_list(xmlns), do: xmlns, else: [xmlns]
 
@@ -215,6 +271,10 @@ defmodule Exampple.Router do
     end
   end
 
+  @doc """
+  Specify a route block where we can add the different routes. This could
+  have the base namespace or not. This is based on the `iq` stanza type.
+  """
   defmacro iq(xmlns_partial \\ "", do: block) do
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, "iq")
@@ -224,6 +284,10 @@ defmodule Exampple.Router do
     end
   end
 
+  @doc """
+  Specify a route block where we can add the different routes. This could
+  have the base namespace or not. This is based on the `message` stanza type.
+  """
   defmacro message(xmlns_partial \\ "", do: block) do
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, "message")
@@ -233,6 +297,10 @@ defmodule Exampple.Router do
     end
   end
 
+  @doc """
+  Specify a route block where we can add the different routes. This could
+  have the base namespace or not. This is based on the `presence` stanza type.
+  """
   defmacro presence(xmlns_partial \\ "", do: block) do
     quote location: :keep do
       Module.put_attribute(__MODULE__, :stanza_type, "presence")
@@ -242,6 +310,7 @@ defmodule Exampple.Router do
     end
   end
 
+  @doc false
   def validate_controller!(controller) do
     {module, []} = Code.eval_quoted(controller)
 
@@ -262,6 +331,7 @@ defmodule Exampple.Router do
     end
   end
 
+  @doc false
   def validate_function!(controller, function) do
     {module, []} = Code.eval_quoted(controller)
     {function, []} = Code.eval_quoted(function)

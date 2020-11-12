@@ -29,6 +29,17 @@ defmodule Exampple.Client do
     to define the payload by ourselves. And even specify a `type`.
   - `register` (username, password): it sends the standard register
     stanza as is defined inside of the [XEP-0077](https://xmpp.org/extensions/xep-0077.html).
+
+  ## Checks
+
+  The checks are functions which check only the happy path, failing or raising
+  an error if it's not finding what they need. We have defined the following
+  checks:
+
+  - `auth`: wait for the `success` stanza from the server.
+  - `init`: wait for `stream:features` stanza and `bind` and `session` features inside.
+  - `bind`: wait for the result IQ.
+  - `presence`: wait for the available presence as an echo from the server.
   """
   use GenStateMachine, callback_mode: :handle_event_function
   require Logger
@@ -147,7 +158,7 @@ defmodule Exampple.Client do
 
   @doc """
   Starts the client. We can send a `name` to be registered or use
-  the module name (`Exampple.Client`) by default. As `args` the
+  the module name (`__MODULE__`) by default. As `args` the
   system requires a Map with the information for the connection.
   The information we can provide is:
 
@@ -168,7 +179,9 @@ defmodule Exampple.Client do
   end
 
   @doc """
-  Send a message to the client process to start the connection.
+  Send a message to the client process to start the connection. Optionally,
+  we can specify the `name` of the process where to connect, by default this
+  is the value provided by `__MODULE__`.
   """
   @spec connect() :: :ok
   def connect(name \\ __MODULE__) do
@@ -176,7 +189,9 @@ defmodule Exampple.Client do
   end
 
   @doc """
-  Send a message to the client process to stop the connection.
+  Send a message to the client process identified by `name` as PID
+  or registered process to stop the connection. The `name` parameter
+  is optional, by default it's set to `__MODULE__`.
   """
   @spec disconnect() :: :ok
   def disconnect(name \\ __MODULE__) do
@@ -184,7 +199,10 @@ defmodule Exampple.Client do
   end
 
   @doc """
-  Ask to the process about if the connection is active or not.
+  Ask to the process about whether the connection is active. The checks are based
+  on the process relanted to the passed `name` (it must be a registered name), the
+  PID should be valid and alive, and then we ask to the client if it's connected.
+  If no parameter is provided it is `__MODULE__`.
   """
   def is_connected?(name \\ __MODULE__) do
     with pid <- Process.whereis(name),
@@ -197,7 +215,8 @@ defmodule Exampple.Client do
   end
 
   @doc """
-  Stops the process.
+  Stops the process. You can specify the `name` of the process to be
+  stopped, by default this value is set as `__MODULE__`.
   """
   @spec stop() :: :ok
   def stop(name \\ __MODULE__) do
@@ -209,6 +228,15 @@ defmodule Exampple.Client do
   XMPP Server. These stanzas could be sent to whoever inside of the
   XMPP network locally or even to other domains if the network is
   federated.
+
+  The accepted paramter `data_or_conn` could be a string (or binary)
+  or a `Conn` struct. Optionally, you can specify a second parameter
+  as the `name` of the registered process. The default value for the
+  `name` paramter is `__MODULE__`.
+
+  Example:
+      iex> Exampple.Client.send("<presence/>")
+      :ok
   """
   @spec send(binary | Conn.t()) :: :ok
   @spec send(binary | Conn.t(), GenServer.server()) :: :ok
@@ -248,6 +276,16 @@ defmodule Exampple.Client do
     end
   end
 
+  @doc """
+  Use a check registered inside of the client verifying if the incoming
+  stanzas are passing the checks defined by the anonymous function. In
+  the same way as the `send_template/3` function it provides to the
+  developer the ability to write better and shorter tests.
+
+  We are providing the `template` name for the check, optionally some `args`
+  if the check requires it and the `name` of the process for the client,
+  by default it will be `__MODULE__`.
+  """
   @spec check!(atom(), [any()], atom() | pid()) :: :ok
   def check!(template, args \\ [], name \\ __MODULE__)
       when is_atom(template) and is_list(args) do
@@ -291,7 +329,9 @@ defmodule Exampple.Client do
   Waits for an incoming connection / stanza which will be sent from
   the client process. It only works if we are using this function
   from the process which execute the `start_link` function or if
-  we passed the PID of the current process.
+  we passed the PID of the current process as the `name` parameter.
+  Optionally, we can configure a `timeout`, by default it's set to
+  5 seconds.
   """
   def get_conn(name, timeout \\ 5_000) do
     receive do
@@ -303,7 +343,12 @@ defmodule Exampple.Client do
 
   @doc """
   Same as `get_conn/2` but we are waiting for a specific number
-  of stanzas to be received.
+  of stanzas to be received indicated by `num` parameter. We have
+  to indicate the `name` for the process where we are going to be
+  connected.
+
+  Optionally, we can configure a `timeout`, by default it's set to
+  5 seconds.
   """
   def get_conns(name, num, timeout \\ 5_000) do
     receive do

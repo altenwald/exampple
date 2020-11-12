@@ -7,6 +7,7 @@ defmodule Exampple.DummyTcp do
 
   alias Exampple.Xml.Xmlel
 
+  @doc false
   def start(_host, _port) do
     client_pid = self()
     args = [client_pid]
@@ -28,30 +29,37 @@ defmodule Exampple.DummyTcp do
     end
   end
 
+  @doc false
   def stop() do
     stop(__MODULE__)
   end
 
+  @doc false
   def dump() do
     GenServer.cast(__MODULE__, :dump)
   end
 
+  @doc false
   def stop(pid) do
     GenServer.stop(pid)
   end
 
+  @doc false
   def send(packet, pid) when is_binary(packet) do
     GenServer.cast(pid, {:send, packet})
   end
 
+  @doc false
   def subscribe() do
     GenServer.cast(__MODULE__, {:subscribe, self()})
   end
 
+  @doc false
   def sent() do
     GenServer.call(__MODULE__, :sent)
   end
 
+  @doc false
   def wait_for_sent_xml(timeout \\ 5_000) do
     receive do
       packet when is_binary(packet) ->
@@ -62,6 +70,7 @@ defmodule Exampple.DummyTcp do
     end
   end
 
+  @doc false
   def are_all_sent?(stanzas, timeout \\ 500)
 
   def are_all_sent?([], _timeout), do: true
@@ -81,6 +90,7 @@ defmodule Exampple.DummyTcp do
     end
   end
 
+  @doc false
   def received(%Xmlel{} = packet) do
     received(to_string(packet))
   end
@@ -90,6 +100,7 @@ defmodule Exampple.DummyTcp do
   end
 
   @impl GenServer
+  @doc false
   def init([client_pid]) do
     {:ok, %{client_pid: client_pid, subscribed: nil, stream: []}}
   end
@@ -102,6 +113,7 @@ defmodule Exampple.DummyTcp do
   end
 
   @impl GenServer
+  @doc false
   def handle_cast({:send, "<?xml version='1.0' " <> _}, data) do
     Kernel.send(data.client_pid, {:tcp, self(), xml_init()})
     {:noreply, data}
@@ -131,6 +143,7 @@ defmodule Exampple.DummyTcp do
   end
 
   @impl GenServer
+  @doc false
   def handle_call(:sent, _from, %{stream: []} = data), do: {:reply, nil, data}
 
   def handle_call(:sent, _from, %{stream: [packet | packets]} = data) do
@@ -138,6 +151,7 @@ defmodule Exampple.DummyTcp do
   end
 
   @impl GenServer
+  @doc false
   def terminate(_reason, data) do
     Kernel.send(data.client_pid, {:tcp_closed, self()})
     :ok

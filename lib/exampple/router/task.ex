@@ -9,7 +9,9 @@ defmodule Exampple.Router.Task do
   @task_sup Exampple.Router.Task.Supervisor
 
   @doc """
-  Starts the task under the `Exampple.Router.Task.Supervisor`.
+  Starts the task under the `Exampple.Router.Task.Supervisor` providing
+  the stanza in `xmlel` format, the `domain` for the component and the
+  `otp_app` (application name).
   """
   def start(xmlel, domain, otp_app) do
     args = [xmlel, domain, otp_app]
@@ -19,14 +21,19 @@ defmodule Exampple.Router.Task do
   end
 
   @doc """
-  Stops the task using the supervisor to perform this action correctly.
+  Stops the task running in the process identified by the `pid` parameter
+  using the supervisor to perform this action correctly.
   """
   def stop(pid) do
     Task.Supervisor.terminate_child(@task_sup, pid)
   end
 
   @doc """
-  The code which is being ran by the task.
+  The code which is being ran by the task. The information provided
+  is required to create the `Exampple.Router.Conn` struct so, we
+  need the stanza as a `Exampple.Xml.Xmlel` struct into the `xmlel`
+  parameter, the `domain` for the component and the `otp_app`
+  (application) we are using as the main one of our project.
   """
   def run(xmlel, domain, otp_app) do
     module = Application.get_env(otp_app, :router)

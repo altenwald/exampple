@@ -17,10 +17,12 @@ defmodule Exampple.Xmpp.Envelope do
   alias Exampple.Xmpp.Stanza
 
   @doc """
-  Handle the stanza inside of a `Exampple.Router.Conn` and creates
-  an envelope function with it. The function is placed inside of a
-  new `Exampple.Router.Conn` parsed with the data provided from the
-  internal stanza.
+  Handle the stanza inside of a `Exampple.Router.Conn` provided by
+  the first parameter `conn` and creates an envelope function with it.
+  The function is placed inside of a new `Exampple.Router.Conn` parsed
+  with the data provided from the internal stanza. The `query` provided
+  as second parameter let us detect where is the actual stanza to be
+  propagated and where we have to inject the response.
   """
   def handle(%Conn{stanza_type: "message"}, _query) do
     nil

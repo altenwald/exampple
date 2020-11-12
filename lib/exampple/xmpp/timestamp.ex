@@ -8,7 +8,9 @@ defmodule Exampple.Xmpp.Timestamp do
   """
 
   @doc """
-  This function let us to show the datetime in ISO-8601 format.
+  This function let us to show the `datetime` in ISO-8601 format and as
+  second parameter we add a `diff` which adds that amount of seconds to
+  the datetime.
 
   Examples:
       iex> {:ok, ts, 0} = DateTime.from_iso8601("2020-04-30T12:00:00Z")
@@ -23,7 +25,7 @@ defmodule Exampple.Xmpp.Timestamp do
   end
 
   @doc """
-  This function let us to show the naive datetime in UTC format.
+  This function let us to show the `naive` datetime in UTC format.
 
   Examples:
       iex> {:ok, ts, 0} = DateTime.from_iso8601("2020-04-30T12:00:00Z")

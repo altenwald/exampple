@@ -53,8 +53,9 @@ defmodule Exampple.Router.Task.Monitor do
   end
 
   @doc """
-  Starts the monitor as a server passing the stanza in `%Xmlel{}` format,
-  the name of the application and the timeout.
+  Starts the monitor as a server passing the stanza in `xmlel` format,
+  the XMPP `domain` for the component and the name of the application
+  (`otp_app`) and the `timeout`, all of those parameters as a `list`.
 
   The `timeout` is needed to know where we have to terminate the task and
   annotate this kind of failure.

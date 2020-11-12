@@ -23,7 +23,8 @@ defmodule Exampple.MixProject do
         "coveralls.html": :test,
         "coveralls.post": :test,
         "coveralls.travis": :test,
-        "travis-ci": :test
+        "travis-ci": :test,
+        inch: :docs
       ]
     ]
   end

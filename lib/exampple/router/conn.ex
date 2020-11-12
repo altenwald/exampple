@@ -38,9 +38,9 @@ defmodule Exampple.Router.Conn do
   @type t() :: %__MODULE__{}
 
   @doc """
-  Creates a new connection passing `%Xmlel{}` as the first parameter and
-  a domain as a second parameter (or nil by default) to create a
-  `%Conn{}`.
+  Creates a new connection passing a `%Xmlel{}` struct in `xmlel` as the
+  first parameter and a `domain` as a second parameter (or `nil` by default)
+  to create a `%Conn{}` struct.
   """
   def new(%Xmlel{} = xmlel, domain \\ nil) do
     xmlns =
@@ -66,7 +66,7 @@ defmodule Exampple.Router.Conn do
   end
 
   @doc """
-  Obtains the response stored inside of the connection. Checking if there
+  Obtains the response stored inside of the `conn`. Checking if there
   is an envelope used or not.
   """
   def get_response(%Conn{envelope: nil, response: response}) when response != nil do
