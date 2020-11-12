@@ -42,6 +42,7 @@ defmodule Exampple.Router.Task.Monitor do
   @metric_prefix [:xmpp, :request]
 
   defmodule Data do
+    @moduledoc false
     defstruct ~w[
       xmlel
       domain

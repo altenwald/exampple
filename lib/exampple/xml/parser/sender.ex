@@ -6,6 +6,7 @@ defmodule Exampple.Xml.Parser.Sender do
   alias Exampple.Xml.Parser.Simple
 
   defmodule Data do
+    @moduledoc false
     defstruct pid: nil, stack: [], debug_xml: false
   end
 

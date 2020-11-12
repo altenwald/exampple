@@ -25,7 +25,7 @@ defmodule Exampple.Client do
   - `presence`: sends a presence.
   - `message` (to, id, *kw_opts): build a message, it requires to specify
     different options. If we send `body: "hello"` then a body is created
-    with that text as CDATA. We can also use `payload: "<body>Hello</body>"
+    with that text as CDATA. We can also use `payload: "<body>Hello</body>"`
     to define the payload by ourselves. And even specify a `type`.
   - `register` (username, password): it sends the standard register
     stanza as is defined inside of the [XEP-0077](https://xmpp.org/extensions/xep-0077.html).
