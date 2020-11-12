@@ -1,5 +1,8 @@
 language: elixir
 script: "mix travis-ci"
+after_script:
+  - MIX_ENV=docs mix deps.get
+  - MIX_ENV=docs mix inch.report
 jobs:
   include:
     # - elixir: 1.10

@@ -23,7 +23,8 @@ defmodule Exampple.MixProject do
         "coveralls.html": :test,
         "coveralls.post": :test,
         "coveralls.travis": :test,
-        "travis-ci": :test
+        "travis-ci": :test,
+        inch: :docs
       ]
     ]
   end
@@ -43,7 +44,8 @@ defmodule Exampple.MixProject do
   defp deps do
     [
       {:gen_state_machine, "~> 2.1.0"},
-      {:ex_doc, "~> 0.21.3", optional: true, only: :dev},
+      {:ex_doc, ">= 0.0.0", optional: true, only: :dev},
+      {:inch_ex, ">= 0.0.0", optional: true, only: :docs},
       {:saxy, "~> 1.2.1"},
       {:telemetry, "~> 0.4"},
       {:telemetry_poller, "~> 0.4"},

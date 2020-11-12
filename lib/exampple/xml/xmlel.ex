@@ -10,13 +10,23 @@ defmodule Exampple.Xml.Xmlel do
   @type attr_value :: binary
   @type attrs :: %{attr_name => attr_value}
 
+  @typedoc """
+  Xmlel.`t` defines the `xmlel` element which contains the `name`, the
+  `attrs` (attributes) and `children` for the XML tags.
+  """
   @type t :: %__MODULE__{name: binary, attrs: attrs, children: [t | binary | struct]}
   @type children :: [t] | [String.t()]
 
   defstruct name: nil, attrs: %{}, children: []
 
   @doc """
-  Creates a Xmlel struct.
+  Creates a Xmlel struct passing the `name` of the stanza, the `attrs`
+  as a map or keyword list to create the attributes and `children` for
+  the payload of the XML tag. This is not recursive so it's intended
+  the children has to be in a correct format.
+
+  The children could be or binaries (strings) representing CDATA or other
+  `Exampple.Xml.Xmlel` elements.
 
   Examples:
       iex> Exampple.Xml.Xmlel.new("foo")
@@ -40,7 +50,8 @@ defmodule Exampple.Xml.Xmlel do
   end
 
   @doc """
-  Sigil to use ~X to provide XML text and transform it to Xmlel struct.
+  Sigil to use ~X to provide XML `string` and transform it to Xmlel struct.
+  Note that we are not using `addons`.
 
   Examples:
       iex> import Exampple.Xml.Xmlel
@@ -55,8 +66,9 @@ defmodule Exampple.Xml.Xmlel do
   end
 
   @doc """
-  Sigil to use ~x to provide XML text and transform it to Xmlel struct
+  Sigil to use ~x to provide XML `string` and transform it to Xmlel struct
   removing spaces and breaking lines.
+  Note that we are not using `addons`.
 
   Examples:
       iex> import Exampple.Xml.Xmlel
@@ -72,7 +84,7 @@ defmodule Exampple.Xml.Xmlel do
   end
 
   @doc """
-  Parser a XML string into Xmlel struct.
+  Parser a `xml` string into `Exampple.Xml.Xmlel` struct.
 
   Examples:
       iex> Exampple.Xml.Xmlel.parse("<foo/>")
@@ -94,7 +106,7 @@ defmodule Exampple.Xml.Xmlel do
 
   @doc """
   This function is a helper function to translate the tuples coming
-  from Saxy to the Xmlel structs.
+  from Saxy into de `data` parameter to the `Exampple.Xml.Xmlel` structs.
 
   Examples:
       iex> Exampple.Xml.Xmlel.decode({"foo", [], []})
@@ -117,7 +129,7 @@ defmodule Exampple.Xml.Xmlel do
 
   @doc """
   This function is a helper function to translate the content of the
-  Xmlel structs to the tuples needed by Saxy.
+  `xmlel` structs to the tuples needed by Saxy.
 
   Examples:
       iex> Exampple.Xml.Xmlel.encode(%Exampple.Xml.Xmlel{name: "foo"})
@@ -150,7 +162,7 @@ defmodule Exampple.Xml.Xmlel do
     alias Saxy.Builder
 
     @doc """
-    Implements `to_string/1` to convert a XML entity to a XML
+    Implements `to_string/1` to convert a XML entity to a `xmlel`
     representation.
 
     Examples:
@@ -176,7 +188,7 @@ defmodule Exampple.Xml.Xmlel do
   defimpl Saxy.Builder, for: Xmlel do
     @moduledoc false
     @doc """
-    Generates the Saxy tuples from Xmlel structs.
+    Generates the Saxy tuples from `xmlel` structs.
 
     Examples:
         iex> Saxy.Builder.build(Exampple.Xml.Xmlel.new("foo", %{}, []))
@@ -188,7 +200,9 @@ defmodule Exampple.Xml.Xmlel do
   end
 
   @doc """
-  Retrieve an attribute from a Xmlel struct.
+  Retrieve an attribute by `name` from a `xmlel` struct. If the value
+  is not found the `default` value is used instead. If `default` is
+  not provided then `nil` is used as default value.
 
   Examples:
       iex> attrs = %{"id" => "100", "name" => "Alice"}
@@ -203,7 +217,7 @@ defmodule Exampple.Xml.Xmlel do
   end
 
   @doc """
-  Deletes an attribute from a Xmlel struct.
+  Deletes an attribute by `name` from a `xmlel` struct.
 
   Examples:
       iex> attrs = %{"id" => "100", "name" => "Alice"}
@@ -219,8 +233,8 @@ defmodule Exampple.Xml.Xmlel do
   end
 
   @doc """
-  Add or set an attribute inside of the Xmlel struct passed as
-  parameter.
+  Add or set a `value` by `name` as attribute inside of the `xmlel` struct
+  passed as parameter.
 
   Examples:
       iex> attrs = %{"id" => "100", "name" => "Alice"}
@@ -234,8 +248,8 @@ defmodule Exampple.Xml.Xmlel do
   end
 
   @doc """
-  Add or set one or several attributes inside of the Xmlel struct
-  passed as parameter.
+  Add or set one or several attributes using `fields` inside of the `xmlel`
+  struct passed as parameter. The `fields` data are in keyword list format.
 
   Examples:
       iex> fields = %{"id" => "100", "name" => "Alice", "city" => "Cordoba"}
@@ -254,8 +268,8 @@ defmodule Exampple.Xml.Xmlel do
   end
 
   @doc """
-  This function removes the extra spaces inside of the stanzas to ensure
-  we can perform matching in a proper way.
+  This function removes the extra spaces inside of the stanzas starting from
+  `xmlel` to ensure we can perform matching in a proper way.
 
   Examples:
       iex> "<foo>\\n    <bar>\\n        Hello<br/>world!\\n    </bar>\\n</foo>"
@@ -303,7 +317,8 @@ defmodule Exampple.Xml.Xmlel do
 
   @impl Access
   @doc """
-  Access the value stored under key
+  Access the value stored under `key` passing the stanza in
+  `Exampple.Xml.Xmlel` format into the `xmlel` parameter.
 
   Examples:
       iex> import Exampple.Xml.Xmlel
@@ -325,7 +340,8 @@ defmodule Exampple.Xml.Xmlel do
 
   @impl Access
   @doc """
-  Access the value under key and update it at the same time
+  Access the value under `key` and update it at the same time for the `xmlel`
+  using the `function` passed as paramter.
 
   Examples:
       iex> import Exampple.Xml.Xmlel
@@ -340,21 +356,21 @@ defmodule Exampple.Xml.Xmlel do
       iex> get_and_update(el, "c1", fun)
       {[%Exampple.Xml.Xmlel{attrs: %{"v" => "1"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{"v" => "2"}, children: [], name: "c1"}], %Exampple.Xml.Xmlel{attrs: %{}, children: [%Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "c2"}], name: "foo"}}
   """
-  def get_and_update(%Xmlel{children: children} = el, key, function) do
+  def get_and_update(%Xmlel{children: children} = xmlel, key, function) do
     %{match: match, nonmatch: nonmatch} = split_children(children, key)
 
     case function.(if Enum.empty?(match), do: nil, else: match) do
       :pop ->
-        {match, %Xmlel{el | children: nonmatch}}
+        {match, %Xmlel{xmlel | children: nonmatch}}
 
       {get_value, update_value} ->
-        {get_value, %Xmlel{el | children: update_value ++ nonmatch}}
+        {get_value, %Xmlel{xmlel | children: update_value ++ nonmatch}}
     end
   end
 
   @impl Access
   @doc """
-  Pop the value under key
+  Pop the value under `key` passed an `Exampple.Xml.Xmlel` struct as `element`.
 
   Examples:
       iex> import Exampple.Xml.Xmlel
@@ -364,13 +380,13 @@ defmodule Exampple.Xml.Xmlel do
       iex> pop(el, "nonexistent")
       {[], %Exampple.Xml.Xmlel{attrs: %{}, children: [%Exampple.Xml.Xmlel{attrs: %{"v" => "1"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{"v" => "2"}, children: [], name: "c1"}, %Exampple.Xml.Xmlel{attrs: %{}, children: [], name: "c2"}], name: "foo"}}
   """
-  def pop(%Xmlel{children: children} = el, key) do
+  def pop(%Xmlel{children: children} = element, key) do
     case split_children(children, key) do
       %{match: []} ->
-        {[], el}
+        {[], element}
 
       %{match: match, nonmatch: nonmatch} ->
-        {match, %Xmlel{el | children: nonmatch}}
+        {match, %Xmlel{element | children: nonmatch}}
     end
   end
 end

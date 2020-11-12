@@ -3,6 +3,7 @@ defmodule Exampple.Xmpp.Stanza do
   Provides functions to create stanzas.
   """
   alias Exampple.Xml.Xmlel
+  alias Exampple.Xmpp
   alias Exampple.Router.Conn
 
   @xmpp_stanzas "urn:ietf:params:xml:ns:xmpp-stanzas"
@@ -25,7 +26,18 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Creates IQ stanzas.
+  Creates IQ stanzas based on the information provided by the parameters:
+  the `payload` gives the content as a list of strings and/or
+  `Exampple.Xml.Xmlel` structs, the `from` and `to` parameters configures
+  who send and receive the message, respectively, as bare or full JID in
+  string format. The `id` provides the ID for the stanza. Finally, the
+  `type` provides the type for the stanza depending on if it's message,
+  presence or iq the content of type could be different. Usually for normal
+  chat messages the type is _chat_, for normal IQ requests is _get_ and for
+  presences indicating the user is available, it's _available_.
+
+  Check the [RFC-6121](https://tools.ietf.org/html/rfc6121) in the sections
+  4.7.1 for presence, 5.2.2 for message and 6 for IQs.
 
   Examples:
       iex> payload = [Exampple.Xml.Xmlel.new("query", %{"xmlns" => "jabber:iq:roster"})]
@@ -40,7 +52,8 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Creates message stanzas.
+  Creates message stanzas passing the `payload`, `from` JID, `id`, `to` JID,
+  and optionally the `type`.
 
   Examples:
       iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
@@ -62,7 +75,8 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Creates presence stanzas.
+  Creates presence stanzas based on the `payload`, `from` JID, `id`,
+  `to` JID, and optionally the `type` passed as parameters.
 
   Examples:
       iex> alice = "alice@example.com"
@@ -75,7 +89,8 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Creates error presence stanzas.
+  Creates error presence stanzas based on the `payload`, `error`, `from` JID,
+  `id` and `to` JID passed as parameters.
 
   Examples:
       iex> payload = [Exampple.Xml.Xmlel.new("status", %{}, ["away"])]
@@ -90,9 +105,10 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Creates a response error presence inside of the Exampple.Router.Conn struct
-  (response) or sending back directly the XML struct if Exampple.Xml.Xmlel is
-  used.
+  Creates a response error presence (indicated `error` as second parameter)
+  inside of the Exampple.Router.Conn struct (response) or sending back
+  directly the XML struct if Exampple.Xml.Xmlel is used. It is depending
+  on the first parameter `xmlel` or `conn`.
 
   Examples:
       iex> payload = [Exampple.Xml.Xmlel.new("status", %{}, ["away"])]
@@ -126,7 +142,8 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Creates error message stanzas.
+  Creates error message stanzas based on the `payload`, `error`, `from` JID,
+  `id` and `to` JID passed as parameters.
 
   Examples:
       iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
@@ -141,7 +158,8 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Creates a response error message.
+  Creates a response error message based on the `error` indicated as second
+  parameter and the stanza as first parameter and in `conn` or `xmlel` format.
 
   Examples:
       iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
@@ -177,7 +195,8 @@ defmodule Exampple.Xmpp.Stanza do
   @doc """
   Creates a response message inside of the Router.Conn struct (response).
   This is indeed not a response but a way to simplify the send to a message
-  to who was sending us something.
+  to who was sending us something. We are providing a `payload` as second
+  parameter for the response and `conn` as the first parameter.
 
   Examples:
       iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
@@ -187,22 +206,22 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> Exampple.Xmpp.Stanza.message_resp([])
       iex> conn.response
       iex> |> to_string()
-      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"chat\\"/>"
+      "<message from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"chat\\"/>"
   """
   def message_resp(%Conn{} = conn, payload) do
     from_jid = to_string(conn.from_jid)
     to_jid = to_string(conn.to_jid)
-    response = message(payload, from_jid, conn.id, to_jid, conn.type)
+    response = message(payload, to_jid, conn.id, from_jid, conn.type)
     %Conn{conn | response: response}
   end
 
   @doc """
   Taking an IQ stanza, it generates a response swapping from and to and
-  changing the type to "result". If a payload is provided (not nil) it
+  changing the type to "result". If a `payload` is provided (not nil) it
   will replace the payload using the second parameter.
 
-  If the first paramenter is a `Router.Conn` it keeps the flow.
-  Stores the response inside of the `Router.Conn` and return it.
+  If the first paramenter (`xmlel_or_conn`) is a `Router.Conn` it keeps
+  the flow. Stores the response inside of the `Router.Conn` and return it.
 
   Examples:
       iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1", "type" => "get"}
@@ -274,7 +293,7 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Generates a result IQ stanza passing the payload, from JID, id and to JID.
+  Generates a result IQ stanza passing the `payload`, `from` JID, `id` and `to` JID.
 
   Examples:
       iex> from = "bob@example.com"
@@ -297,8 +316,8 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Taken an IQ stanza, it generates an error based on error parameter.
-  The codes available are the following ones:
+  Taken an IQ stanza (`xmlel`), it generates an error based on `error`
+  parameter. The codes available are the following ones:
 
   - bad-request
   - forbidden
@@ -352,8 +371,8 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Generates an error IQ stanza passing the payload, from JID, id and to JID.
-  The codes available are the following ones:
+  Generates an error IQ stanza passing the `payload`, `from` JID, `id` and
+  `to` JID. The codes available are the following ones:
 
   - bad-request
   - forbidden
@@ -389,7 +408,7 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Returns an error tag based on the key provided as parameter.
+  Returns an error tag based on the `error` provided as parameter.
   The codes available are the following ones:
 
   - bad-request
@@ -419,13 +438,13 @@ defmodule Exampple.Xmpp.Stanza do
       "<error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/><text lang=\\"en\\" xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\">item was not found in database</text></error>"
   """
   def error_tag(error) when is_binary(error) do
-    type = get_error(error)
+    type = Xmpp.Error.get_error(error)
     err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
     Xmlel.new("error", %{"type" => type}, [err_tag])
   end
 
   def error_tag({error, lang, text}) do
-    type = get_error(error)
+    type = Xmpp.Error.get_error(error)
     err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
     text_tag = Xmlel.new("text", %{"xmlns" => @xmpp_stanzas, "lang" => lang}, [text])
     Xmlel.new("error", %{"type" => type}, [err_tag, text_tag])
@@ -460,7 +479,10 @@ defmodule Exampple.Xmpp.Stanza do
   end
 
   @doc """
-  Agnostic to the type of stanza it generates an error for the incoming stanza.
+  Agnostic to the type of stanza it generates an `error` (provided as second
+  parameter) for the incoming stanza (provided as first parameter as `xmlel` or
+  `conn`).
+
   The supported types are: iq, presence and message.
 
   Examples:
@@ -479,39 +501,11 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> to_string()
       "<iq type=\\"error\\"><error type=\\"auth\\"><forbidden xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
   """
-  def error(%Xmlel{name: "iq"} = xml, error), do: iq_error(xml, error)
-  def error(%Xmlel{name: "message"} = xml, error), do: message_error(xml, error)
-  def error(%Xmlel{name: "presence"} = xml, error), do: presence_error(xml, error)
+  def error(%Xmlel{name: "iq"} = xmlel, error), do: iq_error(xmlel, error)
+  def error(%Xmlel{name: "message"} = xmlel, error), do: message_error(xmlel, error)
+  def error(%Xmlel{name: "presence"} = xmlel, error), do: presence_error(xmlel, error)
 
-  def error(%Conn{} = conn, error) do
-    case conn.stanza_type do
-      "iq" -> iq_error(conn, error)
-      "message" -> message_error(conn, error)
-      "presence" -> presence_error(conn, error)
-    end
-  end
-
-  @doc false
-  ## took from: https://xmpp.org/extensions/xep-0086.html
-  def get_error("gone"), do: "modify"
-  def get_error("redirect"), do: "modify"
-  def get_error("bad-request"), do: "modify"
-  def get_error("jid-malformed"), do: "modify"
-  def get_error("unexpected-request"), do: "wait"
-  def get_error("not-authorized"), do: "auth"
-  def get_error("payment-required"), do: "auth"
-  def get_error("forbidden"), do: "auth"
-  def get_error("item-not-found"), do: "cancel"
-  def get_error("recipient-unavailable"), do: "cancel"
-  def get_error("remote-server-not-found"), do: "cancel"
-  def get_error("not-allowed"), do: "cancel"
-  def get_error("not-acceptable"), do: "modify"
-  def get_error("registration-required"), do: "auth"
-  def get_error("subscription-required"), do: "auth"
-  def get_error("conflict"), do: "cancel"
-  def get_error("internal-server-error"), do: "wait"
-  def get_error("resource-constraint"), do: "wait"
-  def get_error("feature-not-implemented"), do: "cancel"
-  def get_error("service-unavailable"), do: "cancel"
-  def get_error("remote-server-timeout"), do: "wait"
+  def error(%Conn{stanza_type: "iq"} = conn, error), do: iq_error(conn, error)
+  def error(%Conn{stanza_type: "message"} = conn, error), do: message_error(conn, error)
+  def error(%Conn{stanza_type: "presence"} = conn, error), do: presence_error(conn, error)
 end

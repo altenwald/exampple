@@ -1,4 +1,22 @@
 defmodule Exampple.Router.Task.Monitor do
+  @moduledoc """
+  The monitor starts a task to attend the incoming request,
+  when the task is launched a timer is set. The timer is cancelled
+  when the task is terminated. If the task crashes, the monitor
+  receives a message and replies with an error. In case of timeout
+  the request is returning a timeout and the task is terminated.
+
+  In addition to the logs regarding the stanzas we have the following information to be gathered by telemetry:
+
+  - `[:xmpp, :request, :success]`
+  - `[:xmpp, :request, :failure]`
+  - `[:xmpp, :request, :timeout]`
+
+  All of them register `duration` in milliseconds so, you can get
+  the maximum, minimum, average, percentile and more statistics from
+  the duration of the stanzas inside of the system based on if they
+  are correct (success), wrong (failure) or was not attended (timeout).
+  """
   use GenServer, restart: :temporary
   require Logger
 
@@ -34,10 +52,20 @@ defmodule Exampple.Router.Task.Monitor do
     ]a
   end
 
+  @doc """
+  Starts the monitor as a server passing the stanza in `xmlel` format,
+  the XMPP `domain` for the component and the name of the application
+  (`otp_app`) and the `timeout`, all of those parameters as a `list`.
+
+  The `timeout` is needed to know where we have to terminate the task and
+  annotate this kind of failure.
+  """
   def start_link([xmlel, domain, otp_app, timeout]) do
     GenServer.start_link(__MODULE__, [xmlel, domain, otp_app, timeout])
   end
 
+  @doc false
+  @impl GenServer
   def init([xmlel, domain, otp_app, timeout]) do
     Logger.debug("init monitor: #{inspect(xmlel)}")
     {:ok, pid} = RouterTask.start(xmlel, domain, otp_app)
@@ -55,6 +83,8 @@ defmodule Exampple.Router.Task.Monitor do
      }}
   end
 
+  @doc false
+  @impl GenServer
   def handle_info({:DOWN, _ref, :process, pid, reason}, %Data{task_pid: pid} = state)
       when reason in [:normal, :noproc] do
     sucess(state)

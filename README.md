@@ -4,6 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/altenwald/exampple/badge.svg)](https://coveralls.io/github/altenwald/exampple)
 [![License: LGPL 2.1](https://img.shields.io/github/license/altenwald/exampple.svg)](https://raw.githubusercontent.com/altenwald/exampple/master/COPYING)
 [![Hex](https://img.shields.io/hexpm/v/exampple.svg)](https://hex.pm/packages/exampple)
+[![Inline docs](http://inch-ci.org/github/altenwald/exampple.png)](http://inch-ci.org/github/altenwald/exampple)
 
 eXaMPPle is a XMPP framework to build components using a router, controllers
 and an easy way to generate stanzas. It also has facilities to perform 
@@ -456,6 +457,24 @@ About the information you can configure for identity you can see the [available 
 
 You can provide as name the name of the component or whatever which could means the mission of the component to be clear for the rest of the clients, server and components.
 
+It is also possible to indicate a feature when they are not being to be attended directly by a request. For example, inside of [XEP-0369](https://xmpp.org/extensions/xep-0355.html) we could use the namespace `urn:xmpp:mix:core:1` but also there's a new to indicate support for `urn:xmpp:mix:core:1#create`. This is not the only one XEP which includes the use of the sharp symbol to give more information about support. To add this, we can use `feature`:
+
+```elixir
+defmodule Myapp.Router do
+  use Exampple.Router
+
+  discovery do
+    identity category: "component", type: "generic", name: "myapp"
+  end
+
+  iq "urn:xmpp:mix" do
+    get "core:1", Myapp.Xmpp.MixCoreController, :core
+  end
+
+  feature "urn:xmpp:mix:core:1#create"
+end
+```
+
 ### Envelope
 
 Because we can configure XMPP to delegate using [XEP-0355](https://xmpp.org/extensions/xep-0355.html), we could configure to receive in a transparent way the incoming messages inside of their envelope and reply them just as if we were inside of the XMPP Server replying directly to the user or component asking.
@@ -593,7 +612,7 @@ In addition to the logs regarding the stanzas we have the following information 
 
 All of them register `duration` in milliseconds so, you can get the maximum, minimum, average, percentile and more statistics from the duration of the stanzas inside of the system based on if they are correct (success), wrong (failure) or was not attended (timeout).
 
-## Testing
+## Functional Testing
 
 Finally, but maybe the most important topic, we have facilities to perform the testing part of our component. Thanks to `Exampply.DummyTcp` we can easily use the following macros to test our systems.
 
@@ -663,6 +682,14 @@ assert_stanza_receive ~x[
 - `stanza_receive/2`: this is not an assertion but let us to retrieve the stanza directly to handle the information inside of it. As the previous assert it let us to define a timeout.
 
 - `stanza_received/1`: as the previous one, this is a way to retrieve the stanza which should arrived to us previously.
+
+## System Testing
+
+[bottle]: https://github.com/altenwald/bottle
+
+In addition to the possibility to create components it's possible to play with `Exampple.Client` creating a connection as a client for the XMPP environment and perform some actions.
+
+This module aims create clients for testing and in combination with [bottle][bottle] it's a good piece of code to create really complex scenarios in an easy way an perform a complete system testing. You can find more information in [Bottle][bottle] project.
 
 ## Collaboration
 

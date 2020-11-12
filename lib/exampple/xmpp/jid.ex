@@ -1,26 +1,47 @@
 defmodule Exampple.Xmpp.Jid do
+  @moduledoc """
+  JID stands for Jabber Identification. This is de Identification the XMPP
+  network provide for all of the users, servers and components which can be
+  connected and reachable inside of the XMPP protocol.
+
+  This module is a facility to handle JID data helping to parse it and
+  convert it again to string. Provides the `~j` sigil which help us to
+  define JIDs in the way `~j[user@domain/res]` and be converted into a
+  JID structure.
+  """
   alias Exampple.Xmpp.Jid
 
   defstruct node: "", server: "", resource: "", original: nil
 
-  @type t :: %__MODULE__{node: binary, server: binary, resource: binary}
+  @typedoc """
+  JID.`t` represents the structure in use to handle the identification
+  for a user, component or server inside of a XMPP network. It is formed
+  by the `node`, `server` and `resource`.
+  """
+  @type t :: %__MODULE__{node: String.t, server: String.t, resource: String.t}
 
   @spec is_full?(binary | t()) :: boolean | {:error, :enojid}
   @doc """
-  Returns true if the JID is a full JID, false otherwise.
+  A boolean function to determine if the `jid` passed as parameter is
+  a full JID or not. The parameter could be in binary format or as
+  a JID structure.
+
+  Remember that a full JID is a JID which has node, domain and
+  resource. Actually is enough if the node is missing, but the
+  resource should appears.
 
   Examples:
-    iex> Exampple.Xmpp.Jid.is_full?("alice@example.com")
-    false
+      iex> Exampple.Xmpp.Jid.is_full?("alice@example.com")
+      false
 
-    iex> Exampple.Xmpp.Jid.is_full?("comp.example.com/data")
-    true
+      iex> Exampple.Xmpp.Jid.is_full?("comp.example.com/data")
+      true
 
-    iex> Exampple.Xmpp.Jid.is_full?("bob@example.com/res")
-    true
+      iex> Exampple.Xmpp.Jid.is_full?("bob@example.com/res")
+      true
 
-    iex> Exampple.Xmpp.Jid.is_full?("/abc/xyz")
-    {:error, :enojid}
+      iex> Exampple.Xmpp.Jid.is_full?("/abc/xyz")
+      {:error, :enojid}
   """
   def is_full?(jid) when is_binary(jid) do
     jid
@@ -34,7 +55,7 @@ defmodule Exampple.Xmpp.Jid do
 
   @spec new(node :: binary, server :: binary, resource :: binary) :: t
   @doc """
-  Creates a new JID passing node, server and resource data.
+  Creates a new JID passing `node`, `server` and `resource` data.
 
   Note that XMPP standard says the JID is case insensitive therefore,
   and to make easier the handle of comparisons, we put everything
@@ -57,7 +78,7 @@ defmodule Exampple.Xmpp.Jid do
 
   @spec to_bare(binary | t()) :: binary
   @doc """
-  Converts JID to a bare JID in binary format.
+  Converts `jid` to a bare JID in binary format.
 
   Examples:
     iex> Exampple.Xmpp.Jid.to_bare("alice@example.com")
@@ -83,7 +104,7 @@ defmodule Exampple.Xmpp.Jid do
 
   @spec parse(jid :: binary) :: t() | {:error, :enojid}
   @doc """
-  Parse a binary to a Jid struct.
+  Parse a binary to a `jid` struct.
 
   Examples:
       iex> Exampple.Xmpp.Jid.parse("alice@example.com/resource")
@@ -143,7 +164,7 @@ defmodule Exampple.Xmpp.Jid do
 
   @doc """
   This sigil help us to define JIDs using a simple format and get
-  their struct representation.
+  their struct representation from `binary`.
 
   Examples:
       iex> import Exampple.Xmpp.Jid
@@ -156,7 +177,7 @@ defmodule Exampple.Xmpp.Jid do
 
   defimpl String.Chars, for: __MODULE__ do
     @doc """
-    Convert Jid struct to string.
+    Convert `jid` struct to string.
 
     Example:
       iex> to_string(%Exampple.Xmpp.Jid{server: "example.com"})

@@ -129,9 +129,10 @@ defmodule Exampple.RouterTest do
           <query xmlns='http://jabber.org/protocol/disco#info'>
             <identity category="component" name="Testing component" type="generic"/>
             <feature var="jabber:iq:register"/>
+            <feature var="jabber:iq:register#remove"/>
             <feature var="urn:exampple:test:set:0"/>
-            <feature var="urn:xmpp:forward:0"/>
             <feature var="urn:xmpp:delegation:1"/>
+            <feature var="urn:xmpp:forward:0"/>
             <feature var="urn:exampple:test:get:0"/>
           </query>
         </iq>

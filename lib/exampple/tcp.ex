@@ -5,7 +5,7 @@ defmodule Exampple.Tcp do
   """
 
   @doc """
-  starts a connection to a host and port passed as parameters. The
+  starts a connection to a `host` and `port` passed as parameters. The
   handling process is which start the connection in active way.
   """
   def start(host, port) when is_binary(host) and is_integer(port) do
@@ -15,7 +15,7 @@ defmodule Exampple.Tcp do
   end
 
   @doc """
-  Send data. The argments are being positioned to use data in a
+  Send `data` via `socket`. The argments are being positioned to use data in a
   pipeline way.
   """
   def send(data, socket) do
@@ -24,7 +24,7 @@ defmodule Exampple.Tcp do
   end
 
   @doc """
-  Stops the client connection.
+  Stops the connection passing the `socket` as parameter.
   """
   def stop(socket) do
     :gen_tcp.close(socket)

@@ -1,4 +1,18 @@
 defmodule Exampple.Component do
+  @moduledoc """
+  Component is letting us to connect to a XMPP server as a XMPP Component.
+  This module aims create a connection as a process letting us handle
+  the connection easily. By default, using the configuration it's starting
+  using the module name as registerd name for the process.
+
+  This module is designed to be in use in combination with `Exampple.Router`
+  and the custom implementation of _controllers_ which are using this
+  module and implementing the functions which were defined in the
+  implementation of the router.
+
+  Check the general documentation about the architecture and how to use it
+  for further information.
+  """
   use GenStateMachine, callback_mode: :handle_event_function
   require Logger
 
@@ -10,6 +24,7 @@ defmodule Exampple.Component do
   @default_router_handler Exampple.Router
 
   defmodule Data do
+    @moduledoc false
     defstruct socket: nil,
               stream: nil,
               host: nil,
@@ -38,6 +53,7 @@ defmodule Exampple.Component do
     "<handshake>#{password}</handshake>"
   end
 
+  @doc false
   defmacro __using__(_) do
     quote do
       import Exampple.Component, only: [send: 1]
@@ -48,15 +64,48 @@ defmodule Exampple.Component do
           iq_resp: 1,
           iq_resp: 2,
           message_resp: 2,
-          message_error: 2
+          message_error: 2,
+          error: 2
         ]
     end
   end
 
+  @doc """
+  Starts a process providing it a `name`. This function let you to
+  create as many connections as component as needed. Check
+  `start_link/1` for further information about `args`.
+  """
   def start_link(name, args) do
     GenStateMachine.start_link(__MODULE__, args, name: name)
   end
 
+  @doc """
+  Starts a process using the module name (Exampple.Component) as the
+  registered name. The arguments we can provide are the following:
+
+  - `otp_app`: the name of the application. If you specify this only
+    one parameter the rest of the configuration will be retrieved
+    from the application configuration. This should be a keyword list.
+
+  If we provide a map instead we can specify the following `args`:
+
+  - `otp_app`: in this level it's only needed to be sent to the router.
+  - `host`: the name of the host where the XMPP server is.
+  - `port`: the port where the XMPP server is listening for the components.
+  - `domain`: the XMPP domain. Note that it is not necessary the same as the host.
+  - `trimmed`: if the XML packet will be trimmed (removing all of the empty nodes).
+    default to `false`.
+  - `set_from`: if we have to set the from for each stanza. Default `false`.
+  - `ping`: if we want to send a ping to the server we can specify the time in
+    milliseconds to send an `\n` and ensure the connection is not closed because
+    of idle. Default is `false`.
+  - `router_handler`: the module which is going to handle the routing. This is only
+    for testing purposes. Default to `Exampple.Router`.
+  - `tcp_handler`: the module which is going to handle the connection for the
+    component. This could be useful for TLS handling or testing purposes. You can
+    see further information in `Exampple.Tcp` and `Exampple.DummyTcp`. Default to
+    `Exampple.Tcp`.
+  """
   def start_link(otp_app: otp_app) when is_atom(otp_app) do
     args =
       otp_app
@@ -70,21 +119,39 @@ defmodule Exampple.Component do
   def start_link(args), do: start_link(__MODULE__, args)
 
   @spec connect() :: :ok
+  @doc """
+  Send the message to the component to perform the connection. This has effect
+  only if the status of the server is `disconnected`.
+  """
   def connect() do
     :ok = GenStateMachine.cast(__MODULE__, :connect)
   end
 
   @spec disconnect() :: :ok
+  @doc """
+  Send the message to the component to perform the disconnection. This has effect
+  only if the status is different from `disconnected`.
+  """
   def disconnect() do
     :ok = GenStateMachine.cast(__MODULE__, :disconnect)
   end
 
   @spec stop() :: :ok
+  @doc """
+  Stop the process and therefore performs the disconnection from the XMPP server
+  if any.
+  """
   def stop() do
     :ok = GenStateMachine.stop(__MODULE__)
   end
 
   @spec send(binary | Xmlel.t() | Conn.t()) :: :ok
+  @doc """
+  Send `data` using the socket to the XMPP server. You can send whatever binary data
+  or a `%Xmlel{}` struct which will be converted first to string to be sent. It
+  also works with `%Conn{}` but only if you stored the response inside of it. See
+  `Exampple.Stanza` for further information.
+  """
   def send(data) when is_binary(data) do
     GenStateMachine.cast(__MODULE__, {:send, data})
   end
@@ -98,11 +165,22 @@ defmodule Exampple.Component do
   end
 
   @spec subscribe() :: :ok
+  @doc """
+  Performs a subscription to the XMPP component. This means the component
+  is going to notify when it's ready. This could be used for testing and
+  for synchronization at start. Only one process could be subscribed at
+  the same time.
+  """
   def subscribe() do
     GenStateMachine.cast(__MODULE__, {:subscribe, self()})
   end
 
   @spec wait_for_ready() :: :ok
+  @doc """
+  Wait until the system is ready to start processing messages. This is in
+  use for functional tests and could be used as a phase in the start of
+  the applications.
+  """
   def wait_for_ready() do
     subscribe()
 
@@ -114,6 +192,7 @@ defmodule Exampple.Component do
   end
 
   @impl GenStateMachine
+  @doc false
   def init(%{host: host, port: port, domain: domain, password: password} = cfg) do
     trimmed = Map.get(cfg, :trimmed, false)
     set_from = Map.get(cfg, :set_from, false)
@@ -154,6 +233,7 @@ defmodule Exampple.Component do
      }, events}
   end
 
+  @doc false
   def disconnected(type, :connect, %Data{host: host, port: port} = data)
       when type in [:cast, :state_timeout, :timeout] do
     case data.tcp_handler.start(host, port) do
@@ -171,6 +251,7 @@ defmodule Exampple.Component do
     {:keep_state_and_data, [postpone: true]}
   end
 
+  @doc false
   def retrying(:cast, :connect, data) do
     {:next_state, :disconnected, data, [{:state_timeout, 3_000, :connect}]}
   end
@@ -179,11 +260,13 @@ defmodule Exampple.Component do
     {:keep_state_and_data, [postpone: true]}
   end
 
+  @doc false
   def connected(:cast, :stream_init, %Data{} = data) do
     stream = XmlStream.new()
     {:next_state, :stream_init, %Data{data | stream: stream}, [{:next_event, :cast, :init}]}
   end
 
+  @doc false
   def stream_init(:cast, :init, data) do
     data.domain
     |> xml_init()
@@ -211,6 +294,7 @@ defmodule Exampple.Component do
     {:keep_state_and_data, [postpone: true]}
   end
 
+  @doc false
   def authenticate(:internal, {:handshake, stream_id}, data) do
     stream_id
     |> get_handshake(data.password)
@@ -248,6 +332,7 @@ defmodule Exampple.Component do
     mac
   end
 
+  @doc false
   def ready({:timeout, :ping}, :send_ping, data) do
     data.tcp_handler.send("\n", data.socket)
     {:keep_state_and_data, timeout_action(data)}
@@ -287,6 +372,7 @@ defmodule Exampple.Component do
   end
 
   @impl GenStateMachine
+  @doc false
   def handle_event(:cast, :disconnect, :disconnected, _data) do
     :keep_state_and_data
   end
