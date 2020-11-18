@@ -11,7 +11,9 @@ if Mix.env() == :test do
     trimmed: true,
     tcp_handler: Exampple.DummyTcp
 
-  config :exampple, router: TestingRouter
+  config :exampple,
+    auto_generate_id: false,
+    router: TestingRouter
 
   config :logger, :console,
     format: "$time $metadata[$level] $levelpad$message\n",

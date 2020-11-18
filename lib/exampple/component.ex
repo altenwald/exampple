@@ -22,9 +22,11 @@ defmodule Exampple.Component do
 
   @default_tcp_handler Exampple.Tcp
   @default_router_handler Exampple.Router
+  @default_stanza_timeout 5_000
 
   defmodule Data do
     @moduledoc false
+
     defstruct socket: nil,
               stream: nil,
               host: nil,
@@ -37,7 +39,8 @@ defmodule Exampple.Component do
               tcp_handler: Tcp,
               router_handler: Router,
               otp_app: nil,
-              subscribed: nil
+              subscribed: nil,
+              stanza_timeout: nil
   end
 
   defguard not_ready(state) when state != :ready
@@ -105,6 +108,8 @@ defmodule Exampple.Component do
     component. This could be useful for TLS handling or testing purposes. You can
     see further information in `Exampple.Tcp` and `Exampple.DummyTcp`. Default to
     `Exampple.Tcp`.
+  - `stanza_timeout`: the amount of time we wait until we kill the process and
+    reply back an error. The error will be a `remote-server-timeout`.
   """
   def start_link(otp_app: otp_app) when is_atom(otp_app) do
     args =
@@ -200,6 +205,7 @@ defmodule Exampple.Component do
     router_handler = Map.get(cfg, :router_handler, @default_router_handler)
     tcp_handler = Map.get(cfg, :tcp_handler, @default_tcp_handler)
     otp_app = Map.get(cfg, :otp_app)
+    stanza_timeout = Map.get(cfg, :stanza_timeout, @default_stanza_timeout)
 
     unless otp_app do
       raise """
@@ -229,7 +235,8 @@ defmodule Exampple.Component do
        ping: ping,
        router_handler: router_handler,
        tcp_handler: tcp_handler,
-       otp_app: otp_app
+       otp_app: otp_app,
+       stanza_timeout: stanza_timeout
      }, events}
   end
 
@@ -357,17 +364,19 @@ defmodule Exampple.Component do
 
   def ready(:info, {:xmlelement, packet}, %Data{trimmed: true} = data) do
     Logger.debug("received packet: #{inspect(packet)}")
+    %Data{domain: domain, otp_app: otp_app, stanza_timeout: timeout} = data
 
     packet
     |> Xmlel.clean_spaces()
-    |> data.router_handler.route(data.domain, data.otp_app)
+    |> data.router_handler.route(domain, otp_app, timeout)
 
     {:keep_state_and_data, timeout_action(data)}
   end
 
   def ready(:info, {:xmlelement, packet}, %Data{trimmed: false} = data) do
     Logger.debug("received packet: #{inspect(packet)}")
-    data.router_handler.route(packet, data.domain, data.otp_app)
+    %Data{domain: domain, otp_app: otp_app, stanza_timeout: timeout} = data
+    data.router_handler.route(packet, domain, otp_app, timeout)
     {:keep_state_and_data, timeout_action(data)}
   end
 

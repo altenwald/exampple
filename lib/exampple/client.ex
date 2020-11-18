@@ -110,6 +110,7 @@ defmodule Exampple.Client do
           stanza: stanza,
           xmlns: "urn:ietf:params:xml:ns:xmpp-bind"
         } = get_conn(pname)
+
         [%Xmlel{}] = stanza["bind"]
         [%Xmlel{}] = stanza["session"]
       end,

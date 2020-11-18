@@ -47,6 +47,14 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> to_string()
       "<iq from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"get\\"><query xmlns=\\"jabber:iq:roster\\"/></iq>"
   """
+  def iq(payload, from, nil, to, type) do
+    if Application.get_env(:exampple, :auto_generate_id, false) do
+      iq(payload, from, gen_uuid(), to, type)
+    else
+      raise ArgumentError, message: "iq stanzas must have an id defined"
+    end
+  end
+
   def iq(payload, from, id, to, type) do
     stanza(payload, "iq", from, id, to, type)
   end
@@ -71,6 +79,7 @@ defmodule Exampple.Xmpp.Stanza do
       "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\"><composing/></message>"
   """
   def message(payload, from, id, to, type \\ nil) do
+    id = maybe_gen_id(id, type)
     stanza(payload, "message", from, id, to, type)
   end
 
@@ -85,6 +94,7 @@ defmodule Exampple.Xmpp.Stanza do
       "<presence from=\\"alice@example.com\\"/>"
   """
   def presence(payload, from, id \\ nil, to \\ nil, type \\ nil) do
+    id = maybe_gen_id(id, type)
     stanza(payload, "presence", from, id, to, type)
   end
 
@@ -454,6 +464,27 @@ defmodule Exampple.Xmpp.Stanza do
   defp maybe_add(attrs, _name, ""), do: attrs
   defp maybe_add(attrs, name, value), do: Map.put(attrs, name, value)
 
+  defp maybe_gen_id(nil, "error"), do: nil
+
+  defp maybe_gen_id(nil, _type) do
+    if Application.get_env(:exampple, :auto_generate_id, false) do
+      gen_uuid()
+    end
+  end
+
+  defp maybe_gen_id(id, _type), do: id
+
+  @doc """
+  Gen ID let us to generate an ID based on UUID v4.
+  """
+  if Mix.env() == :test do
+    def gen_uuid() do
+      Application.get_env(:exampple, :gen_uuid, "5dc7ff90-60ea-462c-9d71-581487afdb71")
+    end
+  else
+    def gen_uuid(), do: UUID.uuid4()
+  end
+
   @doc """
   Generates an stanza passed the stanza type (iq, presence or message), the `from`
   and `to` for sender and recipient respectively, the `id` for the stanza, the
@@ -496,10 +527,10 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> to_string()
       "<message type=\\"error\\"><error type=\\"auth\\"><forbidden xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
 
-      iex> Exampple.Xmpp.Stanza.stanza([], "iq", nil, nil, nil, nil)
+      iex> Exampple.Xmpp.Stanza.stanza([], "iq", nil, "42", nil, nil)
       iex> |> Exampple.Xmpp.Stanza.error("forbidden")
       iex> |> to_string()
-      "<iq type=\\"error\\"><error type=\\"auth\\"><forbidden xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
+      "<iq id=\\"42\\" type=\\"error\\"><error type=\\"auth\\"><forbidden xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></iq>"
   """
   def error(%Xmlel{name: "iq"} = xmlel, error), do: iq_error(xmlel, error)
   def error(%Xmlel{name: "message"} = xmlel, error), do: message_error(xmlel, error)

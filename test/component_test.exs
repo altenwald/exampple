@@ -20,7 +20,7 @@ defmodule Exampple.ComponentTest do
 
     def maybe_envelope(conn), do: conn
 
-    def route(xmlel, domain, _otp_app) do
+    def route(xmlel, domain, _otp_app, _timeout) do
       xmlel
       |> Conn.new(domain)
       |> maybe_envelope()
@@ -153,7 +153,7 @@ defmodule Exampple.ComponentTest do
 
       component_received(~x[
         <iq from="example.com"
-            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
+            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004"
             to="test.example.com"
             type="set">
           <delegation xmlns="urn:xmpp:delegation:1">
@@ -168,7 +168,7 @@ defmodule Exampple.ComponentTest do
 
       stanza = ~x[
         <iq to="example.com"
-            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
+            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004"
             from="test.example.com"
             type="result">
           <delegation xmlns='urn:xmpp:delegation:1'>

@@ -18,7 +18,7 @@ defmodule Exampple.Xmpp.Jid do
   for a user, component or server inside of a XMPP network. It is formed
   by the `node`, `server` and `resource`.
   """
-  @type t :: %__MODULE__{node: String.t, server: String.t, resource: String.t}
+  @type t :: %__MODULE__{node: String.t(), server: String.t(), resource: String.t()}
 
   @spec is_full?(binary | t()) :: boolean | {:error, :enojid}
   @doc """

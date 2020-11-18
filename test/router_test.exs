@@ -85,7 +85,7 @@ defmodule Exampple.RouterTest do
       Process.register(self(), Exampple.Component)
       stanza = ~x[<message><body>hello</body></message>]
       domain = "example.com"
-      error = {"internal-server-error", "en", "An error happened"}
+      error = {"service-unavailable", "es", "¡fuego!"}
 
       response =
         stanza
@@ -148,10 +148,10 @@ defmodule Exampple.RouterTest do
 
     test "check envelope" do
       stanza = ~x[
-        <iq from='you' to='me' type='set'>
+        <iq from='you' to='me' type='set' id='1'>
           <delegation xmlns='urn:xmpp:delegation:1'>
             <forwarded xmlns='urn:xmpp:forward:0'>
-              <iq from='other' to='you' type='set'><query xmlns="urn:exampple:test:set:0"/></iq>
+              <iq from='other' to='you' type='set' id='42'><query xmlns="urn:exampple:test:set:0"/></iq>
             </forwarded>
           </delegation>
         </iq>
@@ -165,10 +165,10 @@ defmodule Exampple.RouterTest do
 
       assert_receive {:ok, conn, ^query}
       reply = ~x[
-        <iq from='me' to='you' type='result'>
+        <iq from='me' to='you' type='result' id='1'>
           <delegation xmlns='urn:xmpp:delegation:1'>
             <forwarded xmlns='urn:xmpp:forward:0'>
-              <iq from='you' to='other' type='result'><query xmlns="urn:exampple:test:set:0"/></iq>
+              <iq from='you' to='other' type='result' id='42'><query xmlns="urn:exampple:test:set:0"/></iq>
             </forwarded>
           </delegation>
         </iq>
@@ -180,7 +180,7 @@ defmodule Exampple.RouterTest do
     test "check envelope without from or to" do
       stanza = ~x[
         <iq from="example.com"
-            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
+            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004"
             to="component.example.com"
             type="set">
           <delegation xmlns="urn:xmpp:delegation:1">
@@ -199,7 +199,7 @@ defmodule Exampple.RouterTest do
 
       reply = ~x[
         <iq to="example.com"
-            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004" 
+            id="rr-1589541841199-6202528975393777179-M1Gu8YC3x1EVFBl6bfW6FIECFP4=-55238004"
             from="component.example.com"
             type="result">
           <delegation xmlns='urn:xmpp:delegation:1'>

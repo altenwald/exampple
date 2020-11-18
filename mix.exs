@@ -4,7 +4,7 @@ defmodule Exampple.MixProject do
   def project do
     [
       app: :exampple,
-      version: "0.5.0",
+      version: "0.6.0",
       description: "eXaMPPle is a XMPP Component Framework",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -43,15 +43,16 @@ defmodule Exampple.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:gen_state_machine, "~> 2.1.0"},
-      {:ex_doc, ">= 0.0.0", optional: true, only: :dev},
-      {:inch_ex, ">= 0.0.0", optional: true, only: :docs},
-      {:saxy, "~> 1.2.1"},
+      {:gen_state_machine, "~> 2.1"},
+      {:saxy, "~> 1.2"},
       {:telemetry, "~> 0.4"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:excoveralls, "~> 0.13.1", only: [:test]}
+      {:uuid, "~> 1.1"},
+      {:ex_doc, ">= 0.0.0", optional: true, only: :dev},
+      {:inch_ex, ">= 0.0.0", optional: true, only: :docs},
+      {:dialyxir, "~> 1.0", optional: true, only: :dev, runtime: false},
+      {:excoveralls, "~> 0.13", optional: true, only: :test}
     ]
   end
 

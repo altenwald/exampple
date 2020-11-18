@@ -6,25 +6,24 @@ defmodule Exampple.Xmpp.Error do
   You can trigger these errors whenever inside of your controller and
   these scales until the component to return the corresponding error.
   """
-  defexception [
-    message: "service-unavailable",
-    lang: "en",
-    type: "cancel",
-    reason: "Something wrong happened"
-  ]
+  defexception message: "service-unavailable",
+               lang: "en",
+               type: "cancel",
+               reason: "Something wrong happened"
 
   @doc """
   Raise the error with the information provided.
   """
   defmacro fire_up!(message, reason, lang \\ "en") do
     type = get_error(message)
+
     quote do
-      raise(unquote(__MODULE__), [
+      raise(unquote(__MODULE__),
         message: unquote(message),
         lang: unquote(lang),
         type: unquote(type),
         reason: unquote(reason)
-      ])
+      )
     end
   end
 

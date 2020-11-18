@@ -166,6 +166,16 @@ The possible configuration entries are:
 - `auto_connect` (boolean | integer): when the component process is created y configured it should to perform the connection to the XMPP Server. We have three different options with `auto_connect`. If we choose `true`, the server is auto-connected. If we choose `false` it is not. When we choose a number of milliseconds then it is not connected immediately, it is awaiting that amount of time. Default is `false`.
 - `router_handler` (module): let us to configure the module we want to use to handel the routes. Useful for tests.
 - `tcp_handler` (module): let us to configure the module we want to use to handle the TCP connection. Useful for tests.
+- `stanza_timeout` (integer): when we receive a stanza the component spawns a process which is monitorised by another process created only for this. The timeout is provided to the monitor process ensuring that if the time is over, it kills the process which is attending the request and return back an error.
+
+In addition, we could configure in general if we want to auto-generate IDs for stanzas like message, presence or iqs in case we want Exampple does this task for us:
+
+```elixir
+config :exampple,
+  auto_generate_id: true
+```
+
+- `auto_generate_id` (boolean): when we need to send a message, an iq or a presence, it depends on us to provide an ID for those stanzas. For iq stanzas, it is compulsory so if we set this configuration as `true` it's autogenerating it even if we pass `nil` as the ID parameter using the UUID v4. Otherwise, using `false` it's not doing anything. By default this is set as `false`.
 
 ## Choose your XMPP Server
 
@@ -573,6 +583,21 @@ We hav different functions to use to generate responses:
 - `message_error/2`
 
 You can check the module to get even more functionalities regarding stanzas.
+
+## Something goes wrong
+
+There is a monitoring process which is controlling what is happening with our request. If it takes more than the configured time to be attended which could be configured in the connection as `stanza_timeout` (by default it is 5 seconds) it's killing the process and
+returning an error in its name with the type message `remote-server-timeout`.
+
+In addition, during the execution of our controller we could generate or raise an `Exampple.Xmpp.Error`. This error is designed to include a `message` (the type of error, by default `internal-server-error`), a `reason` (where you can explain what happened in text format) and even a `lang` (language used for the message).
+
+```elixir
+alias Exampple.Xmpp
+...
+raise Xmpp.Error, message: "item-not-found", reason: "user not found"
+```
+
+Note that while it is a good way to send back an error where we are inside of a very nested process, it is not recommended abuse of it because it is generating error messages into the log and in a controlled and very loaded system it couldn't be good.
 
 ## Tracing
 

@@ -23,6 +23,7 @@ defmodule Exampple.Router.Task.Monitor do
   alias Exampple.Component
   alias Exampple.Router.Conn
   alias Exampple.Router.Task, as: RouterTask
+  alias Exampple.Xmpp
   alias Exampple.Xmpp.Stanza
 
   @syntax_colors [
@@ -142,9 +143,17 @@ defmodule Exampple.Router.Task.Monitor do
       %{request_ns: conn.xmlns}
     )
 
-    conn
-    |> Stanza.error({"internal-server-error", "en", "An error happened"})
-    |> Component.send()
+    case reason do
+      {%Xmpp.Error{} = error, _stacktrace} ->
+        conn
+        |> Stanza.error({error.message, error.lang, error.reason})
+        |> Component.send()
+
+      _ ->
+        conn
+        |> Stanza.error({"internal-server-error", "en", "An error happened"})
+        |> Component.send()
+    end
   end
 
   defp timeout(%Data{task_pid: task_pid, timeout: timeout} = state) do
