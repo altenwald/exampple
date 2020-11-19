@@ -491,7 +491,7 @@ defmodule Exampple.Client do
   def terminate(_reason, _state, data) do
     data.tcp_handler.send(xml_terminate(), get_socket(data))
     Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
-    data.tcp_handler.stop(data.socket)
+    data.tcp_handler.stop(get_socket(data))
     :ok
   end
 
