@@ -4,7 +4,7 @@ defmodule Exampple.MixProject do
   def project do
     [
       app: :exampple,
-      version: "0.6.0",
+      version: "0.7.0",
       description: "eXaMPPle is a XMPP Component Framework",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -35,7 +35,7 @@ defmodule Exampple.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :crypto],
+      extra_applications: [:logger, :crypto, :ssl],
       mod: {Exampple.Application, []}
     ]
   end

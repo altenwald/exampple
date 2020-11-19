@@ -47,6 +47,7 @@ defmodule Exampple.Client do
   import Kernel, except: [send: 2]
 
   alias Exampple.Router.Conn
+  alias Exampple.Tls
   alias Exampple.Xml.Stream, as: XmlStream
   alias Exampple.Xml.Xmlel
 
@@ -104,6 +105,9 @@ defmodule Exampple.Client do
       auth: fn pname ->
         %Conn{stanza_type: "success"} = get_conn(pname)
       end,
+      starttls: fn pname ->
+        %Conn{stanza_type: "proceed"} = get_conn(pname)
+      end,
       init: fn pname ->
         %Conn{
           stanza_type: "stream:features",
@@ -133,6 +137,7 @@ defmodule Exampple.Client do
   defmodule Data do
     @moduledoc false
     defstruct socket: nil,
+              tls_socket: nil,
               stream: nil,
               host: nil,
               domain: nil,
@@ -185,8 +190,18 @@ defmodule Exampple.Client do
   is the value provided by `__MODULE__`.
   """
   @spec connect() :: :ok
+  @spec connect(atom()) :: :ok
   def connect(name \\ __MODULE__) do
     :ok = GenStateMachine.cast(name, :connect)
+  end
+
+  @doc """
+  Upgrade a connection as TLS.
+  """
+  @spec upgrade_tls() :: :ok
+  @spec upgrade_tls(atom()) :: :ok
+  def upgrade_tls(name \\ __MODULE__) do
+    :ok = GenStateMachine.cast(name, :upgrade_tls)
   end
 
   @doc """
@@ -406,6 +421,11 @@ defmodule Exampple.Client do
     :keep_state_and_data
   end
 
+  def disconnected(:cast, :upgrade_tls, _data) do
+    Logger.error("cannot process upgrade TLS, we're still disconnected!")
+    :keep_state_and_data
+  end
+
   def disconnected({:timeout, :ping}, :send_ping, _data) do
     :keep_state_and_data
   end
@@ -433,13 +453,33 @@ defmodule Exampple.Client do
   end
 
   def connected(:cast, {:send, packet}, data) when is_binary(packet) do
-    data.tcp_handler.send(packet, data.socket)
+    data.tcp_handler.send(packet, get_socket(data))
     Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{packet}#{IO.ANSI.reset()}")
     :keep_state_and_data
   end
 
+  def connected(:cast, :upgrade_tls, %Data{socket: socket, tls_socket: nil} = data) do
+    case Tls.start(socket) do
+      {:ok, tls_socket} ->
+        stream = XmlStream.new()
+        xml_init = xml_init(data.domain)
+        Tls.send(xml_init, tls_socket)
+        Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_init}#{IO.ANSI.reset()}")
+        {:keep_state, %Data{data | stream: stream, tls_socket: tls_socket, tcp_handler: Tls}}
+
+      {:error, reason} ->
+        Logger.error("start TLS failed due to: #{inspect(reason)}")
+        :keep_state_and_data
+    end
+  end
+
+  def connected(:cast, :upgrade_tls, _data) do
+    Logger.warn("TLS was already connected!")
+    :keep_state_and_data
+  end
+
   def connected({:timeout, :ping}, :send_ping, data) do
-    data.tcp_handler.send("\n", data.socket)
+    data.tcp_handler.send("\n", get_socket(data))
     Logger.debug("sent (ping)")
     {:keep_state_and_data, timeout_action(data)}
   end
@@ -449,7 +489,7 @@ defmodule Exampple.Client do
   def terminate(_reason, :disconnected, _data), do: :ok
 
   def terminate(_reason, _state, data) do
-    data.tcp_handler.send(xml_terminate(), data.socket)
+    data.tcp_handler.send(xml_terminate(), get_socket(data))
     Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
     data.tcp_handler.stop(data.socket)
     :ok
@@ -457,18 +497,20 @@ defmodule Exampple.Client do
 
   @impl GenStateMachine
   @doc false
-  def handle_event(:info, {:tcp, _socket, packet}, _state, data) do
+  def handle_event(:info, {type, _socket, packet}, _state, data) when type in [:tcp, :ssl] do
     Logger.info("(#{data.name}) received (packet): #{IO.ANSI.cyan()}#{packet}#{IO.ANSI.reset()}")
     stream = XmlStream.parse(data.stream, packet)
     {:keep_state, %Data{data | stream: stream}}
   end
 
-  def handle_event(:info, {:tcp_closed, _socket}, _state, data) do
+  def handle_event(:info, {closed, _socket}, _state, data)
+      when closed in [:tcp_closed, :ssl_closed] do
     Logger.error("tcp closed, disconnected")
     {:stop, :normal, data}
   end
 
-  def handle_event(:info, {:tcp_error, _socket, reason}, _state, data) do
+  def handle_event(:info, {error, _socket, reason}, _state, data)
+      when error in [:tcp_error, :ssl_error] do
     Logger.error("tcp closed, disconnected, error: #{inspect(reason)}")
     {:stop, :normal, data}
   end
@@ -498,10 +540,10 @@ defmodule Exampple.Client do
   end
 
   def handle_event(:cast, :disconnect, _state, data) do
-    data.tcp_handler.send(xml_terminate(), data.socket)
+    data.tcp_handler.send(xml_terminate(), get_socket(data))
     Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
-    data.tcp_handler.stop(data.socket)
-    data = %{data | socket: nil, stream: nil}
+    data.tcp_handler.stop(get_socket(data))
+    data = %{data | tls_socket: nil, socket: nil, stream: nil}
     {:next_state, :disconnected, data}
   end
 
@@ -511,4 +553,7 @@ defmodule Exampple.Client do
 
   defp timeout_action(%Data{ping: false}), do: []
   defp timeout_action(%Data{ping: ping}), do: [{{:timeout, :ping}, ping, :send_ping}]
+
+  defp get_socket(%Data{tls_socket: nil, socket: socket}), do: socket
+  defp get_socket(%Data{tls_socket: tls_socket}), do: tls_socket
 end
