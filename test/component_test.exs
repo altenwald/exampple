@@ -86,7 +86,7 @@ defmodule Exampple.ComponentTest do
       ]
 
       assert_stanza_receive(stanza)
-      assert_stanza_received(stanza)
+      assert_stanza_received(^stanza)
     end
 
     test "stanzas" do
@@ -182,7 +182,7 @@ defmodule Exampple.ComponentTest do
       ]
 
       assert_stanza_receive(stanza)
-      assert_stanza_received(stanza)
+      assert_stanza_received(^stanza)
     end
   end
 end

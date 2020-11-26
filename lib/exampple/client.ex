@@ -113,10 +113,11 @@ defmodule Exampple.Client do
           stanza_type: "stream:features",
           stanza: stanza,
           xmlns: "urn:ietf:params:xml:ns:xmpp-bind"
-        } = get_conn(pname)
+        } = conn = get_conn(pname)
 
         [%Xmlel{}] = stanza["bind"]
         [%Xmlel{}] = stanza["session"]
+        conn
       end,
       bind: fn pname ->
         %Conn{
@@ -301,17 +302,21 @@ defmodule Exampple.Client do
   We are providing the `template` name for the check, optionally some `args`
   if the check requires it and the `name` of the process for the client,
   by default it will be `__MODULE__`.
+
+  The return of the check should be a map, if you return an struct it will
+  be inserted inside of an empty map using the name of the struct as name.
+  For example, returning a `%Conn{}` it will result in a `%{"conn" => %Conn{}}`.
   """
-  @spec check!(atom(), [any()], atom() | pid()) :: :ok
+  @spec check!(atom(), [any()], atom() | pid()) :: map()
   def check!(template, args \\ [], name \\ __MODULE__)
       when is_atom(template) and is_list(args) do
     case GenStateMachine.call(name, {:get_check, template}) do
       {:ok, check_fn} ->
-        unless apply(check_fn, args) do
-          raise "check #{template} for #{name} failed!"
+        case apply(check_fn, args) do
+          %struct{} = result -> %{String.downcase(to_string(struct)) => result}
+          %{} = result -> result
+          _ -> %{}
         end
-
-        :ok
 
       :error ->
         raise "check #{template} for #{name} not found!"
