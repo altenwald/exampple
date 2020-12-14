@@ -112,10 +112,15 @@ defmodule Exampple.Xml.Xmlel do
       iex> Exampple.Xml.Xmlel.decode({"foo", [], []})
       %Exampple.Xml.Xmlel{name: "foo", attrs: %{}, children: []}
 
+      iex> Exampple.Xml.Xmlel.decode({"foo", [], [{:characters, "1&1"}]})
+      %Exampple.Xml.Xmlel{name: "foo", children: ["1&1"]}
+
       iex> Exampple.Xml.Xmlel.decode({"bar", [{"id", "10"}], ["Hello!"]})
       %Exampple.Xml.Xmlel{name: "bar", attrs: %{"id" => "10"}, children: ["Hello!"]}
   """
   def decode(data) when is_binary(data), do: data
+
+  def decode({:characters, data}), do: data
 
   def decode(%Xmlel{attrs: attrs, children: children} = xmlel) do
     children = Enum.map(children, &decode/1)
@@ -136,7 +141,7 @@ defmodule Exampple.Xml.Xmlel do
       {"foo", [], []}
 
       iex> Exampple.Xml.Xmlel.encode(%Exampple.Xml.Xmlel{name: "bar", attrs: %{"id" => "10"}, children: ["Hello!"]})
-      {"bar", [{"id", "10"}], ["Hello!"]}
+      {"bar", [{"id", "10"}], [{:characters, "Hello!"}]}
 
       iex> Exampple.Xml.Xmlel.encode(%TestBuild{name: "bro"})
       "<bro/>"
@@ -146,7 +151,7 @@ defmodule Exampple.Xml.Xmlel do
     {xmlel.name, Enum.into(xmlel.attrs, []), children}
   end
 
-  def encode(content) when is_binary(content), do: content
+  def encode(content) when is_binary(content), do: {:characters, content}
 
   def encode(%struct_name{} = struct) do
     builder = Module.concat(Saxy.Builder, struct_name)
@@ -175,6 +180,9 @@ defmodule Exampple.Xml.Xmlel do
         iex> query = Exampple.Xml.Xmlel.new("query", %{"xmlns" => "urn:jabber:iq"})
         iex> Exampple.Xml.Xmlel.new("iq", %{"type" => "get"}, [query]) |> to_string()
         "<iq type=\\"get\\"><query xmlns=\\"urn:jabber:iq\\"/></iq>"
+
+        iex> Exampple.Xml.Xmlel.new("query", %{}, ["<going >"]) |> to_string()
+        "<query>&lt;going &gt;</query>"
     """
     def to_string(xmlel) do
       xmlel
