@@ -78,7 +78,33 @@ defmodule Exampple.RouterTest do
       Process.register(self(), :test_get_and_set)
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
 
-      assert_receive {:ok, ^conn, ^query}
+      assert_receive {:ok, :set, ^conn, ^query}
+    end
+
+    test "check ignoring namespaces with messages" do
+      stanza = ~x[
+        <message type='groupchat'>
+          <markable xmlns='urn:xmpp:chat-markers:0'/>
+          <store xmlns='urn:xmpp:hints'/>
+          <body>Hola?</body>
+        </message>
+      ]
+      domain = "example.com"
+
+      conn = %Exampple.Router.Conn{
+        domain: "example.com",
+        stanza_type: "message",
+        type: "groupchat",
+        xmlns: "urn:xmpp:chat-markers:0",
+        stanza: stanza
+      }
+
+      query = stanza.children
+
+      Process.register(self(), :test_get_and_set)
+      assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
+
+      assert_receive {:ok, :groupchat, ^conn, ^query}
     end
 
     test "error inside of task, monitor" do
@@ -163,7 +189,7 @@ defmodule Exampple.RouterTest do
       Process.register(self(), :test_get_and_set)
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
 
-      assert_receive {:ok, conn, ^query}
+      assert_receive {:ok, :set, conn, ^query}
       reply = ~x[
         <iq from='me' to='you' type='result' id='1'>
           <delegation xmlns='urn:xmpp:delegation:1'>

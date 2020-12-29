@@ -52,6 +52,68 @@ defmodule Exampple.Router do
     end
   end
 
+  defp process_route({stanza_type, type, "", controller, function}) do
+    quote do
+      def route(
+            %Exampple.Router.Conn{
+              stanza_type: unquote(stanza_type),
+              type: unquote(type)
+            } = conn,
+            stanza
+          ) do
+        unquote(controller).unquote(function)(conn, stanza)
+      end
+    end
+  end
+
+  defp process_route({stanza_type, type, xmlns, controller, function}) do
+    quote do
+      def route(
+            %Exampple.Router.Conn{
+              stanza_type: unquote(stanza_type),
+              xmlns: unquote(xmlns),
+              type: unquote(type)
+            } = conn,
+            stanza
+          ) do
+        unquote(controller).unquote(function)(conn, stanza)
+      end
+    end
+  end
+
+  defp process_route({route, {stanza_type, type, "", _, _}}) do
+    quote do
+      def route(
+            %Exampple.Router.Conn{
+              stanza_type: unquote(stanza_type),
+              type: unquote(type)
+            } = conn,
+            stanza
+          ) do
+        unquote(route).route(conn, stanza)
+      end
+    end
+  end
+
+  defp process_route({route, {stanza_type, type, xmlns, _, _}}) do
+    quote do
+      def route(
+            %Exampple.Router.Conn{
+              stanza_type: unquote(stanza_type),
+              xmlns: unquote(xmlns),
+              type: unquote(type)
+            } = conn,
+            stanza
+          ) do
+        unquote(route).route(conn, stanza)
+      end
+    end
+  end
+
+  defp process_routes(routes) do
+    for route <- routes, do: process_route(route)
+  end
+
   @doc false
   defmacro __before_compile__(env) do
     envelopes = Module.get_attribute(env.module, :envelopes)
@@ -74,37 +136,8 @@ defmodule Exampple.Router do
       end
       |> List.flatten()
 
-    route_functions =
-      for {stanza_type, type, xmlns, controller, function} <- routes do
-        quote do
-          def route(
-                %Exampple.Router.Conn{
-                  stanza_type: unquote(stanza_type),
-                  xmlns: unquote(xmlns),
-                  type: unquote(type)
-                } = conn,
-                stanza
-              ) do
-            unquote(controller).unquote(function)(conn, stanza)
-          end
-        end
-      end
-
-    inc_route_functions =
-      for {route, {stanza_type, type, xmlns, _, _}} <- inc_routes do
-        quote do
-          def route(
-                %Exampple.Router.Conn{
-                  stanza_type: unquote(stanza_type),
-                  xmlns: unquote(xmlns),
-                  type: unquote(type)
-                } = conn,
-                stanza
-              ) do
-            unquote(route).route(conn, stanza)
-          end
-        end
-      end
+    route_functions = process_routes(routes)
+    inc_route_functions = process_routes(inc_routes)
 
     all_routes = routes ++ for {_, route} <- inc_routes, do: route
 
