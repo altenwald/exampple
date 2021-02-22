@@ -52,6 +52,26 @@ defmodule Exampple.ComponentTest do
       assert {:ready, %Component.Data{}} = :sys.get_state(Component)
       assert nil == DummyTcp.sent()
     end
+
+    test "error connecting" do
+      config =
+        :exampple
+        |> Application.get_env(Exampple.Component)
+        |> Keyword.put(:password, "wrong")
+
+      old_config = Application.get_env(:exampple, Exampple.Component)
+      Application.put_env(:exampple, Exampple.Component, config)
+
+      Component.stop()
+      {:ok, pid} = Exampple.start_link(otp_app: :exampple)
+      Process.unlink(pid)
+      Process.monitor(pid)
+      Component.connect()
+
+      assert_receive {:DOWN, _ref, :process, ^pid, {%ArgumentError{}, _stacktrace}}, 500
+      refute Process.alive?(pid)
+      Application.put_env(:exampple, Exampple.Component, old_config)
+    end
   end
 
   describe "handling stanzas" do

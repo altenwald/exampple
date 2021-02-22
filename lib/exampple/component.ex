@@ -221,7 +221,7 @@ defmodule Exampple.Component do
       case Map.get(cfg, :auto_connect, false) do
         true -> [{:next_event, :cast, :connect}]
         false -> []
-        time when is_integer(time) -> [{:timeout, time, :connect}]
+        time when is_integer(time) -> [{:state_timeout, time, :connect}]
       end
 
     {:ok, :disconnected,
@@ -319,6 +319,7 @@ defmodule Exampple.Component do
   end
 
   def authenticate(:info, {:xmlelement, %Xmlel{name: "stream:error"} = xmlel}, data) do
+    Logger.error("cannot authenticate: #{to_string(xmlel)}")
     raise ArgumentError, """
 
     ******************************************
@@ -395,6 +396,10 @@ defmodule Exampple.Component do
     case XmlStream.parse(data.stream, packet) do
       {:cont, partial} ->
         {:keep_state, %Data{data | stream: partial}}
+
+      {:halt, _user, "</stream:stream>"} ->
+        stream = XmlStream.new()
+        {:keep_state, %Data{data | stream: stream}}
 
       {:halt, _user, rest} ->
         stream = XmlStream.new()
