@@ -137,6 +137,23 @@ defmodule Exampple.Client do
 
   defmodule Data do
     @moduledoc false
+    @type t() :: %__MODULE__{
+      socket: nil | :gen_tcp.socket(),
+      tls_socket: nil | :ssl.sslsocket(),
+      stream: nil | Saxy.Partial.t(),
+      host: nil | String.t(),
+      domain: nil | String.t(),
+      port: non_neg_integer(),
+      trimmed: boolean(),
+      set_from: boolean(),
+      ping: boolean() | non_neg_integer(),
+      tcp_handler: module(),
+      send_pid: nil | pid(),
+      templates: Keyword.t(),
+      checks: Keyword.t(),
+      name: nil | atom()
+    }
+
     defstruct socket: nil,
               tls_socket: nil,
               stream: nil,
@@ -363,6 +380,23 @@ defmodule Exampple.Client do
   end
 
   @doc """
+  Waits for an incoming connection / stanza which will be sent from
+  the client process. It needs to define the stanza as the second
+  parameter to be catch. If the stanza arriving isn't which match,
+  it's giving a timeout. Optionally, we can configure a `timeout`,
+  by default it's set to 5 seconds.
+  """
+  defmacro receive_conn(name, stanza, timeout \\ 5_000) do
+    quote do
+      receive do
+        {:conn, unquote(name), unquote(stanza)} -> true
+      after
+        unquote(timeout) -> false
+      end
+    end
+  end
+
+  @doc """
   Same as `get_conn/2` but we are waiting for a specific number
   of stanzas to be received indicated by `num` parameter. We have
   to indicate the `name` for the process where we are going to be
@@ -380,6 +414,24 @@ defmodule Exampple.Client do
         [packet]
     after
       timeout -> [:timeout]
+    end
+  end
+
+  @doc """
+  Returns or true or a list of stanzas which were not found
+  in the message queue.
+  """
+  def receive_conns(name, stanzas, timeout \\ 5_000) do
+    Enum.reduce(stanzas, [], fn stanza, acc ->
+      case receive_conn(name, stanza, timeout) do
+        :timeout -> [stanza | acc]
+        result -> acc
+      end
+    end)
+    |> Enum.reverse()
+    |> case do
+      [] -> true
+      errors -> errors
     end
   end
 
