@@ -177,7 +177,7 @@ defmodule Exampple.Xmpp.Stanza do
       iex> Exampple.Xml.Xmlel.new("message", attrs, payload)
       iex> |> Exampple.Xmpp.Stanza.message_error("item-not-found")
       iex> |> to_string()
-      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
+      "<message from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><body>hello world!</body><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
 
       iex> payload = [Exampple.Xml.Xmlel.new("body", %{}, ["hello world!"])]
       iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "1"}
@@ -186,18 +186,18 @@ defmodule Exampple.Xmpp.Stanza do
       iex> |> Exampple.Xmpp.Stanza.message_error("item-not-found")
       iex> conn.response
       iex> |> to_string()
-      "<message from=\\"alice@example.com\\" id=\\"1\\" to=\\"bob@example.com\\" type=\\"error\\"><body>hello world!</body><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
+      "<message from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"error\\"><body>hello world!</body><error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error></message>"
   """
   def message_error(%Xmlel{attrs: attrs, children: children}, error) do
-    from_jid = attrs["from"]
-    to_jid = attrs["to"]
+    from_jid = attrs["to"]
+    to_jid = attrs["from"]
     id = attrs["id"]
     message_error(children, error, from_jid, id, to_jid)
   end
 
   def message_error(%Conn{} = conn, error) do
-    from_jid = to_string(conn.from_jid)
-    to_jid = to_string(conn.to_jid)
+    from_jid = to_string(conn.to_jid)
+    to_jid = to_string(conn.from_jid)
     response = message_error(conn.stanza.children, error, from_jid, conn.id, to_jid)
     %Conn{conn | response: response}
   end

@@ -425,7 +425,7 @@ defmodule Exampple.Client do
     Enum.reduce(stanzas, [], fn stanza, acc ->
       case receive_conn(name, stanza, timeout) do
         :timeout -> [stanza | acc]
-        result -> acc
+        _result -> acc
       end
     end)
     |> Enum.reverse()
