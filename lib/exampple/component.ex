@@ -358,13 +358,13 @@ defmodule Exampple.Component do
   end
 
   def ready(:cast, {:send, packet}, data) do
-    Logger.debug("send packet: #{inspect(packet)}")
+    Logger.debug("send packet: #{packet}")
     data.tcp_handler.send(packet, data.socket)
     {:keep_state_and_data, timeout_action(data)}
   end
 
   def ready(:info, {:xmlelement, packet}, %Data{trimmed: true} = data) do
-    Logger.debug("received packet: #{inspect(packet)}")
+    Logger.debug("received packet: #{to_string(packet)}")
     %Data{domain: domain, otp_app: otp_app, stanza_timeout: timeout} = data
 
     packet
@@ -375,7 +375,7 @@ defmodule Exampple.Component do
   end
 
   def ready(:info, {:xmlelement, packet}, %Data{trimmed: false} = data) do
-    Logger.debug("received packet: #{inspect(packet)}")
+    Logger.debug("received packet: #{to_string(packet)}")
     %Data{domain: domain, otp_app: otp_app, stanza_timeout: timeout} = data
     data.router_handler.route(packet, domain, otp_app, timeout)
     {:keep_state_and_data, timeout_action(data)}
