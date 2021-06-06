@@ -552,11 +552,18 @@ defmodule Exampple.Client do
     :ok
   end
 
+  defp parse_stream(stream, packet) do
+    case XmlStream.parse(stream, packet) do
+      {:halt, _, rest} -> parse_stream(XmlStream.new(), rest)
+      other -> other
+    end
+  end
+
   @impl GenStateMachine
   @doc false
   def handle_event(:info, {type, _socket, packet}, _state, data) when type in [:tcp, :ssl] do
     Logger.info("(#{data.name}) received (packet): #{IO.ANSI.cyan()}#{packet}#{IO.ANSI.reset()}")
-    stream = XmlStream.parse(data.stream, packet)
+    stream = parse_stream(data.stream, packet)
     {:keep_state, %Data{data | stream: stream}}
   end
 

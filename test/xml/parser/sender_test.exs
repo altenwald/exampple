@@ -2,6 +2,7 @@ defmodule Exampple.Xml.Parser.SenderTest do
   use ExUnit.Case, async: false
 
   alias Exampple.Xml.Stream, as: XmlStream
+  alias Exampple.Xml.Xmlel
   import Exampple.Xml.Xmlel, only: [sigil_x: 2]
 
   describe "process a document" do
@@ -103,6 +104,64 @@ defmodule Exampple.Xml.Parser.SenderTest do
         {:xmlelement, ~x[<bar>more data</bar>]},
         {:xmlstreamstart, "baz", []},
         {:xmlelement, ~x[<baz>and more</baz>]}
+      ]
+
+      assert events == receive_all()
+    end
+
+    test "ignoring stream:stream (never ending tag)" do
+      Application.put_env(:exampple, :debug_xml, false)
+
+      assert {:halt, _, data} =
+               XmlStream.new()
+               |> XmlStream.parse("<?xml version='1.0'?><stream:stream id='17927389085261471095' version='1.0' xml:lang='en' xmlns:stream='http://etherx.jabber.org/streams' from='localhost' xmlns='jabber:client'><stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/><session xmlns='urn:ietf:params:xml:ns:xmpp-session'><optional/></session><sm xmlns='urn:xmpp:sm:2'/><sm xmlns='urn:xmpp:sm:3'/></stream:features>")
+
+      events = [
+        {:xmlstreamstart, "stream:stream", [
+          {"id", "17927389085261471095"},
+          {"version", "1.0"},
+          {"xml:lang", "en"},
+          {"xmlns:stream", "http://etherx.jabber.org/streams"},
+          {"from", "localhost"},
+          {"xmlns", "jabber:client"}
+        ]}
+      ]
+
+      assert events == receive_all()
+
+      assert {:halt, _, ""} =
+               XmlStream.new()
+               |> XmlStream.parse(data)
+
+      events = [
+        {:xmlstreamstart, "stream:features", []},
+        {:xmlstreamstart, "bind", [{"xmlns", "urn:ietf:params:xml:ns:xmpp-bind"}]},
+        {:xmlstreamstart, "session", [{"xmlns", "urn:ietf:params:xml:ns:xmpp-session"}]},
+        {:xmlstreamstart, "optional", []},
+        {:xmlstreamstart, "sm", [{"xmlns", "urn:xmpp:sm:2"}]},
+        {:xmlstreamstart, "sm", [{"xmlns", "urn:xmpp:sm:3"}]},
+        {:xmlelement, %Xmlel{
+          children: [
+            %Xmlel{
+              attrs: %{"xmlns" => "urn:ietf:params:xml:ns:xmpp-bind"},
+              name: "bind"
+            },
+            %Xmlel{
+              attrs: %{"xmlns" => "urn:ietf:params:xml:ns:xmpp-session"},
+              children: [%Xmlel{name: "optional"}],
+              name: "session"
+            },
+            %Xmlel{
+              attrs: %{"xmlns" => "urn:xmpp:sm:2"},
+              name: "sm"
+            },
+            %Xmlel{
+              attrs: %{"xmlns" => "urn:xmpp:sm:3"},
+              name: "sm"
+            }
+          ],
+          name: "stream:features"
+        }}
       ]
 
       assert events == receive_all()
