@@ -320,6 +320,7 @@ defmodule Exampple.Component do
 
   def authenticate(:info, {:xmlelement, %Xmlel{name: "stream:error"} = xmlel}, data) do
     Logger.error("cannot authenticate: #{to_string(xmlel)}")
+
     raise ArgumentError, """
 
     ******************************************

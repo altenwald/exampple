@@ -21,6 +21,7 @@ defmodule Exampple.Xml.Parser.Sender do
   def handle_event(:start_element, {tag_name, attributes}, data) do
     send(data.pid, {:xmlstreamstart, tag_name, attributes})
     {:ok, stack} = Simple.handle_event(:start_element, {tag_name, attributes}, data.stack)
+
     case stack do
       [%Xmlel{name: "stream:stream", children: []}] ->
         {:halt, data.pid}

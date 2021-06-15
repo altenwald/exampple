@@ -138,21 +138,21 @@ defmodule Exampple.Client do
   defmodule Data do
     @moduledoc false
     @type t() :: %__MODULE__{
-      socket: nil | :gen_tcp.socket(),
-      tls_socket: nil | :ssl.sslsocket(),
-      stream: nil | Saxy.Partial.t(),
-      host: nil | String.t(),
-      domain: nil | String.t(),
-      port: non_neg_integer(),
-      trimmed: boolean(),
-      set_from: boolean(),
-      ping: boolean() | non_neg_integer(),
-      tcp_handler: module(),
-      send_pid: nil | pid(),
-      templates: Keyword.t(),
-      checks: Keyword.t(),
-      name: nil | atom()
-    }
+            socket: nil | :gen_tcp.socket(),
+            tls_socket: nil | :ssl.sslsocket(),
+            stream: nil | Saxy.Partial.t(),
+            host: nil | String.t(),
+            domain: nil | String.t(),
+            port: non_neg_integer(),
+            trimmed: boolean(),
+            set_from: boolean(),
+            ping: boolean() | non_neg_integer(),
+            tcp_handler: module(),
+            send_pid: nil | pid(),
+            templates: Keyword.t(),
+            checks: Keyword.t(),
+            name: nil | atom()
+          }
 
     defstruct socket: nil,
               tls_socket: nil,
@@ -208,7 +208,7 @@ defmodule Exampple.Client do
   is the value provided by `__MODULE__`.
   """
   @spec connect() :: :ok
-  @spec connect(atom()) :: :ok
+  @spec connect(module()) :: :ok
   def connect(name \\ __MODULE__) do
     :ok = GenStateMachine.cast(name, :connect)
   end
@@ -217,7 +217,7 @@ defmodule Exampple.Client do
   Upgrade a connection as TLS.
   """
   @spec upgrade_tls() :: :ok
-  @spec upgrade_tls(atom()) :: :ok
+  @spec upgrade_tls(module()) :: :ok
   def upgrade_tls(name \\ __MODULE__) do
     :ok = GenStateMachine.cast(name, :upgrade_tls)
   end
@@ -228,6 +228,7 @@ defmodule Exampple.Client do
   is optional, by default it's set to `__MODULE__`.
   """
   @spec disconnect() :: :ok
+  @spec disconnect(module()) :: :ok
   def disconnect(name \\ __MODULE__) do
     :ok = GenStateMachine.cast(name, :disconnect)
   end
@@ -238,6 +239,8 @@ defmodule Exampple.Client do
   PID should be valid and alive, and then we ask to the client if it's connected.
   If no parameter is provided it is `__MODULE__`.
   """
+  @spec is_connected?() :: boolean()
+  @spec is_connected?(module()) :: boolean()
   def is_connected?(name \\ __MODULE__) do
     with pid <- Process.whereis(name),
          true <- is_pid(pid),
@@ -253,6 +256,7 @@ defmodule Exampple.Client do
   stopped, by default this value is set as `__MODULE__`.
   """
   @spec stop() :: :ok
+  @spec stop(module()) :: :ok
   def stop(name \\ __MODULE__) do
     :ok = GenStateMachine.stop(name)
   end
@@ -324,7 +328,9 @@ defmodule Exampple.Client do
   be inserted inside of an empty map using the name of the struct as name.
   For example, returning a `%Conn{}` it will result in a `%{"conn" => %Conn{}}`.
   """
-  @spec check!(atom(), [any()], atom() | pid()) :: map()
+  @spec check!(atom()) :: map()
+  @spec check!(atom(), [any()]) :: map()
+  @spec check!(atom(), [any()], module() | pid()) :: map()
   def check!(template, args \\ [], name \\ __MODULE__)
       when is_atom(template) and is_list(args) do
     case GenStateMachine.call(name, {:get_check, template}) do
@@ -346,7 +352,8 @@ defmodule Exampple.Client do
   `key` is the name we will use storing the template and `fun` is the
   function which will generate the stanza.
   """
-  @spec add_template(atom(), atom(), (... -> String.t())) :: :ok
+  @spec add_template(atom(), (... -> String.t())) :: :ok
+  @spec add_template(module(), atom(), (... -> String.t())) :: :ok
   def add_template(name \\ __MODULE__, key, fun) do
     :ok = GenStateMachine.cast(name, {:add_template, key, fun})
   end
@@ -358,7 +365,8 @@ defmodule Exampple.Client do
   which will check the incoming stanza returning true or false if the
   check is passed.
   """
-  @spec add_check(atom(), atom(), (... -> boolean())) :: :ok
+  @spec add_check(atom(), (... -> boolean())) :: :ok
+  @spec add_check(module(), atom(), (... -> boolean())) :: :ok
   def add_check(name \\ __MODULE__, key, fun) do
     :ok = GenStateMachine.cast(name, {:add_check, key, fun})
   end
@@ -371,6 +379,8 @@ defmodule Exampple.Client do
   Optionally, we can configure a `timeout`, by default it's set to
   5 seconds.
   """
+  @spec get_conn(module()) :: Conn.t() | :timeout
+  @spec get_conn(module(), timeout()) :: Conn.t() | :timeout
   def get_conn(name, timeout \\ 5_000) do
     receive do
       {:conn, ^name, packet} -> packet
@@ -405,10 +415,12 @@ defmodule Exampple.Client do
   Optionally, we can configure a `timeout`, by default it's set to
   5 seconds.
   """
+  @spec get_conns(module(), pos_integer()) :: [Conn.t() | :timeout]
+  @spec get_conns(module(), pos_integer(), timeout()) :: [Conn.t() | :timeout]
   def get_conns(name, num, timeout \\ 5_000) do
     receive do
       {:conn, ^name, packet} when num > 1 ->
-        [packet | get_conns(num - 1, timeout)]
+        [packet | get_conns(name, num - 1, timeout)]
 
       {:conn, ^name, packet} when num == 1 ->
         [packet]
@@ -421,11 +433,14 @@ defmodule Exampple.Client do
   Returns or true or a list of stanzas which were not found
   in the message queue.
   """
+  @spec receive_conns(module(), [Xmlel.t()]) :: true | [Xmlel.t()]
+  @spec receive_conns(module(), [Xmlel.t()], timeout()) :: true | [Xmlel.t()]
   def receive_conns(name, stanzas, timeout \\ 5_000) do
     Enum.reduce(stanzas, [], fn stanza, acc ->
-      case receive_conn(name, stanza, timeout) do
-        :timeout -> [stanza | acc]
-        _result -> acc
+      if receive_conn(^name, ^stanza, timeout) do
+        acc
+      else
+        [stanza | acc]
       end
     end)
     |> Enum.reverse()

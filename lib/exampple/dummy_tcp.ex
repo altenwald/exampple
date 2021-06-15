@@ -119,8 +119,13 @@ defmodule Exampple.DummyTcp do
     {:noreply, data}
   end
 
-  def handle_cast({:send, "<handshake>881f2697064a815cb3fc9f3f85392d39391f09d0</handshake>"}, data) do
-    error = "<stream:error><not-authorized xmlns='urn:ietf:params:xml:ns:xmpp-streams'/></stream:error></stream:stream>"
+  def handle_cast(
+        {:send, "<handshake>881f2697064a815cb3fc9f3f85392d39391f09d0</handshake>"},
+        data
+      ) do
+    error =
+      "<stream:error><not-authorized xmlns='urn:ietf:params:xml:ns:xmpp-streams'/></stream:error></stream:stream>"
+
     Kernel.send(data.client_pid, {:tcp, self(), error})
     {:noreply, data}
   end
