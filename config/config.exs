@@ -9,7 +9,7 @@ if Mix.env() == :test do
     port: 5252,
     set_from: true,
     trimmed: true,
-    tcp_handler: Exampple.DummyTcp
+    tcp_handler: Exampple.DummyTcpComponent
 
   config :exampple,
     auto_generate_id: false,

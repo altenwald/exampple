@@ -106,8 +106,8 @@ defmodule Exampple.Component do
     for testing purposes. Default to `Exampple.Router`.
   - `tcp_handler`: the module which is going to handle the connection for the
     component. This could be useful for TLS handling or testing purposes. You can
-    see further information in `Exampple.Tcp` and `Exampple.DummyTcp`. Default to
-    `Exampple.Tcp`.
+    see further information in `Exampple.Tcp` and `Exampple.DummyTcpComponent`.
+    Default to `Exampple.Tcp`.
   - `stanza_timeout`: the amount of time we wait until we kill the process and
     reply back an error. The error will be a `remote-server-timeout`.
   """

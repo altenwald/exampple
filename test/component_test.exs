@@ -2,9 +2,9 @@ defmodule Exampple.ComponentTest do
   use ExUnit.Case, async: false
 
   import Exampple.Xml.Xmlel
-  import Exampple.Router.ConnCase
+  import Exampple.Router.ConnCase.Component
 
-  alias Exampple.{Component, DummyTcp}
+  alias Exampple.{Component, DummyTcpComponent}
   alias Exampple.Router.Conn
   alias Exampple.Xmpp.{Envelope, Stanza}
 
@@ -38,7 +38,7 @@ defmodule Exampple.ComponentTest do
     Application.put_env(:exampple, Exampple.Component, config)
     Exampple.start_link(otp_app: :exampple)
     Component.disconnect()
-    on_exit(fn -> DummyTcp.dump() end)
+    on_exit(fn -> DummyTcpComponent.dump() end)
   end
 
   describe "connectivity" do
@@ -50,7 +50,7 @@ defmodule Exampple.ComponentTest do
       Component.connect()
       Component.wait_for_ready()
       assert {:ready, %Component.Data{}} = :sys.get_state(Component)
-      assert nil == DummyTcp.sent()
+      assert nil == DummyTcpComponent.sent()
     end
 
     test "error connecting" do
@@ -85,13 +85,13 @@ defmodule Exampple.ComponentTest do
       Component.wait_for_ready()
       Process.sleep(500)
 
-      assert {^iq, _} = parse(DummyTcp.sent())
+      assert {^iq, _} = parse(DummyTcpComponent.sent())
     end
 
     test "ping" do
       Component.connect()
       Component.wait_for_ready()
-      DummyTcp.subscribe()
+      DummyTcpComponent.subscribe()
 
       component_received(~x[
         <iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>
@@ -112,7 +112,7 @@ defmodule Exampple.ComponentTest do
     test "stanzas" do
       Component.connect()
       Component.wait_for_ready()
-      DummyTcp.subscribe()
+      DummyTcpComponent.subscribe()
 
       component_received(~x[
         <iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>
@@ -142,7 +142,7 @@ defmodule Exampple.ComponentTest do
     test "chunks stanzas" do
       Component.connect()
       Component.wait_for_ready()
-      DummyTcp.subscribe()
+      DummyTcpComponent.subscribe()
 
       component_received(
         "<iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
@@ -169,7 +169,7 @@ defmodule Exampple.ComponentTest do
     test "with register" do
       Component.connect()
       Component.wait_for_ready()
-      DummyTcp.subscribe()
+      DummyTcpComponent.subscribe()
 
       component_received(~x[
         <iq from="example.com"

@@ -9,4 +9,4 @@ config :<%= app_name %>, Exampple.Component,
   set_from: true,
   trimmed: true,
   auto_connect: true,
-  tcp_handler: Exampple.DummyTcp
+  tcp_handler: Exampple.DummyTcpComponent

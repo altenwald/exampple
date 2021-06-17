@@ -1,4 +1,4 @@
-defmodule Exampple.DummyTcp do
+defmodule Exampple.DummyTcpComponent do
   @moduledoc false
   use GenServer
   require Logger

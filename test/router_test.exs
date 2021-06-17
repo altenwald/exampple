@@ -2,7 +2,7 @@ defmodule Exampple.RouterTest do
   use ExUnit.Case, async: false
   require Logger
 
-  import Exampple.Router.ConnCase
+  import Exampple.Router.ConnCase.Component
   import Exampple.Xml.Xmlel
 
   alias Exampple.Component
