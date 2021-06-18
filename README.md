@@ -1,10 +1,9 @@
 # Exampple
 
-[![Build Status](https://img.shields.io/travis/altenwald/exampple/master.svg)](https://travis-ci.org/altenwald/exampple)
+[![Build Status](https://github.com/altenwald/exampple/actions/workflows/elixir.yml/badge.svg)](https://github.com/altenwald/exampple/actions/workflows/elixir.yml)
 [![Coverage Status](https://coveralls.io/repos/github/altenwald/exampple/badge.svg)](https://coveralls.io/github/altenwald/exampple)
 [![License: LGPL 2.1](https://img.shields.io/github/license/altenwald/exampple.svg)](https://raw.githubusercontent.com/altenwald/exampple/master/COPYING)
 [![Hex](https://img.shields.io/hexpm/v/exampple.svg)](https://hex.pm/packages/exampple)
-[![Inline docs](http://inch-ci.org/github/altenwald/exampple.png)](http://inch-ci.org/github/altenwald/exampple)
 
 eXaMPPle is a XMPP framework to build components using a router, controllers
 and an easy way to generate stanzas. It also has facilities to perform 
@@ -639,7 +638,7 @@ All of them register `duration` in milliseconds so, you can get the maximum, min
 
 ## Functional Testing
 
-Finally, but maybe the most important topic, we have facilities to perform the testing part of our component. Thanks to `Exampply.DummyTcp` we can easily use the following macros to test our systems.
+Finally, but maybe the most important topic, we have facilities to perform the testing part of our component. Thanks to `Exampply.DummyTcpComponent` we can easily use the following macros to test our systems.
 
 The definition of the test should be:
 
@@ -663,14 +662,14 @@ config :myapp, Exampple.Component,
   set_from: true,
   trimmed: true,
   auto_connect: true,
-  tcp_handler: Exampple.DummyTcp
+  tcp_handler: Exampple.DummyTcpComponent
 ```
 
 As you can see, we configured our own `tcp_handler`. This let us not only test controlling what we are sending but also this let you to change the way the communication with the component is made using a different transport.
 
 ### Setup
 
-The setup phase is adding the start of the `DummyTcp` subscription and the start of the `Component` machine. `DummyTcp` is simulating a _handshake_ for us so, it should be properly configured to directly start using it.
+The setup phase is adding the start of the `DummyTcpComponent` subscription and the start of the `Component` machine. `DummyTcpComponent` is simulating a _handshake_ for us so, it should be properly configured to directly start using it.
 
 ### Assertions
 
