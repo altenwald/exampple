@@ -22,9 +22,9 @@ defmodule Exampple.MixProject do
         "coveralls.json": :test,
         "coveralls.html": :test,
         "coveralls.post": :test,
-        "coveralls.travis": :test,
-        "travis-ci": :test,
-        inch: :docs
+        "coveralls.github": :test,
+        actions: :test,
+        "inch.report": :docs
       ]
     ]
   end
@@ -52,17 +52,17 @@ defmodule Exampple.MixProject do
       {:ex_doc, ">= 0.0.0", optional: true, only: :dev},
       {:inch_ex, ">= 0.0.0", optional: true, only: :docs},
       {:dialyxir, "~> 1.0", optional: true, only: :dev, runtime: false},
-      {:excoveralls, "~> 0.13", optional: true, only: :test}
+      {:excoveralls, "~> 0.14", optional: true, only: :test}
     ]
   end
 
   defp aliases do
     [
-      "travis-ci": [
+      actions: [
         "local.hex --force",
         "local.rebar --force",
         "deps.get",
-        "coveralls.travis"
+        "coveralls.github"
       ]
     ]
   end
