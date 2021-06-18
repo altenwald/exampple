@@ -7,25 +7,25 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-
-    name: Build and test
+  test:
     runs-on: ubuntu-latest
+    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    strategy:
+      matrix:
+        otp: [22.0, 22.1, 22.2, 22.3, 23.0, 23.1, 23.2, 23.3, 24.0]
+        elixir: [1.9, 1.10, 1.11, 1.12]
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Elixir
       uses: erlef/setup-elixir@885971a72ed1f9240973bd92ab57af8c1aa68f24
       with:
-        elixir-version: '1.10.3' # Define the elixir version [required]
-        otp-version: '23.3' # Define the OTP version [required]
-    - name: Restore dependencies cache
-      uses: actions/cache@v2
-      with:
-        path: deps
-        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-        restore-keys: ${{ runner.os }}-mix-
+        elixir-version: ${{matrix.elixir}}
+        otp-version: ${{matrix.otp}}
     - name: Run tests
       run: mix actions
     - name: Inch Report
-      run: MIX_ENV=docs mix inch.report
+      run: mix inch.report
