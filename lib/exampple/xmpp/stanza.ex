@@ -431,8 +431,8 @@ defmodule Exampple.Xmpp.Stanza do
 
   see more here: https://xmpp.org/extensions/xep-0086.html
 
-  You can also use a 3-elements tuple to send {error, lang, text}, this way you can create a rich
-  error like this:
+  You can also use a tuple ({error, lang, text} or {error, lang, text, custom_tag}), this way you
+  can create a rich error like this:
 
   ```xml
   <error type="cancel">
@@ -446,6 +446,8 @@ defmodule Exampple.Xmpp.Stanza do
       "<error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/></error>"
       iex> Exampple.Xmpp.Stanza.error_tag({"item-not-found", "en", "item was not found in database"}) |> to_string()
       "<error type=\\"cancel\\"><item-not-found xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/><text lang=\\"en\\" xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\">item was not found in database</text></error>"
+      iex> Exampple.Xmpp.Stanza.error_tag({"resource-constraint", "en", "throttled", %Exampple.Xml.Xmlel{name: "timeout", attrs: %{"seconds" => "60", "xmlel" => "urn:custom:throttle"}}}) |> to_string()
+      "<error type=\\"wait\\"><resource-constraint xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\"/><text lang=\\"en\\" xmlns=\\"urn:ietf:params:xml:ns:xmpp-stanzas\\">throttled</text><timeout seconds=\\"60\\" xmlel=\\"urn:custom:throttle\\"/></error>"
   """
   def error_tag(error) when is_binary(error) do
     type = Xmpp.Error.get_error(error)
@@ -458,6 +460,13 @@ defmodule Exampple.Xmpp.Stanza do
     err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
     text_tag = Xmlel.new("text", %{"xmlns" => @xmpp_stanzas, "lang" => lang}, [text])
     Xmlel.new("error", %{"type" => type}, [err_tag, text_tag])
+  end
+
+  def error_tag({error, lang, text, custom_tag}) do
+    type = Xmpp.Error.get_error(error)
+    err_tag = Xmlel.new(error, %{"xmlns" => @xmpp_stanzas})
+    text_tag = Xmlel.new("text", %{"xmlns" => @xmpp_stanzas, "lang" => lang}, [text])
+    Xmlel.new("error", %{"type" => type}, [err_tag, text_tag, custom_tag])
   end
 
   defp maybe_add(attrs, _name, nil), do: attrs
