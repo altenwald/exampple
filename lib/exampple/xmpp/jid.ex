@@ -146,7 +146,7 @@ defmodule Exampple.Xmpp.Jid do
   def parse(jid) when is_binary(jid) do
     opts = [capture: :all_but_first]
 
-    case Regex.run(~r/^(?:([^@]+)@)?([^\/]+)(?:\/(.*))?$/, jid, opts) do
+    case Regex.run(~r/^(?:([^@]+)@)?([^@\/]+)(?:\/(.*))?$/, jid, opts) do
       [node, server] ->
         node = String.downcase(node)
         server = String.downcase(server)
