@@ -202,13 +202,11 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
         xdata
 
       xmlns ->
-        %__MODULE__{xdata | valid?: false}
-        |> add_error("form_type_not_matching", "FORM_TYPE #{xmlns} invalid for #{module}")
+        add_error(xdata, "form_type_not_matching", "FORM_TYPE #{xmlns} invalid for #{module}")
     end
   end
   defp validate_xdata_form_type(%__MODULE__{} = xdata) do
-    %__MODULE__{xdata | valid?: false}
-    |> add_error("form_type_missing", "FORM_TYPE is missing and is required")
+    add_error(xdata, "form_type_missing", "FORM_TYPE is missing and is required")
   end
 
   def validate_form(%__MODULE__{data: data, module: module} = xdata) do
@@ -231,6 +229,18 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
   end
 
   defp validate_type(xdata, _, nil), do: xdata
+  defp validate_type(xdata, %{var: var, type: "boolean"}, value) do
+    value
+    |> String.downcase()
+    |> String.trim()
+    |> case do
+      "true" -> xdata
+      "false" -> xdata
+      "0" -> xdata
+      "1" -> xdata
+      _ -> add_error(xdata, "invalid-boolean", "#{var} boolean is invalid: #{value}")
+    end
+  end
   defp validate_type(xdata, %{type: "hidden"}, _), do: xdata
   defp validate_type(xdata, %{type: "text-single"}, _), do: xdata
   defp validate_type(xdata, %{type: "text-multi"}, _), do: xdata
@@ -297,7 +307,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
 
   def add_error(%__MODULE__{errors: errors} = xdata, name, text) do
     error = %{name: name, text: text}
-    %__MODULE__{xdata | errors: [error|errors || []]}
+    %__MODULE__{xdata | valid?: false, errors: [error|errors || []]}
   end
 
   defimpl String.Chars, for: __MODULE__ do

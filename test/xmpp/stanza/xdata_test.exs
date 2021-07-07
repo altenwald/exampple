@@ -107,6 +107,7 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         ]
 
       assert is_nil(form.errors)
+      assert form.valid?
       assert to_string(xml) == to_string(form)
     end
 
@@ -154,7 +155,35 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         ]
 
       assert nil == form.errors
+      assert form.valid?
       assert to_string(xml) == to_string(form)
+    end
+
+    test "validation errors" do
+      defmodule Form23 do
+        use Exampple.Xmpp.Stanza.Xdata
+
+        form "urn:xmpp:mydata", "Personal Details" do
+          instructions "Fill the whole form, please."
+          field "name", :text_single, required: true, label: "Name"
+          field "surname", :text_single, label: "Surname"
+          field "gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}]
+        end
+      end
+
+      form =
+        Form23.new()
+        |> Xdata.cast(%{
+          "surname" => "Rubio",
+          "gender" => "X"
+        })
+        |> Xdata.validate_form()
+
+      assert [
+        %{name: "required", text: "name is required"},
+        %{name: "invalid-option", text: "gender use invalid option `X`"}
+      ] = form.errors
+      refute form.valid?
     end
   end
 end
