@@ -9,12 +9,14 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         use Exampple.Xmpp.Stanza.Xdata
 
         form "urn:xmpp:mydata", "Personal Details" do
-          instructions """
+          instructions("""
           Fill the whole form, please.
-          """
-          field "name", :text_single, required: true, label: "Name"
-          field "surname", :text_single, label: "Surname"
-          field "gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}]
+          """)
+
+          field("name", :text_single, required: true, label: "Name")
+          field("surname", :text_single, label: "Surname")
+
+          field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
         end
       end
 
@@ -32,14 +34,16 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         use Exampple.Xmpp.Stanza.Xdata
 
         form "urn:xmpp:mydata", "Personal Details" do
-          instructions "Fill the whole form, please."
-          field "name", :text_single, required: true, label: "Name"
-          field "surname", :text_single, label: "Surname"
-          field "gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}]
+          instructions("Fill the whole form, please.")
+          field("name", :text_single, required: true, label: "Name")
+          field("surname", :text_single, label: "Surname")
+
+          field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
         end
       end
 
-      xml = ~x[
+      xml =
+        ~x[
       <x type='form' xmlns='jabber:x:data'>
         <title>Personal Details</title>
         <instructions>Fill the whole form, please.</instructions>
@@ -56,7 +60,7 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         </field>
       </x>
       ]
-      |> to_string()
+        |> to_string()
 
       assert xml == to_string(Form11.new())
     end
@@ -68,10 +72,11 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         use Exampple.Xmpp.Stanza.Xdata
 
         form "urn:xmpp:mydata", "Personal Details" do
-          instructions "Fill the whole form, please."
-          field "name", :text_single, required: true, label: "Name"
-          field "surname", :text_single, label: "Surname"
-          field "gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}]
+          instructions("Fill the whole form, please.")
+          field("name", :text_single, required: true, label: "Name")
+          field("surname", :text_single, label: "Surname")
+
+          field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
         end
       end
 
@@ -116,10 +121,11 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         use Exampple.Xmpp.Stanza.Xdata
 
         form "urn:xmpp:mydata", "Personal Details" do
-          instructions "Fill the whole form, please."
-          field "name", :text_single, required: true, label: "Name"
-          field "surname", :text_single, label: "Surname"
-          field "gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}]
+          instructions("Fill the whole form, please.")
+          field("name", :text_single, required: true, label: "Name")
+          field("surname", :text_single, label: "Surname")
+
+          field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
         end
       end
 
@@ -164,10 +170,11 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         use Exampple.Xmpp.Stanza.Xdata
 
         form "urn:xmpp:mydata", "Personal Details" do
-          instructions "Fill the whole form, please."
-          field "name", :text_single, required: true, label: "Name"
-          field "surname", :text_single, label: "Surname"
-          field "gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}]
+          instructions("Fill the whole form, please.")
+          field("name", :text_single, required: true, label: "Name")
+          field("surname", :text_single, label: "Surname")
+
+          field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
         end
       end
 
@@ -180,9 +187,10 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
         |> Xdata.validate_form()
 
       assert [
-        %{name: "required", text: "name is required"},
-        %{name: "invalid-option", text: "gender use invalid option `X`"}
-      ] = form.errors
+               %{name: "required", text: "name is required"},
+               %{name: "invalid-option", text: "gender use invalid option `X`"}
+             ] = form.errors
+
       refute form.valid?
     end
   end

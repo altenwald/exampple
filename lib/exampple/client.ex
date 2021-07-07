@@ -578,7 +578,9 @@ defmodule Exampple.Client do
         xml_init = xml_init(data.domain)
         data.tls_handler.send(xml_init, tls_socket)
         Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_init}#{IO.ANSI.reset()}")
-        {:keep_state, %Data{data | stream: stream, tls_socket: tls_socket, tcp_handler: data.tls_handler}}
+
+        {:keep_state,
+         %Data{data | stream: stream, tls_socket: tls_socket, tcp_handler: data.tls_handler}}
 
       {:error, reason} ->
         Logger.error("start TLS failed due to: #{inspect(reason)}")

@@ -10,23 +10,27 @@ defmodule Exampple.ClientTest do
 
   describe "connectivity" do
     test "starting" do
-      assert {:ok, _pid} = Client.start_link(%{
-        host: "example.com",
-        port: 5222,
-        domain: "example.com",
-        tcp_handler: DummyTcpClient
-      })
+      assert {:ok, _pid} =
+               Client.start_link(%{
+                 host: "example.com",
+                 port: 5222,
+                 domain: "example.com",
+                 tcp_handler: DummyTcpClient
+               })
+
       assert {:disconnected, %Client.Data{}} = :sys.get_state(Client)
       Client.stop()
     end
 
     test "connecting" do
-      assert {:ok, pid} = Client.start_link(%{
-        host: "example.com",
-        port: 5222,
-        domain: "example.com",
-        tcp_handler: DummyTcpClient
-      })
+      assert {:ok, pid} =
+               Client.start_link(%{
+                 host: "example.com",
+                 port: 5222,
+                 domain: "example.com",
+                 tcp_handler: DummyTcpClient
+               })
+
       Client.connect()
       Client.wait_for_connected()
       assert {:connected, %Client.Data{}} = :sys.get_state(Client)
@@ -37,12 +41,14 @@ defmodule Exampple.ClientTest do
 
   describe "templates" do
     test "add template" do
-      assert {:ok, pid} = Client.start_link(%{
-        host: "example.com",
-        port: 5222,
-        domain: "example.com",
-        tcp_handler: DummyTcpClient
-      })
+      assert {:ok, pid} =
+               Client.start_link(%{
+                 host: "example.com",
+                 port: 5222,
+                 domain: "example.com",
+                 tcp_handler: DummyTcpClient
+               })
+
       Client.connect()
       assert :ok == Client.wait_for_connected()
       DummyTcpClient.subscribe()
