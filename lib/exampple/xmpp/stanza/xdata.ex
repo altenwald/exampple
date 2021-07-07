@@ -10,10 +10,10 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
   alias __MODULE__
 
   @type t() :: %__MODULE__{
-          data: Map.t(),
+          data: map(),
           xdata_form_type: String.t(),
           module: module(),
-          errors: nil | [Map.t()],
+          errors: nil | [map()],
           valid?: boolean()
         }
 
@@ -34,6 +34,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
       @doc """
       Creates a new Xdata structure. See more information in `Exampple.Xmpp.Stanza.Xdata`.
       """
+      @spec new(String.t(), map()) :: Exampple.Xmpp.Stanza.Xdata.t()
       def new(xdata_form_type \\ "form", data \\ %{}) do
         Exampple.Xmpp.Stanza.Xdata.new(__MODULE__)
       end
@@ -42,6 +43,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
       Check if a field inside of the definition is multi or not.
       See more information in `Exampple.Xmpp.Stanza.Xdata`.
       """
+      @spec is_multi_type?(String.t()) :: :error | boolean()
       def is_multi_type?(var) do
         Exampple.Xmpp.Stanza.Xdata.is_multi_type?(__MODULE__, var)
       end
@@ -50,6 +52,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
       Check if a field is existing into the form definition.
       See more information in `Exampple.Xmpp.Stanza.Xdata` .
       """
+      @spec has_field?(String.t()) :: boolean()
       def has_field?(var) do
         Exampple.Xmpp.Stanza.Xdata.has_field?(__MODULE__, var)
       end
@@ -58,6 +61,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
       Parse a form prefixing the module to the current one.
       See more information in `Exampple.Xmpp.Stanza.Xdata`.
       """
+      @spec parse(String.t() | Exampple.Xml.Xmlel.t()) :: Exampple.Xmpp.Stanza.Xdata.t()
       def parse(form) do
         Exampple.Xmpp.Stanza.Xdata.parse(form, __MODULE__)
       end
@@ -304,6 +308,11 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
     end
   end
 
+  @spec is_multi_type?(map()) :: boolean()
+  def is_multi_type?(%{type: type}) do
+    String.ends_with?(type, "-multi")
+  end
+
   @doc """
   Let us know if the field exists inside of a form definition.
   """
@@ -377,8 +386,8 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
   @spec validate_form(t()) :: t()
   def validate_form(%__MODULE__{data: data, module: module} = xdata) do
     module.get_fields()
-    |> Enum.reduce(xdata, fn %{var: var, type: type, required: is_required} = field, acc ->
-      is_multi = String.ends_with?(type, "-multi")
+    |> Enum.reduce(xdata, fn %{var: var, required: is_required} = field, acc ->
+      is_multi = is_multi_type?(field)
 
       case data[var] do
         nil when is_required -> add_error(acc, "required", "#{var} is required")
@@ -474,13 +483,13 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
   values are legal to be included and the way (using the types) we could include
   them.
   """
-  @spec cast(t(), Map.t()) :: t()
+  @spec cast(t(), map()) :: t()
   def cast(%__MODULE__{module: module} = xdata, %{} = data) do
     data = Map.put(data, "FORM_TYPE", module.get_form_type())
 
     module.get_fields()
-    |> Enum.reduce(xdata, fn %{var: var, type: type}, acc ->
-      is_multi = String.ends_with?(type, "-multi")
+    |> Enum.reduce(xdata, fn %{var: var} = field, acc ->
+      is_multi = is_multi_type?(field)
 
       case data[var] do
         nil -> acc

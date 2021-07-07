@@ -205,7 +205,7 @@ defmodule Exampple.Client do
   - `tls_handler`: the module which we will use to handle the
     TLS connection, if any (default `Exampple.Tls`).
   """
-  @spec start_link(atom() | pid(), Map.t()) :: GenStateMachine.on_start()
+  @spec start_link(atom() | pid(), map()) :: GenStateMachine.on_start()
   def start_link(name \\ __MODULE__, args) do
     GenStateMachine.start_link(__MODULE__, [name, self(), args], name: name)
   end

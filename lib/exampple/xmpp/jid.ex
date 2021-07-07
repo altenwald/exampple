@@ -102,7 +102,7 @@ defmodule Exampple.Xmpp.Jid do
   def to_bare(%Jid{node: "", server: server}), do: server
   def to_bare(%Jid{node: node, server: server}), do: "#{node}@#{server}"
 
-  @spec parse(jid :: binary) :: t() | {:error, :enojid}
+  @spec parse(jid :: binary) :: t() | String.t() | {:error, :enojid}
   @doc """
   Parse a binary to a `jid` struct.
 

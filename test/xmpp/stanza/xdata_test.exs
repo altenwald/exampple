@@ -194,4 +194,51 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
       refute form.valid?
     end
   end
+
+  describe "parsing" do
+    test "parsing from binary" do
+      defmodule Form31 do
+        use Exampple.Xmpp.Stanza.Xdata
+
+        form "urn:xmpp:mydata", "Personal Details" do
+          instructions("Fill the whole form, please.")
+          field("name", :text_single, required: true, label: "Name")
+          field("surname", :text_single, label: "Surname")
+
+          field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
+        end
+      end
+
+      xml =
+        ~x[
+      <x type='form' xmlns='jabber:x:data'>
+        <title>Personal Details</title>
+        <instructions>Fill the whole form, please.</instructions>
+        <field var='FORM_TYPE' type='hidden'>
+          <value>urn:xmpp:mydata</value>
+        </field>
+        <field label='Name' type='text-single' var='name'>
+          <required/>
+        </field>
+        <field label='Surname' type='text-single' var='surname'/>
+        <field label='Gender' type='list-single' var='gender'>
+          <option label='Male'><value>M</value></option>
+          <option label='Female'><value>F</value></option>
+        </field>
+      </x>
+      ]
+        |> to_string()
+
+      assert %Xdata{
+               data: %{
+                 "FORM_TYPE" => "urn:xmpp:mydata",
+                 "gender" => nil,
+                 "name" => nil,
+                 "surname" => nil
+               },
+               module: Form31,
+               xdata_form_type: "form"
+             } == Form31.parse(xml)
+    end
+  end
 end
