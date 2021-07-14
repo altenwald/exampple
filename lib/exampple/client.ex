@@ -561,6 +561,10 @@ defmodule Exampple.Client do
     {:keep_state_and_data, timeout_action(data)}
   end
 
+  def connected(:info, {:xmlstreamend, _name}, data) do
+    {:keep_state_and_data, timeout_action(data)}
+  end
+
   def connected(:info, :xmlstartdoc, data) do
     {:keep_state_and_data, timeout_action(data)}
   end
