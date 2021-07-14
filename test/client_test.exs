@@ -11,71 +11,72 @@ defmodule Exampple.ClientTest do
   alias Exampple.Router.Conn
   alias Exampple.Xmpp.{Envelope, Stanza}
 
-  @name Exampple.Client
-
   describe "connectivity" do
     test "starting" do
+      pname = :starting_test
       assert {:ok, _pid} =
-               Client.start_link(%{
+               Client.start_link(pname, %{
                  host: "example.com",
                  port: 5222,
                  domain: "example.com",
                  tcp_handler: DummyTcpClient
                })
 
-      assert {:disconnected, %Client.Data{}} = :sys.get_state(Client)
-      Client.stop()
+      assert {:disconnected, %Client.Data{}} = :sys.get_state(pname)
+      Client.stop(pname)
     end
 
     test "connecting" do
+      pname = :connecting_test
       assert {:ok, pid} =
-               Client.start_link(%{
+               Client.start_link(pname, %{
                  host: "example.com",
                  port: 5222,
                  domain: "example.com",
                  tcp_handler: DummyTcpClient
                })
 
-      Client.connect()
-      Client.wait_for_connected()
-      assert Client.is_connected?()
-      assert {:connected, %Client.Data{}} = :sys.get_state(Client)
+      Client.connect(pname)
+      Client.wait_for_connected(pname)
+      assert Client.is_connected?(pname)
+      assert {:connected, %Client.Data{}} = :sys.get_state(pname)
       assert nil == DummyTcpClient.sent()
-      assert :ok == Client.disconnect()
-      refute Client.is_connected?()
-      Client.stop()
+      assert :ok == Client.disconnect(pname)
+      refute Client.is_connected?(pname)
+      Client.stop(pname)
     end
   end
 
   describe "sending stanzas to the server" do
     setup do
+      pname = :sending_test
       assert {:ok, pid} =
-               Client.start_link(%{
+               Client.start_link(pname, %{
                  host: "example.com",
                  port: 5222,
                  domain: "example.com",
                  tcp_handler: DummyTcpClient
                })
 
-      Client.connect()
-      assert :ok == Client.wait_for_connected()
+      Client.connect(pname)
+      assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
-      [pid: pid]
+      [pid: pid, pname: pname]
     end
 
-    test "message (binary)" do
+    test "message (binary)", %{pname: pname} do
       stanza = ~x[<message to='aaa@example.com'/>]
-      assert :ok == Client.send(to_string(stanza))
+      assert :ok == Client.send(to_string(stanza), pname)
       assert stanza == DummyTcpClient.wait_for_sent_xml(500)
     end
 
-    test "message (conn)" do
+    test "message (conn)", %{pname: pname} do
       conn =
         ~x[<message to='aaa@example.com'/>]
         |> Conn.new()
         |> Stanza.message_resp([])
 
-      assert :ok == Client.send(conn)
+      assert :ok == Client.send(conn, pname)
 
       resp = ~x[<message from='aaa@example.com'/>]
       assert resp == DummyTcpClient.wait_for_sent_xml(500)
@@ -84,57 +85,59 @@ defmodule Exampple.ClientTest do
 
   describe "receiving stanzas from the server" do
     setup do
+      pname = :receiving_test
       assert {:ok, pid} =
-               Client.start_link(%{
+               Client.start_link(pname, %{
                  host: "example.com",
                  port: 5222,
                  domain: "example.com",
                  tcp_handler: DummyTcpClient
                })
 
-      Client.connect()
-      assert :ok == Client.wait_for_connected()
+      Client.connect(pname)
+      assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
-      [pid: pid]
+      [pid: pid, pname: pname]
     end
 
-    test "message" do
+    test "message", %{pname: pname} do
       assert :ok == DummyTcpClient.received("<message to='aaa@example.com'/>")
       stanza = ~x[<message to='aaa@example.com'/>]
-      assert %Conn{stanza: ^stanza} = Client.get_conn(@name)
+      assert %Conn{stanza: ^stanza} = Client.get_conn(pname)
     end
   end
 
   describe "templates" do
     setup do
+      pname = :templates_test
       assert {:ok, pid} =
-               Client.start_link(%{
+               Client.start_link(pname, %{
                  host: "example.com",
                  port: 5222,
                  domain: "example.com",
                  tcp_handler: DummyTcpClient
                })
 
-      Client.connect()
-      assert :ok == Client.wait_for_connected()
+      Client.connect(pname)
+      assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
-      [pid: pid]
+      [pid: pid, pname: pname]
     end
 
-    test "add template" do
-      Client.add_template(:custom, fn -> "<custom/>" end)
-      Client.send_template(:custom)
+    test "add template", %{pname: pname} do
+      Client.add_template(pname, :custom, fn -> "<custom/>" end)
+      Client.send_template(:custom, [], pname)
       assert ~x[<custom/>] == DummyTcpClient.wait_for_sent_xml(500)
     end
 
-    test "use predefined template" do
-      Client.send_template(:auth, ["user", "pass"])
+    test "use predefined template", %{pname: pname} do
+      Client.send_template(:auth, ["user", "pass"], pname)
       assert ~x[
         <auth mechanism='PLAIN' xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>
           AHVzZXIAcGFzcw==
         </auth>
       ] == DummyTcpClient.wait_for_sent_xml(500)
-      Client.send_template(:bind, ["res"])
+      Client.send_template(:bind, ["res"], pname)
       assert ~x[
         <iq type='set' id='bind3' xmlns='jabber:client'>
           <bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>
@@ -142,15 +145,15 @@ defmodule Exampple.ClientTest do
           </bind>
         </iq>
       ] == DummyTcpClient.wait_for_sent_xml(500)
-      Client.send_template(:session)
+      Client.send_template(:session, [], pname)
       assert ~x[
         <iq type='set' id='session4'>
           <session xmlns='urn:ietf:params:xml:ns:xmpp-session'/>
         </iq>
       ] == DummyTcpClient.wait_for_sent_xml(500)
-      Client.send_template(:presence)
+      Client.send_template(:presence, [], pname)
       assert ~x[<presence/>] == DummyTcpClient.wait_for_sent_xml(500)
-      Client.send_template(:message, ["alice@example.com", "msg1", [body: "text"]])
+      Client.send_template(:message, ["alice@example.com", "msg1", [body: "text"]], pname)
       assert ~x[
         <message to='alice@example.com' id='msg1' type='chat'>
           <body>text</body>
@@ -161,7 +164,7 @@ defmodule Exampple.ClientTest do
         "alice@example.com",
         "msg2",
         [type: "chat", payload: "<no-text/>"]
-      ])
+      ], pname)
 
       assert ~x[
         <message to='alice@example.com' id='msg2' type='chat'>
@@ -173,48 +176,49 @@ defmodule Exampple.ClientTest do
 
   describe "checks" do
     setup do
+      pname = :checks_test
       assert {:ok, pid} =
-               Client.start_link(%{
+               Client.start_link(pname, %{
                  host: "example.com",
                  port: 5222,
                  domain: "example.com",
                  tcp_handler: DummyTcpClient
                })
 
-      Client.connect()
-      assert :ok == Client.wait_for_connected()
+      Client.connect(pname)
+      assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
-      [pid: pid]
+      [pid: pid, pname: pname]
     end
 
-    test "add check" do
-      Client.add_check(:msg, fn -> %{check!: true} end)
-      assert %{check!: true} == Client.check!(:msg)
+    test "add check", %{pname: pname} do
+      Client.add_check(pname, :msg, fn -> %{check!: true} end)
+      assert %{check!: true} == Client.check!(:msg, [], pname)
     end
 
-    test "predefined checks" do
+    test "predefined checks", %{pname: pname} do
       assert :ok = DummyTcpClient.received("<success/>")
-      assert %{} = Client.check!(:auth, [@name])
+      assert %{} = Client.check!(:auth, [pname], pname)
       assert :ok = DummyTcpClient.received("<proceed/>")
-      assert %{} = Client.check!(:starttls, [@name])
+      assert %{} = Client.check!(:starttls, [pname], pname)
 
       assert :ok =
                DummyTcpClient.received(
                  "<stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/><session xmlns='urn:xmpp:sm:3'/></stream:features>"
                )
 
-      assert %{"elixir.exampple.router.conn" => %Conn{}} = Client.check!(:init, [@name])
+      assert %{"elixir.exampple.router.conn" => %Conn{}} = Client.check!(:init, [pname], pname)
     end
 
-    test "no good return" do
-      Client.add_check(:msg, fn -> :check! end)
-      assert %{} = empty_map = Client.check!(:msg)
+    test "no good return", %{pname: pname} do
+      Client.add_check(pname, :msg, fn -> :check! end)
+      assert %{} = empty_map = Client.check!(:msg, [], pname)
       assert map_size(empty_map) == 0
     end
 
-    test "missing check" do
+    test "missing check", %{pname: pname} do
       assert_raise Exampple.Client.CheckException, fn ->
-        Client.check!(:msgX)
+        Client.check!(:msgX, [], pname)
       end
     end
   end
