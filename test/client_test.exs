@@ -150,13 +150,19 @@ defmodule Exampple.ClientTest do
       ] == DummyTcpClient.wait_for_sent_xml(500)
       Client.send_template(:presence)
       assert ~x[<presence/>] == DummyTcpClient.wait_for_sent_xml(500)
-      Client.send_template(:message, [ "alice@example.com", "msg1", [body: "text"] ])
+      Client.send_template(:message, ["alice@example.com", "msg1", [body: "text"]])
       assert ~x[
         <message to='alice@example.com' id='msg1' type='chat'>
           <body>text</body>
         </message>
       ] == DummyTcpClient.wait_for_sent_xml(500)
-      Client.send_template(:message, [ "alice@example.com", "msg2", [type: "chat", payload: "<no-text/>"] ])
+
+      Client.send_template(:message, [
+        "alice@example.com",
+        "msg2",
+        [type: "chat", payload: "<no-text/>"]
+      ])
+
       assert ~x[
         <message to='alice@example.com' id='msg2' type='chat'>
           <no-text/>
@@ -182,8 +188,8 @@ defmodule Exampple.ClientTest do
     end
 
     test "add check" do
-      Client.add_check(:msg, fn -> %{ check!: true } end)
-      assert %{ check!: true } == Client.check!(:msg)
+      Client.add_check(:msg, fn -> %{check!: true} end)
+      assert %{check!: true} == Client.check!(:msg)
     end
 
     test "predefined checks" do
@@ -191,7 +197,12 @@ defmodule Exampple.ClientTest do
       assert %{} = Client.check!(:auth, [@name])
       assert :ok = DummyTcpClient.received("<proceed/>")
       assert %{} = Client.check!(:starttls, [@name])
-      assert :ok = DummyTcpClient.received("<stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/><session xmlns='urn:xmpp:sm:3'/></stream:features>")
+
+      assert :ok =
+               DummyTcpClient.received(
+                 "<stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/><session xmlns='urn:xmpp:sm:3'/></stream:features>"
+               )
+
       assert %{"elixir.exampple.router.conn" => %Conn{}} = Client.check!(:init, [@name])
     end
 
