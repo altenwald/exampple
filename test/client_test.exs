@@ -61,6 +61,11 @@ defmodule Exampple.ClientTest do
       Client.connect(pname)
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
+      on_exit(fn ->
+        if Client.is_connected?(pname) do
+          Client.stop(pname)
+        end
+      end)
       [pid: pid, pname: pname]
     end
 
@@ -97,6 +102,11 @@ defmodule Exampple.ClientTest do
       Client.connect(pname)
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
+      on_exit(fn ->
+        if Client.is_connected?(pname) do
+          Client.stop(pname)
+        end
+      end)
       [pid: pid, pname: pname]
     end
 
@@ -121,6 +131,11 @@ defmodule Exampple.ClientTest do
       Client.connect(pname)
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
+      on_exit(fn ->
+        if Client.is_connected?(pname) do
+          Client.stop(pname)
+        end
+      end)
       [pid: pid, pname: pname]
     end
 
@@ -188,6 +203,11 @@ defmodule Exampple.ClientTest do
       Client.connect(pname)
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
+      on_exit(fn ->
+        if Client.is_connected?(pname) do
+          Client.stop(pname)
+        end
+      end)
       [pid: pid, pname: pname]
     end
 
