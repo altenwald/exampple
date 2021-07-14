@@ -15,7 +15,7 @@ defmodule Exampple.RouterTest do
         defmodule TestingRouterFail do
           use Exampple.Router
 
-          iq "urn:exampple:test:" do
+          iq "urn:exampple:test" do
             get("get:0", TestingControllerFail, :get)
             set("set:0", TestingControllerFail, :set)
           end
@@ -28,7 +28,7 @@ defmodule Exampple.RouterTest do
         defmodule TestingRouterFailFunction do
           use Exampple.Router
 
-          iq "urn:exampple:test:" do
+          iq "urn:exampple:test" do
             get("get:0", TestingController, :no_get)
             set("set:0", TestingController, :no_set)
           end

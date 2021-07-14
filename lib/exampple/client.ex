@@ -46,7 +46,7 @@ defmodule Exampple.Client do
 
   import Kernel, except: [send: 2]
 
-  alias Exampple.Client.CheckException
+  alias Exampple.Client.CheckError
   alias Exampple.Router.Conn
   alias Exampple.Tls
   alias Exampple.Xml.Stream, as: XmlStream
@@ -379,7 +379,7 @@ defmodule Exampple.Client do
         end
 
       :error ->
-        raise CheckException.exception("check #{template} for #{name} not found!")
+        raise CheckError.exception("check #{template} for #{name} not found!")
     end
   end
 

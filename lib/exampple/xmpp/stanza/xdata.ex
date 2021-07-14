@@ -7,6 +7,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
   """
   alias Exampple.Xml.Xmlel
   alias Exampple.Xmpp.Jid
+  alias Exampple.Xmpp.Stanza.Xdata.FieldError
   alias __MODULE__
 
   @type t() :: %__MODULE__{
@@ -187,7 +188,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
   defp get_type(:text_single), do: "text-single"
 
   defp get_type(type) do
-    raise """
+    raise FieldError, """
     Field with type `#{type}` is invalid, please use one of the valid ones.
     Check: https://xmpp.org/extensions/xep-0004.html#protocol-fieldtypes
     """
@@ -358,6 +359,11 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
     |> validate_xdata_form_type()
   end
 
+  defp validate_xdata_form_type(%__MODULE__{data: %{"FORM_TYPE" => form_type}} = xdata)
+       when form_type in [nil, ""] do
+    add_error(xdata, "form_type_missing", "FORM_TYPE is missing and is required")
+  end
+
   defp validate_xdata_form_type(
          %__MODULE__{data: %{"FORM_TYPE" => xmlns}, module: module} = xdata
        ) do
@@ -365,8 +371,18 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
       ^xmlns ->
         xdata
 
-      xmlns ->
-        add_error(xdata, "form_type_not_matching", "FORM_TYPE #{xmlns} invalid for #{module}")
+      right_xmlns ->
+        mod_str =
+          case to_string(module) do
+            "Elixir." <> mod_str -> mod_str
+            mod_str -> mod_str
+          end
+
+        add_error(
+          xdata,
+          "form_type_not_matching",
+          "FORM_TYPE #{xmlns} != #{right_xmlns} invalid for #{mod_str}"
+        )
     end
   end
 
@@ -460,10 +476,15 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
   end
 
   defp validate_type(xdata, %{var: var, type: "list-single", options: options}, option) do
-    if List.keyfind(options, option, 1) do
-      xdata
-    else
-      add_error(xdata, "invalid-option", "#{var} use invalid option `#{option}`")
+    case List.keyfind(options, option, 1) do
+      nil when option in [nil, ""] ->
+        add_error(xdata, "invalid-option", "#{var} use invalid empty option")
+
+      nil ->
+        add_error(xdata, "invalid-option", "#{var} use invalid option `#{option}`")
+
+      _option ->
+        xdata
     end
   end
 
@@ -485,7 +506,12 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
   """
   @spec cast(t(), map()) :: t()
   def cast(%__MODULE__{module: module} = xdata, %{} = data) do
-    data = Map.put(data, "FORM_TYPE", module.get_form_type())
+    data =
+      if Map.has_key?(data, "FORM_TYPE") do
+        data
+      else
+        Map.put(data, "FORM_TYPE", module.get_form_type())
+      end
 
     module.get_fields()
     |> Enum.reduce(xdata, fn %{var: var} = field, acc ->
@@ -532,12 +558,27 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
     defp maybe_add_required(%{var: "FORM_TYPE"}), do: []
     defp maybe_add_required(%{required: true}), do: [Xmlel.new("required")]
 
-    defp maybe_add_value(%{}, value) when not is_nil(value) do
+    defp maybe_add_value(%{}, value) when is_binary(value) do
       [Xmlel.new("value", %{}, [value])]
     end
 
+    defp maybe_add_value(%{}, values) when is_list(values) do
+      for value <- values do
+        Xmlel.new("value", %{}, [value])
+      end
+    end
+
     defp maybe_add_value(%{value: nil}, nil), do: []
-    defp maybe_add_value(%{value: value}, nil), do: [Xmlel.new("value", %{}, [value])]
+
+    defp maybe_add_value(%{value: value}, nil) when is_binary(value) do
+      [Xmlel.new("value", %{}, [value])]
+    end
+
+    defp maybe_add_value(%{value: values}, nil) when is_list(values) do
+      for value <- values do
+        Xmlel.new("value", %{}, [value])
+      end
+    end
 
     defp maybe_add_options(%{options: nil}), do: []
 

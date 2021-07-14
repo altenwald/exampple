@@ -1,4 +1,4 @@
-defmodule Exampple.Client.CheckException do
+defmodule Exampple.Client.CheckError do
   @moduledoc """
   This exception is triggered when a check is not satisfied. Usually
   we could add our own message inside. If we are not adding it, it is

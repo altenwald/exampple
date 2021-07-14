@@ -5,15 +5,15 @@ defmodule Exampple.ClientTest do
   require Logger
 
   import Exampple.Xml.Xmlel
-  import Exampple.Router.ConnCase.Client
 
   alias Exampple.{Client, DummyTcpClient}
   alias Exampple.Router.Conn
-  alias Exampple.Xmpp.{Envelope, Stanza}
+  alias Exampple.Xmpp.Stanza
 
   describe "connectivity" do
     test "starting" do
       pname = :starting_test
+
       assert {:ok, _pid} =
                Client.start_link(pname, %{
                  host: "example.com",
@@ -28,7 +28,8 @@ defmodule Exampple.ClientTest do
 
     test "connecting" do
       pname = :connecting_test
-      assert {:ok, pid} =
+
+      assert {:ok, _pid} =
                Client.start_link(pname, %{
                  host: "example.com",
                  port: 5222,
@@ -50,6 +51,7 @@ defmodule Exampple.ClientTest do
   describe "sending stanzas to the server" do
     setup do
       pname = :sending_test
+
       assert {:ok, pid} =
                Client.start_link(pname, %{
                  host: "example.com",
@@ -61,11 +63,13 @@ defmodule Exampple.ClientTest do
       Client.connect(pname)
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
+
       on_exit(fn ->
         if Client.is_connected?(pname) do
           Client.stop(pname)
         end
       end)
+
       [pid: pid, pname: pname]
     end
 
@@ -91,6 +95,7 @@ defmodule Exampple.ClientTest do
   describe "receiving stanzas from the server" do
     setup do
       pname = :receiving_test
+
       assert {:ok, pid} =
                Client.start_link(pname, %{
                  host: "example.com",
@@ -102,11 +107,13 @@ defmodule Exampple.ClientTest do
       Client.connect(pname)
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
+
       on_exit(fn ->
         if Client.is_connected?(pname) do
           Client.stop(pname)
         end
       end)
+
       [pid: pid, pname: pname]
     end
 
@@ -120,6 +127,7 @@ defmodule Exampple.ClientTest do
   describe "templates" do
     setup do
       pname = :templates_test
+
       assert {:ok, pid} =
                Client.start_link(pname, %{
                  host: "example.com",
@@ -131,11 +139,13 @@ defmodule Exampple.ClientTest do
       Client.connect(pname)
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
+
       on_exit(fn ->
         if Client.is_connected?(pname) do
           Client.stop(pname)
         end
       end)
+
       [pid: pid, pname: pname]
     end
 
@@ -175,11 +185,15 @@ defmodule Exampple.ClientTest do
         </message>
       ] == DummyTcpClient.wait_for_sent_xml(500)
 
-      Client.send_template(:message, [
-        "alice@example.com",
-        "msg2",
-        [type: "chat", payload: "<no-text/>"]
-      ], pname)
+      Client.send_template(
+        :message,
+        [
+          "alice@example.com",
+          "msg2",
+          [type: "chat", payload: "<no-text/>"]
+        ],
+        pname
+      )
 
       assert ~x[
         <message to='alice@example.com' id='msg2' type='chat'>
@@ -192,6 +206,7 @@ defmodule Exampple.ClientTest do
   describe "checks" do
     setup do
       pname = :checks_test
+
       assert {:ok, pid} =
                Client.start_link(pname, %{
                  host: "example.com",
@@ -203,11 +218,13 @@ defmodule Exampple.ClientTest do
       Client.connect(pname)
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
+
       on_exit(fn ->
         if Client.is_connected?(pname) do
           Client.stop(pname)
         end
       end)
+
       [pid: pid, pname: pname]
     end
 
@@ -237,7 +254,7 @@ defmodule Exampple.ClientTest do
     end
 
     test "missing check", %{pname: pname} do
-      assert_raise Exampple.Client.CheckException, fn ->
+      assert_raise Exampple.Client.CheckError, fn ->
         Client.check!(:msgX, [], pname)
       end
     end
