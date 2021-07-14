@@ -521,7 +521,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
     %__MODULE__{xdata | valid?: false, errors: [error | errors || []]}
   end
 
-  defimpl String.Chars, for: __MODULE__ do
+  defimpl Exampple.Xml, for: __MODULE__ do
     alias Exampple.Xml.Xmlel
     alias Exampple.Xmpp.Stanza.Xdata
 
@@ -559,7 +559,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
     @doc """
     Converts a Xdata form into the XML representation.
     """
-    def to_string(form) do
+    def to_xmlel(form) do
       Xmlel.new(
         "x",
         %{"type" => get_final_type(form), "xmlns" => "jabber:x:data"},
@@ -578,6 +578,16 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
            maybe_add("title", form.module.get_title()))
         |> Enum.reverse()
       )
+    end
+  end
+
+  defimpl String.Chars, for: __MODULE__ do
+    @doc """
+    Converts a Xdata form into the XML string representation.
+    """
+    def to_string(form) do
+      form
+      |> Exampple.Xml.to_xmlel()
       |> Kernel.to_string()
     end
   end

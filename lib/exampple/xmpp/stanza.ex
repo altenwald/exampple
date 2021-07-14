@@ -80,6 +80,7 @@ defmodule Exampple.Xmpp.Stanza do
   """
   def message(payload, from, id, to, type \\ nil) do
     id = maybe_gen_id(id, type)
+    type = if type != "normal", do: type
     stanza(payload, "message", from, id, to, type)
   end
 
@@ -217,6 +218,14 @@ defmodule Exampple.Xmpp.Stanza do
       iex> conn.response
       iex> |> to_string()
       "<message from=\\"bob@example.com\\" id=\\"1\\" to=\\"alice@example.com\\" type=\\"chat\\"/>"
+
+      iex> attrs = %{"from" => "alice@example.com", "to" => "bob@example.com", "id" => "2"}
+      iex> message = Exampple.Xml.Xmlel.new("message", attrs, [])
+      iex> conn = Exampple.Router.Conn.new(message)
+      iex> |> Exampple.Xmpp.Stanza.message_resp([])
+      iex> conn.response
+      iex> |> to_string()
+      "<message from=\\"bob@example.com\\" id=\\"2\\" to=\\"alice@example.com\\"/>"
   """
   def message_resp(%Conn{} = conn, payload) do
     from_jid = to_string(conn.from_jid)

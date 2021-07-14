@@ -46,6 +46,7 @@ defmodule Exampple.Client do
 
   import Kernel, except: [send: 2]
 
+  alias Exampple.Client.CheckException
   alias Exampple.Router.Conn
   alias Exampple.Tls
   alias Exampple.Xml.Stream, as: XmlStream
@@ -279,8 +280,7 @@ defmodule Exampple.Client do
   @spec is_connected?() :: boolean()
   @spec is_connected?(atom() | pid()) :: boolean()
   def is_connected?(name \\ __MODULE__) do
-    with pid <- Process.whereis(name),
-         true <- is_pid(pid),
+    with pid when is_pid(pid) <- Process.whereis(name),
          true <- Process.alive?(pid) do
       GenStateMachine.call(name, :is_connected?)
     else
@@ -379,7 +379,7 @@ defmodule Exampple.Client do
         end
 
       :error ->
-        raise "check #{template} for #{name} not found!"
+        raise CheckException.exception("check #{template} for #{name} not found!")
     end
   end
 
@@ -628,13 +628,13 @@ defmodule Exampple.Client do
   def handle_event(:info, {closed, _socket}, _state, data)
       when closed in [:tcp_closed, :ssl_closed] do
     Logger.error("tcp closed, disconnected")
-    {:stop, :normal, data}
+    {:next_state, :disconnected, data}
   end
 
   def handle_event(:info, {error, _socket, reason}, _state, data)
       when error in [:tcp_error, :ssl_error] do
     Logger.error("tcp closed, disconnected, error: #{inspect(reason)}")
-    {:stop, :normal, data}
+    {:next_state, :disconnected, data}
   end
 
   def handle_event(:cast, {:add_template, key, template}, _state, data) do

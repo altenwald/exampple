@@ -7,7 +7,4 @@ defmodule Exampple do
 
   @doc false
   defdelegate start_link(args), to: Exampple.Component
-
-  @doc false
-  defdelegate child_spec(args), to: Exampple.Component
 end

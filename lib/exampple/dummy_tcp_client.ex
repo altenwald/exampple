@@ -30,33 +30,29 @@ defmodule Exampple.DummyTcpClient do
   end
 
   @doc false
-  def stop() do
-    stop(__MODULE__)
+  def dump(pid \\ __MODULE__) do
+    GenServer.cast(pid, :dump)
   end
 
   @doc false
-  def dump() do
-    GenServer.cast(__MODULE__, :dump)
-  end
-
-  @doc false
-  def stop(pid) do
+  def stop(pid \\ __MODULE__) do
     GenServer.stop(pid)
   end
 
   @doc false
-  def send(packet, pid) when is_binary(packet) do
+  def send(packet, pid \\ __MODULE__) when is_binary(packet) do
     GenServer.cast(pid, {:send, packet})
   end
 
   @doc false
-  def subscribe() do
-    GenServer.cast(__MODULE__, {:subscribe, self()})
+  def subscribe(pid \\ nil) do
+    pid = if pid, do: pid, else: self()
+    GenServer.cast(__MODULE__, {:subscribe, pid})
   end
 
   @doc false
-  def sent() do
-    GenServer.call(__MODULE__, :sent)
+  def sent(pid \\ __MODULE__) do
+    GenServer.call(pid, :sent)
   end
 
   @doc false
