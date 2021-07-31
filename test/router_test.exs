@@ -45,6 +45,7 @@ defmodule Exampple.RouterTest do
         {"message", "chat", "", TestingFullController, :chat},
         {"iq", "get", "jabber:iq:register", TestingFullController, :register},
         {"iq", "set", "urn:exampple:test:set:0", TestingFullController, :set},
+        {"iq", "set", "jabber:iq:rpc", Exampple.Xmpp.Rpc.Controller, :rpc},
         {"iq", "get", "urn:exampple:test:get:0", TestingController, :get}
       ]
 
@@ -159,6 +160,7 @@ defmodule Exampple.RouterTest do
             <feature var="urn:exampple:test:set:0"/>
             <feature var="urn:xmpp:delegation:1"/>
             <feature var="urn:xmpp:forward:0"/>
+            <feature var="jabber:iq:rpc"/>
             <feature var="urn:exampple:test:get:0"/>
           </query>
         </iq>

@@ -273,6 +273,10 @@ defmodule Exampple.Component do
     {:next_state, :stream_init, %Data{data | stream: stream}, [{:next_event, :cast, :init}]}
   end
 
+  def connected(:cast, :connect, _data) do
+    :keep_state_and_data
+  end
+
   @doc false
   def stream_init(:cast, :init, data) do
     data.domain
@@ -434,6 +438,10 @@ defmodule Exampple.Component do
   end
 
   def handle_event(:info, {:xmlstreamend, _name}, _state, _data) do
+    :keep_state_and_data
+  end
+
+  def handle_event(:info, {:xmlcdata, _cdata}, _state, _data) do
     :keep_state_and_data
   end
 

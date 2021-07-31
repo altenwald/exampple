@@ -8,6 +8,7 @@ defmodule TestingFullRouter do
   envelope(["urn:xmpp:delegation:1", "urn:xmpp:forward:0"])
 
   includes(TestingRouter)
+  includes(Exampple.Xmpp.Rpc)
 
   iq "urn:exampple:test" do
     set("set:0", TestingFullController, :set)

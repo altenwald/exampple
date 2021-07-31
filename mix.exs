@@ -4,7 +4,7 @@ defmodule Exampple.MixProject do
   def project do
     [
       app: :exampple,
-      version: "0.8.0",
+      version: "0.9.0",
       description: "eXaMPPle is a XMPP Component Framework",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -23,8 +23,7 @@ defmodule Exampple.MixProject do
         "coveralls.html": :test,
         "coveralls.post": :test,
         "coveralls.github": :test,
-        actions: :test,
-        "inch.report": :docs
+        actions: :test
       ]
     ]
   end
@@ -50,7 +49,6 @@ defmodule Exampple.MixProject do
       {:telemetry_metrics, "~> 0.4"},
       {:uuid, "~> 1.1"},
       {:ex_doc, ">= 0.0.0", optional: true, only: :dev},
-      {:inch_ex, ">= 0.0.0", optional: true, only: :docs},
       {:dialyxir, "~> 1.0", optional: true, only: :dev, runtime: false},
       {:excoveralls, "~> 0.14", optional: true, only: :test}
     ]

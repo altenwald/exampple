@@ -13,6 +13,7 @@ if Mix.env() == :test do
 
   config :exampple,
     auto_generate_id: false,
+    rpc: TestingRpc,
     router: TestingRouter
 
   config :logger, :console,

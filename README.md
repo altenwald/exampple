@@ -16,7 +16,7 @@ You can install the application for your project in the following way:
 ```elixir
 def deps do
   [
-    {:exampple, "~> 0.5.0"}
+    {:exampple, "~> 0.9.0"}
   ]
 end
 ```
@@ -25,19 +25,25 @@ You can also create a new project using [phx_new](https://github.com/altenwald/e
 
 ## Elixir and OTP Versions
 
-We recommend to use OTP 22+ and Elixir 1.10+. You can see in the following table the tests are they are made on [Travis CI](https://travis-ci.org/github/altenwald/exampple):
+We recommend to use OTP 23+ and Elixir 1.10+. You can see in the following table the tests are they are made on [Travis CI](https://travis-ci.org/github/altenwald/exampple):
 
 | Erlang | Elixir | Support            |
 |:-------|:-------|:-------------------|
+| 24.0   | 1.12   | :heavy_check_mark: |
+| 24.0   | 1.11   | :heavy_check_mark: |
+| 24.0   | 1.10   | :heavy_check_mark: |
+| 23.3   | 1.12   | :heavy_check_mark: |
+| 23.3   | 1.11   | :heavy_check_mark: |
+| 23.3   | 1.10   | :heavy_check_mark: |
+| 23.2   | 1.12   | :heavy_check_mark: |
+| 23.2   | 1.11   | :heavy_check_mark: |
+| 23.2   | 1.10   | :heavy_check_mark: |
+| 23.1   | 1.12   | :heavy_check_mark: |
+| 23.1   | 1.11   | :heavy_check_mark: |
 | 23.1   | 1.10   | :heavy_check_mark: |
+| 23.0   | 1.12   | :heavy_check_mark: |
+| 23.0   | 1.11   | :heavy_check_mark: |
 | 23.0   | 1.10   | :heavy_check_mark: |
-| 23.0   | 1.9    | :x:                |
-| 22.3   | 1.10   | :heavy_check_mark: |
-| 22.3   | 1.9    | :heavy_check_mark: |
-| 22.2   | 1.10   | :heavy_check_mark: |
-| 22.2   | 1.9    | :heavy_check_mark: |
-| 22.1   | 1.10   | :heavy_check_mark: |
-| 22.1   | 1.9    | :heavy_check_mark: |
 
 ## Donation
 
@@ -583,6 +589,102 @@ We hav different functions to use to generate responses:
 
 You can check the module to get even more functionalities regarding stanzas.
 
+## Jabber-RPC
+
+If we want to provide a fast way to use XML-RPC over XMPP, we can use [Jabber-RPC (XEP-0009)](https://xmpp.org/extensions/xep-0009.html). You only need to add this line to your router:
+
+```elixir
+includes(Exampple.Xmpp.Rpc)
+```
+
+And then, the configuration:
+
+```elixir
+config :exampple,
+  router: MyRouter,
+  rpc: MyRpc
+```
+
+The `MyRpc` module should be created by you. The mapping is direct. Every call performed to the Jabber-RPC namespace is handled and run the function inside of `MyRpc` with the number of parameters passed into the request.
+
+## XData Forms
+
+To handle better the forms, you can use this:
+
+```elixir
+defmodule Form01 do
+  use Exampple.Xmpp.Stanza.Xdata
+
+  form "urn:xmpp:mydata", "Personal Details" do
+    instructions("""
+    Fill the whole form, please.
+    """)
+
+    field("name", :text_single, required: true, label: "Name")
+    field("surname", :text_single, label: "Surname")
+
+    field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
+  end
+end
+```
+
+If we want to send the form to the client to be filled it up:
+
+```elixir
+Form01.new()
+```
+
+Because it's implementing `to_string/1` protocol, it could be inserted into a response:
+
+```elixir
+conn
+|> iq_resp([Xmlel.new("query", %{"xmlns" => "urn:mydata"}, [Form01.new()])])
+|> send()
+```
+
+And, when the user is sending back the form, we could parse it and validate it:
+
+```elixir
+def set(conn, [%Xmlel{name: "query", children: [xdata|_]}]) do
+  xdata
+  |> Form01.parse()
+  |> Xdata.validate_form()
+  |> case do
+    %Xdata{valid?: true} ->
+      conn
+      |> iq_resp([])
+      |> send()
+
+    %Xdata{errors: errors} ->
+      error_txt =
+        errors
+        |> Enum.map(& "#{&1.name}: #{&1.text}")
+        |> Enum.join("; ")
+
+      conn
+      |> error({"bad-request", "en", error_txt})
+      |> send()
+  end
+end
+```
+
+If you receive the information using other vias and you want to continue performing the validation of the form, you can use `Xdata.cast/2`:
+
+```elixir
+Form01.new()
+|> Xdata.cast(%{"name" => "Manuel", "surname" => "Rubio", "gender" => "M"})
+|> Xdata.validate_form()
+```
+
+As you can see the validation is delegated to the specification of the data. Even, if you need to fill a form yourself to be sent to another server or even to a client, you can perform the action using the function `Xdata.submit/2`:
+
+```elixir
+Form01.new()
+|> Xdata.submit(%{"name" => "Manuel", "surname" => "Rubio", "gender" => "M"})
+```
+
+The difference between _cast_ and _submit_ is the last one is changing the form_type and performing a validation. Cast isn't performing a validation.
+
 ## Something goes wrong
 
 There is a monitoring process which is controlling what is happening with our request. If it takes more than the configured time to be attended which could be configured in the connection as `stanza_timeout` (by default it is 5 seconds) it's killing the process and
@@ -643,7 +745,7 @@ Finally, but maybe the most important topic, we have facilities to perform the t
 The definition of the test should be:
 
 ```elixir
-use Exampple.ConnCase
+use Exampple.Router.ConnCase
 ```
 
 This macro let us to include and configure the basics to run all of the necessary tests for us and provide us more macros for assertion (see below).
