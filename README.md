@@ -589,7 +589,7 @@ We hav different functions to use to generate responses:
 
 You can check the module to get even more functionalities regarding stanzas.
 
-## Jabber-RPC
+## Jabber-RPC
 
 If we want to provide a fast way to use XML-RPC over XMPP, we can use [Jabber-RPC (XEP-0009)](https://xmpp.org/extensions/xep-0009.html). You only need to add this line to your router:
 
