@@ -109,6 +109,17 @@ defmodule Exampple.ComponentTest do
       assert_stanza_received(^stanza)
     end
 
+    test "ping disconnected" do
+      Component.connect()
+      Component.wait_for_ready()
+      DummyTcpComponent.subscribe()
+
+      Process.sleep(500)
+      Component.disconnect()
+      Process.sleep(750)
+      assert is_pid(Process.whereis(Exampple.Component))
+    end
+
     test "stanzas" do
       Component.connect()
       Component.wait_for_ready()

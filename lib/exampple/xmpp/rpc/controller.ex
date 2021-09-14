@@ -29,7 +29,7 @@ defmodule Exampple.Xmpp.Rpc.Controller do
     end
   end
 
-  def rpc(conn, query) do
+  def rpc(conn, _query) do
     conn
     |> error({"bad-request", "en", "invalid query, you must include only one query tag"})
     |> send()

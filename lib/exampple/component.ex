@@ -13,7 +13,7 @@ defmodule Exampple.Component do
   Check the general documentation about the architecture and how to use it
   for further information.
   """
-  use GenStateMachine, callback_mode: :handle_event_function
+  use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
   require Logger
 
   alias Exampple.Xml.Xmlel
@@ -388,6 +388,13 @@ defmodule Exampple.Component do
 
   @impl GenStateMachine
   @doc false
+  def handle_event(:enter, _old_state, :disconnected, _data) do
+    {:keep_state_and_data, [{{:timeout, :ping}, :cancel}]}
+  end
+  def handle_event(:enter, _old_state, _state, _data) do
+    :keep_state_and_data
+  end
+
   def handle_event(:cast, :disconnect, :disconnected, _data) do
     :keep_state_and_data
   end
