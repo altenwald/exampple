@@ -158,21 +158,24 @@ defmodule Exampple.ComponentTest do
       component_received(
         "<iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
           "<query xmlns='jabber:iq:ping'/>" <>
-          "</iq><iq type='get' to='test.example.com' from='User@example.com/res1' id='1'>" <>
+          "</iq><iq type='get' to='test.example.com' from='User@example.com/res1' id='2'>" <>
           "<query xmlns='jabbe"
       )
 
       Process.sleep(100)
       component_received("r:iq:ping'/></iq>")
 
-      stanza = ~x[
+      assert_stanza_receive ~x[
         <iq from="test.example.com" id="1" to="User@example.com/res1" type="result">
           <query xmlns="jabber:iq:ping"/>
         </iq>
       ]
 
-      assert_stanza_receive(stanza)
-      assert_stanza_receive(stanza)
+      assert_stanza_receive ~x[
+        <iq from="test.example.com" id="2" to="User@example.com/res1" type="result">
+          <query xmlns="jabber:iq:ping"/>
+        </iq>
+      ]
     end
   end
 

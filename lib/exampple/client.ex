@@ -548,13 +548,7 @@ defmodule Exampple.Client do
       "(#{data.name}) received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}"
     )
 
-    data = %Data{data | stream: XmlStream.new()}
-    {:keep_state, data}
-  end
-
-  def connected(:info, {:xmlstreamstart, "stream:stream", _attrs}, data) do
-    data = %Data{data | stream: XmlStream.new()}
-    {:keep_state, data, timeout_action(data)}
+    :keep_state_and_data
   end
 
   def connected(:info, {:xmlstreamstart, _name, _attrs}, data) do
@@ -614,19 +608,29 @@ defmodule Exampple.Client do
     :ok
   end
 
-  defp parse_stream(stream, packet) do
-    case XmlStream.parse(stream, packet) do
-      {:halt, _, rest} -> parse_stream(XmlStream.new(), rest)
-      other -> other
-    end
-  end
-
   @impl GenStateMachine
   @doc false
-  def handle_event(:info, {type, _socket, packet}, _state, data) when type in [:tcp, :ssl] do
+  def handle_event(:info, {type, socket, packet}, _state, data) when type in [:tcp, :ssl] do
     Logger.info("(#{data.name}) received (packet): #{IO.ANSI.cyan()}#{packet}#{IO.ANSI.reset()}")
-    stream = parse_stream(data.stream, packet)
-    {:keep_state, %Data{data | stream: stream}}
+    case XmlStream.parse(data.stream, packet) do
+      {:cont, partial} ->
+        {:keep_state, %Data{data | stream: partial}}
+
+      {:halt, _user, "</stream:stream>"} ->
+        stream = XmlStream.new()
+        {:keep_state, %Data{data | stream: stream}}
+
+      {:halt, _user, rest} ->
+        stream = XmlStream.new()
+        actions = [{:next_event, :info, {type, socket, rest}}]
+        {:keep_state, %Data{data | stream: stream}, actions}
+
+      {:error, error} ->
+        Logger.error("failing packet: #{inspect(packet)}")
+        Logger.error("parsing error: #{inspect(error)}")
+        data.tcp_handler.stop(data.socket)
+        {:next_state, :retrying, data, [{:next_event, :cast, :connect}]}
+    end
   end
 
   def handle_event(:info, {closed, _socket}, _state, data)

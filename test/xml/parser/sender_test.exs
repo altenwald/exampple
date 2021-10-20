@@ -109,6 +109,30 @@ defmodule Exampple.Xml.Parser.SenderTest do
       assert events == receive_all()
     end
 
+    test "more than one stanza split" do
+      Application.put_env(:exampple, :debug_xml, false)
+
+      assert {:ok, ""} =
+               XmlStream.new()
+               |> XmlStream.parse("<foo id='1'")
+               |> XmlStream.parse(">Hello world!")
+               |> XmlStream.parse("</foo><bar a='1")
+               |> XmlStream.parse("23'>more data</bar>")
+               |> XmlStream.parse("<baz>and more</baz>")
+               |> XmlStream.terminate()
+
+      events = [
+        {:xmlstreamstart, "foo", [{"id", "1"}]},
+        {:xmlelement, ~x[<foo id='1'>Hello world!</foo>]},
+        {:xmlstreamstart, "bar", [{"a", "123"}]},
+        {:xmlelement, ~x[<bar a='123'>more data</bar>]},
+        {:xmlstreamstart, "baz", []},
+        {:xmlelement, ~x[<baz>and more</baz>]}
+      ]
+
+      assert events == receive_all()
+    end
+
     test "ignoring stream:stream (never ending tag)" do
       Application.put_env(:exampple, :debug_xml, false)
 

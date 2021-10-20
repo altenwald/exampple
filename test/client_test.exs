@@ -122,6 +122,35 @@ defmodule Exampple.ClientTest do
       stanza = ~x[<message to='aaa@example.com'/>]
       assert %Conn{stanza: ^stanza} = Client.get_conn(pname)
     end
+
+    test "chunks stanzas", %{pname: pname} do
+      assert :ok == DummyTcpClient.received(
+        "<iq type='get' from='test.example.com' to='User@example.com/res1' id='1'>" <>
+          "<query xmlns='jabber:iq:ping'/>" <>
+          "</iq><iq type='get' from='test.example.com' to='User@example.com/res1' id='2'>" <>
+          "<query xmlns='jabbe"
+      )
+
+      Process.sleep(100)
+      assert :ok == DummyTcpClient.received("r:iq:ping'/></iq>")
+
+      stanza1 = ~x[
+        <iq from="test.example.com" id="1" to="User@example.com/res1" type="get">
+          <query xmlns="jabber:iq:ping"/>
+        </iq>
+      ]
+
+      stanza2 = ~x[
+        <iq from="test.example.com" id="2" to="User@example.com/res1" type="get">
+          <query xmlns="jabber:iq:ping"/>
+        </iq>
+      ]
+
+      assert [
+        %Conn{stanza: ^stanza1},
+        %Conn{stanza: ^stanza2}
+      ] = Client.get_conns(pname, 2)
+    end
   end
 
   describe "templates" do
