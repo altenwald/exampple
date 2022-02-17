@@ -12,132 +12,25 @@ defmodule Exampple.Client do
   It has the possibility to register templates and returns back the
   stanzas which are being received from the XMPP server to the calling
   process. This way we are responsible of the communication.
-
-  ## Templates
-
-  We have available the following templates:
-
-  - `init` (domain): it sends the initial XML header. Requires the domain.
-  - `starttls`: sends the stanza to init the TLS negotiation (WIP).
-  - `auth` (user, password): send the auth stanza to the server.
-  - `bind` (resource): establish the bind to a resource.
-  - `session`: creates the session.
-  - `presence`: sends a presence.
-  - `message` (to, id, *kw_opts): build a message, it requires to specify
-    different options. If we send `body: "hello"` then a body is created
-    with that text as CDATA. We can also use `payload: "<body>Hello</body>"`
-    to define the payload by ourselves. And even specify a `type`.
-  - `register` (username, password): it sends the standard register
-    stanza as is defined inside of the [XEP-0077](https://xmpp.org/extensions/xep-0077.html).
-
-  ## Checks
-
-  The checks are functions which check only the happy path, failing or raising
-  an error if it's not finding what they need. We have defined the following
-  checks:
-
-  - `auth`: wait for the `success` stanza from the server.
-  - `init`: wait for `stream:features` stanza and `bind` and `session` features inside.
-  - `bind`: wait for the result IQ.
-  - `presence`: wait for the available presence as an echo from the server.
   """
   use GenStateMachine, callback_mode: :handle_event_function
   require Logger
 
   import Kernel, except: [send: 2]
 
-  alias Exampple.Client.CheckError
   alias Exampple.Router.Conn
   alias Exampple.Tls
   alias Exampple.Xml.Stream, as: XmlStream
-  alias Exampple.Xml.Xmlel
 
   @default_tcp_handler Exampple.Tcp
   @default_tls_handler Exampple.Tls
 
-  defp default_templates() do
-    [
-      init: &xml_init/1,
-      starttls: fn -> "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>" end,
-      auth: fn user, password ->
-        base64 = Base.encode64(<<0, user::binary, 0, password::binary>>)
-
-        "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' " <>
-          "mechanism='PLAIN'>#{base64}</auth>"
-      end,
-      bind: fn resource ->
-        "<iq type='set' id='bind3' xmlns='jabber:client'>" <>
-          "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>" <>
-          "<resource>#{resource}</resource></bind></iq>"
-      end,
-      session: fn ->
-        "<iq type='set' id='session4'>" <>
-          "<session xmlns='urn:ietf:params:xml:ns:xmpp-session'/></iq>"
-      end,
-      presence: fn -> "<presence/>" end,
-      message: fn
-        to, id, body: body_text ->
-          "<message to='#{to}' id='#{id}' type='chat'><body>#{body_text}</body></message>"
-
-        to, id, type: type, payload: payload ->
-          "<message to='#{to}' id='#{id}' type='#{type}'>#{payload}</message>"
-      end,
-      iq: fn
-        to, id, type, xmlns: xmlns ->
-          "<iq to='#{to}' id='#{id}' type='#{type}'><query xmlns='#{xmlns}'/></iq>"
-
-        to, id, type, payload: payload ->
-          "<iq to='#{to}' id='#{id}' type='#{type}'>#{payload}</iq>"
-
-        to, id, type, xmlns: xmlns, payload: payload ->
-          "<iq to='#{to}' id='#{id}' type='#{type}'><query xmlns='#{xmlns}'>#{payload}</query></iq>"
-      end,
-      register: fn username, password ->
-        "<iq id='reg1' type='set'>" <>
-          "<query xmlns='jabber:iq:register'>" <>
-          "<username>#{username}</username>" <>
-          "<password>#{password}</password>" <>
-          "</query></iq>"
-      end
-    ]
-  end
-
-  defp default_checks() do
-    [
-      auth: fn pname ->
-        %Conn{stanza_type: "success"} = get_conn(pname)
-      end,
-      starttls: fn pname ->
-        %Conn{stanza_type: "proceed"} = get_conn(pname)
-      end,
-      init: fn pname ->
-        %Conn{
-          stanza_type: "stream:features",
-          stanza: stanza,
-          xmlns: "urn:ietf:params:xml:ns:xmpp-bind"
-        } = conn = get_conn(pname)
-
-        [%Xmlel{}] = stanza["bind"]
-        [%Xmlel{}] = stanza["session"]
-        conn
-      end,
-      bind: fn pname ->
-        %Conn{
-          stanza_type: "iq",
-          type: "result",
-          xmlns: "urn:ietf:params:xml:ns:xmpp-bind"
-        } = get_conn(pname)
-      end,
-      presence: fn pname ->
-        %Conn{
-          stanza_type: "presence",
-          type: "available"
-        } = get_conn(pname)
-      end
-    ]
-  end
+  @type hook_name() :: String.t()
+  @type hook_function() :: (Conn.t() -> {:ok, Conn.t()} | :drop)
 
   defmodule Data do
+    alias Exampple.Client
+
     @moduledoc false
     @type t() :: %__MODULE__{
             socket: nil | :gen_tcp.socket(),
@@ -151,11 +44,9 @@ defmodule Exampple.Client do
             ping: boolean() | non_neg_integer(),
             tcp_handler: module(),
             tls_handler: module(),
-            send_pid: nil | pid(),
-            templates: Keyword.t(),
-            checks: Keyword.t(),
-            name: nil | atom(),
-            subscribed: nil | atom() | pid()
+            tracer_pids: %{ reference() => pid() },
+            hooks: %{ Client.hook_name() => Client.hook_function() },
+            name: nil | atom()
           }
 
     defstruct socket: nil,
@@ -169,11 +60,9 @@ defmodule Exampple.Client do
               ping: false,
               tcp_handler: Tcp,
               tls_handler: Tls,
-              send_pid: nil,
-              templates: [],
-              checks: [],
-              name: nil,
-              subscribed: nil
+              tracer_pids: %{},
+              hooks: %{},
+              name: nil
   end
 
   defp xml_init(domain) do
@@ -205,6 +94,8 @@ defmodule Exampple.Client do
     connection (default `Exampple.Tcp`).
   - `tls_handler`: the module which we will use to handle the
     TLS connection, if any (default `Exampple.Tls`).
+  - `trace`: indicate if you want to receive trace output from
+    the client.
   """
   @spec start_link(atom() | pid(), map()) :: GenStateMachine.on_start()
   def start_link(name \\ __MODULE__, args) do
@@ -223,31 +114,24 @@ defmodule Exampple.Client do
   end
 
   @doc """
-  Performs a subscription to the XMPP client. This means the client
-  is going to notify when it's connected. This could be used for testing and
-  for synchronization at start. Only one process could be subscribed at
-  the same time.
-  """
-  @spec subscribe() :: :ok
-  @spec subscribe(atom() | pid()) :: :ok
-  def subscribe(name \\ __MODULE__) do
-    GenStateMachine.cast(name, {:subscribe, self()})
-  end
-
-  @doc """
   Wait until the system is connected to start processing messages. This is in
   use for functional tests and could be used as a phase in the start of
   the applications.
   """
-  @spec wait_for_connected() :: :ok
-  @spec wait_for_connected(atom() | pid()) :: :ok
-  def wait_for_connected(name \\ __MODULE__) do
-    subscribe(name)
+  @spec wait_for_connected() :: :ok | :timeout
+  @spec wait_for_connected(atom() | pid()) :: :ok | :timeout
+  def wait_for_connected(name \\ __MODULE__, sleep \\ 250, retries \\ 2)
 
-    receive do
-      :connected -> :ok
-    after
-      500 -> :timeout
+  def wait_for_connected(_name, _sleep, 0) do
+    :timeout
+  end
+
+  def wait_for_connected(name, sleep, retries) do
+    if is_connected?(name) do
+      :ok
+    else
+      Process.sleep(250)
+      wait_for_connected(name, sleep, retries - 1)
     end
   end
 
@@ -328,161 +212,53 @@ defmodule Exampple.Client do
   end
 
   @doc """
-  Use a template registered inside of the client. This let us to
-  trigger faster stanzas when we are working from the shell. But
-  also reduce the amount of code when we are developing tests.
-
-  The `template` parameter is an atom, the key for the keyword
-  list of templates stored inside of the process. The `args` are
-  the arguments passed to the function template. Finally the `name`
-  is the name of the process where the request will be sent.
+  Add process as a tracer for the current XMPP client. It let us receive
+  all of the events happening inside of the client. We can have as many
+  tracers as needed.
   """
-  @spec send_template(atom(), [any()], atom() | pid()) :: :ok | :not_found
-  def send_template(template, args \\ [], name \\ __MODULE__)
-      when is_atom(template) and is_list(args) do
-    case GenStateMachine.call(name, {:get_template, template}) do
-      {:ok, xml_fn} ->
-        xml_fn
-        |> apply(args)
-        |> send(name)
+  @spec trace(boolean()) :: :ok
+  @spec trace(GenServer.server(), enable? :: boolean()) :: :ok
+  def trace(name \\ __MODULE__, enable?) when is_boolean(enable?) do
+    GenStateMachine.cast(name, {:trace, enable?, self()})
+  end
 
-      :error ->
-        :not_found
+  @doc """
+  Add hook letting us to run a specific code for a received stanza. The
+  hooks should be anonymous functions in the way:
+
+  ```
+  fn conn ->
+    if conn.stanza_type == "iq" and conn.type == "result" do
+      :drop
+    else
+      {:ok, conn}
     end
   end
+  ```
 
-  @doc """
-  Use a check registered inside of the client verifying if the incoming
-  stanzas are passing the checks defined by the anonymous function. In
-  the same way as the `send_template/3` function it provides to the
-  developer the ability to write better and shorter tests.
+  These functions let us stop processing of the stanzas or add specific
+  listeners for an incoming stanza we are awaiting for. For example, if
+  we want to get the stanza in our process:
 
-  We are providing the `template` name for the check, optionally some `args`
-  if the check requires it and the `name` of the process for the client,
-  by default it will be `__MODULE__`.
-
-  The return of the check should be a map, if you return an struct it will
-  be inserted inside of an empty map using the name of the struct as name.
-  For example, returning a `%Conn{}` it will result in a `%{"conn" => %Conn{}}`.
-  """
-  @spec check!(atom()) :: map()
-  @spec check!(atom(), [any()]) :: map()
-  @spec check!(atom(), [any()], atom() | pid() | pid()) :: map()
-  def check!(template, args \\ [], name \\ __MODULE__)
-      when is_atom(template) and is_list(args) do
-    case GenStateMachine.call(name, {:get_check, template}) do
-      {:ok, check_fn} ->
-        case apply(check_fn, args) do
-          %struct{} = result -> %{String.downcase(to_string(struct)) => result}
-          %{} = result -> result
-          _ -> %{}
-        end
-
-      :error ->
-        raise CheckError.exception("check #{template} for #{name} not found!")
+  ```
+  parent = self()
+  f = fn conn ->
+    if conn.stanza_type == "iq" and conn.type == "error" do
+      send(parent, {:stanza_error, conn.stanza})
     end
+    {:ok, conn}
+  end
+  """
+  @spec add_hook(hook_name, hook_function) :: :ok
+  @spec add_hook(GenServer.server(), hook_name, hook_function) :: :ok
+  def add_hook(name \\ __MODULE__, hook_name, hook_function) do
+    :ok = GenStateMachine.cast(name, {:add_hook, hook_name, hook_function})
   end
 
-  @doc """
-  Adds a template to be in use by the process when we call `send_template/2`
-  or `send_template/3`. The `name` is the name or PID for the process, the
-  `key` is the name we will use storing the template and `fun` is the
-  function which will generate the stanza.
-  """
-  @spec add_template(atom(), (... -> String.t())) :: :ok
-  @spec add_template(atom() | pid(), atom(), (... -> String.t())) :: :ok
-  def add_template(name \\ __MODULE__, key, fun) do
-    :ok = GenStateMachine.cast(name, {:add_template, key, fun})
-  end
-
-  @doc """
-  Adds a check to be in use by the process when we call `check/2` or
-  `check/3`. The `name` is the name or PID for the process, the `key`
-  is the name we will use storing the template and `fun` is the function
-  which will check the incoming stanza returning true or false if the
-  check is passed.
-  """
-  @spec add_check(atom(), (... -> boolean())) :: :ok
-  @spec add_check(atom() | pid(), atom(), (... -> boolean())) :: :ok
-  def add_check(name \\ __MODULE__, key, fun) do
-    :ok = GenStateMachine.cast(name, {:add_check, key, fun})
-  end
-
-  @doc """
-  Waits for an incoming connection / stanza which will be sent from
-  the client process. It only works if we are using this function
-  from the process which execute the `start_link` function or if
-  we passed the PID of the current process as the `name` parameter.
-  Optionally, we can configure a `timeout`, by default it's set to
-  5 seconds.
-  """
-  @spec get_conn(atom() | pid()) :: Conn.t() | :timeout
-  @spec get_conn(atom() | pid(), timeout()) :: Conn.t() | :timeout
-  def get_conn(name, timeout \\ 5_000) do
-    receive do
-      {:conn, ^name, packet} -> packet
-    after
-      timeout -> :timeout
-    end
-  end
-
-  @doc """
-  Waits for an incoming connection / stanza which will be sent from
-  the client process. It needs to define the stanza as the second
-  parameter to be catch. If the stanza arriving isn't which match,
-  it's giving a timeout. Optionally, we can configure a `timeout`,
-  by default it's set to 5 seconds.
-  """
-  defmacro receive_conn(name, stanza, timeout \\ 5_000) do
-    quote do
-      receive do
-        {:conn, unquote(name), unquote(stanza) = returning_stanza} ->
-          {true, returning_stanza}
-      after
-        unquote(timeout) -> false
-      end
-    end
-  end
-
-  @doc """
-  Same as `get_conn/2` but we are waiting for a specific number
-  of stanzas to be received indicated by `num` parameter. We have
-  to indicate the `name` for the process where we are going to be
-  connected.
-
-  Optionally, we can configure a `timeout`, by default it's set to
-  5 seconds.
-  """
-  @spec get_conns(atom() | pid(), pos_integer()) :: [Conn.t() | :timeout]
-  @spec get_conns(atom() | pid(), pos_integer(), timeout()) :: [Conn.t() | :timeout]
-  def get_conns(name, num, timeout \\ 5_000) do
-    receive do
-      {:conn, ^name, packet} when num > 1 ->
-        [packet | get_conns(name, num - 1, timeout)]
-
-      {:conn, ^name, packet} when num == 1 ->
-        [packet]
-    after
-      timeout -> [:timeout]
-    end
-  end
-
-  @doc """
-  Returns or true or a list of stanzas which were not found
-  in the message queue.
-  """
-  @spec receive_conns(atom() | pid(), [Xmlel.t()]) :: {[Xmlel.t()], [Xmlel.t()]}
-  @spec receive_conns(atom() | pid(), [Xmlel.t()], timeout()) :: {[Xmlel.t()], [Xmlel.t()]}
-  def receive_conns(name, stanzas, timeout \\ 5_000) do
-    {good, bad} =
-      Enum.reduce(stanzas, {[], []}, fn stanza, {good, bad} ->
-        case receive_conn(^name, ^stanza, timeout) do
-          {true, st} -> {[st | good], bad}
-          false -> {good, [stanza | bad]}
-        end
-      end)
-
-    {Enum.reverse(good), Enum.reverse(bad)}
+  @spec del_hook(hook_name) :: :ok
+  @spec del_hook(GenServer.server(), hook_name) :: :ok
+  def del_hook(name \\ __MODULE__, hook_name) do
+    :ok = GenStateMachine.cast(name, {:del_hook, hook_name})
   end
 
   @impl GenStateMachine
@@ -499,12 +275,35 @@ defmodule Exampple.Client do
       ping: Map.get(cfg, :ping, false),
       tcp_handler: Map.get(cfg, :tcp_handler, @default_tcp_handler),
       tls_handler: Map.get(cfg, :tls_handler, @default_tls_handler),
-      templates: default_templates(),
-      checks: default_checks(),
-      send_pid: pid
+      tracer_pids: if(Map.get(cfg, :trace, false), do: to_subscribe(%{}, pid), else: %{})
     }
 
     {:ok, :disconnected, state_data}
+  end
+
+  defp to_subscribe(tracer_pids, pid) do
+    ref = Process.monitor(pid)
+    Map.put(tracer_pids, ref, pid)
+  end
+
+  defp trace(%Data{tracer_pids: pids, name: name}, event_name, event_data) do
+    Enum.each(pids, fn {_, pid} ->
+      Kernel.send(pid, {event_name, self(), Keyword.put(event_data, :name, name)})
+    end)
+  end
+
+  defp apply_hooks(conn, %Data{hooks: []}), do: conn
+  defp apply_hooks(conn, %Data{hooks: hooks}) do
+    Enum.reduce(hooks, conn, fn {hook_name, hook_function}, conn_acc ->
+      try do
+        Logger.debug("running hook #{hook_name} on #{to_string(conn.stanza)}")
+        hook_function.(conn_acc)
+      rescue
+        error ->
+          Logger.error("failed hook #{hook_name} on #{to_string(conn.stanza)} with #{inspect(error)}")
+          conn_acc
+      end
+    end)
   end
 
   @doc false
@@ -514,24 +313,32 @@ defmodule Exampple.Client do
         stream = XmlStream.new()
         xml_init = xml_init(data.domain)
         data.tcp_handler.send(xml_init, socket)
-        Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_init}#{IO.ANSI.reset()}")
+        trace(data, :sent, packet: xml_init)
         data = %Data{data | socket: socket, stream: stream}
-        if pid = data.subscribed, do: Kernel.send(pid, :connected)
+        trace(data, :connected, [])
         {:next_state, :connected, data, timeout_action(data)}
 
       error ->
         Logger.error("connect error #{data.host}:#{data.port}: #{inspect(error)}")
+        trace(data, :connection_error, [error_message: error])
         :keep_state_and_data
     end
   end
 
-  def disconnected(:cast, {:send, _packet}, _data) do
+  def disconnected(:cast, {:send, packet}, data) do
     Logger.error("cannot process sent, we're still disconnected!")
+    trace(data, :send_error, [
+      error_message: "cannot process sent, still disconnected",
+      error_data: packet
+    ])
     :keep_state_and_data
   end
 
-  def disconnected(:cast, :upgrade_tls, _data) do
+  def disconnected(:cast, :upgrade_tls, data) do
     Logger.error("cannot process upgrade TLS, we're still disconnected!")
+    trace(data, :upgrade_tls_error, [
+      error_message: "cannot process upgrade TLS, still disconnected"
+    ])
     :keep_state_and_data
   end
 
@@ -541,13 +348,12 @@ defmodule Exampple.Client do
 
   @doc false
   def connected(:info, {:xmlelement, xmlel}, data) do
-    conn = Conn.new(xmlel)
-    Kernel.send(data.send_pid, {:conn, data.name, conn})
+    conn =
+      xmlel
+      |> Conn.new()
+      |> apply_hooks(data)
 
-    Logger.info(
-      "(#{data.name}) received: #{IO.ANSI.green()}#{to_string(xmlel)}#{IO.ANSI.reset()}"
-    )
-
+    trace(data, :received, conn: conn)
     :keep_state_and_data
   end
 
@@ -565,7 +371,7 @@ defmodule Exampple.Client do
 
   def connected(:cast, {:send, packet}, data) when is_binary(packet) do
     data.tcp_handler.send(packet, get_socket(data))
-    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{packet}#{IO.ANSI.reset()}")
+    trace(data, :sent, packet: packet)
     :keep_state_and_data
   end
 
@@ -575,13 +381,15 @@ defmodule Exampple.Client do
         stream = XmlStream.new()
         xml_init = xml_init(data.domain)
         data.tls_handler.send(xml_init, tls_socket)
-        Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_init}#{IO.ANSI.reset()}")
+        trace(data, :upgraded_tls)
+        trace(data, :sent, packet: xml_init)
 
         {:keep_state,
          %Data{data | stream: stream, tls_socket: tls_socket, tcp_handler: data.tls_handler}}
 
       {:error, reason} ->
         Logger.error("start TLS failed due to: #{inspect(reason)}")
+        trace(data, :error_upgrading_tls, [error_message: reason])
         :keep_state_and_data
     end
   end
@@ -593,7 +401,7 @@ defmodule Exampple.Client do
 
   def connected({:timeout, :ping}, :send_ping, data) do
     data.tcp_handler.send("\n", get_socket(data))
-    Logger.debug("sent (ping)")
+    trace(data, :sent, packet: :ping)
     {:keep_state_and_data, timeout_action(data)}
   end
 
@@ -602,16 +410,17 @@ defmodule Exampple.Client do
   def terminate(_reason, :disconnected, _data), do: :ok
 
   def terminate(_reason, _state, data) do
-    data.tcp_handler.send(xml_terminate(), get_socket(data))
-    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
+    xml_terminate = xml_terminate()
+    data.tcp_handler.send(xml_terminate, get_socket(data))
+    trace(data, :sent, packet: xml_terminate)
     data.tcp_handler.stop(get_socket(data))
+    trace(data, :terminated, [])
     :ok
   end
 
   @impl GenStateMachine
   @doc false
   def handle_event(:info, {type, socket, packet}, _state, data) when type in [:tcp, :ssl] do
-    Logger.info("(#{data.name}) received (packet): #{IO.ANSI.cyan()}#{packet}#{IO.ANSI.reset()}")
     case XmlStream.parse(data.stream, packet) do
       {:cont, partial} ->
         {:keep_state, %Data{data | stream: partial}}
@@ -628,6 +437,7 @@ defmodule Exampple.Client do
       {:error, error} ->
         Logger.error("failing packet: #{inspect(packet)}")
         Logger.error("parsing error: #{inspect(error)}")
+        trace(data, :receive_error, packet: packet, error_message: error)
         data.tcp_handler.stop(data.socket)
         {:next_state, :retrying, data, [{:next_event, :cast, :connect}]}
     end
@@ -636,52 +446,52 @@ defmodule Exampple.Client do
   def handle_event(:info, {closed, _socket}, _state, data)
       when closed in [:tcp_closed, :ssl_closed] do
     Logger.error("tcp closed, disconnected")
+    trace(data, :error_closed, error_message: "tcp closed, disconnected")
     {:next_state, :disconnected, data}
   end
 
   def handle_event(:info, {error, _socket, reason}, _state, data)
       when error in [:tcp_error, :ssl_error] do
     Logger.error("tcp closed, disconnected, error: #{inspect(reason)}")
+    trace(data, :error_closed, error_message: "tcp closed, disconnected, error: #{inspect(reason)}")
     {:next_state, :disconnected, data}
-  end
-
-  def handle_event(:cast, {:add_template, key, template}, _state, data) do
-    templates = Keyword.put(data.templates, key, template)
-    {:keep_state, %Data{data | templates: templates}}
-  end
-
-  def handle_event(:cast, {:add_check, key, check}, _state, data) do
-    checks = Keyword.put(data.checks, key, check)
-    {:keep_state, %Data{data | checks: checks}}
-  end
-
-  def handle_event({:call, from}, {:get_template, template}, _state, data) do
-    reply = Keyword.fetch(data.templates, template)
-    {:keep_state_and_data, [{:reply, from, reply}]}
-  end
-
-  def handle_event({:call, from}, {:get_check, check}, _state, data) do
-    reply = Keyword.fetch(data.checks, check)
-    {:keep_state_and_data, [{:reply, from, reply}]}
   end
 
   def handle_event({:call, from}, :is_connected?, state, _data) do
     {:keep_state_and_data, [{:reply, from, state == :connected}]}
   end
 
-  def handle_event(:cast, {:subscribe, pid}, :connected, data) do
-    Kernel.send(pid, :connected)
-    {:keep_state, %Data{data | subscribed: pid}}
+  def handle_event(:cast, {:trace, pid, true}, state, data) when is_pid(pid) do
+    if state == :connected, do: Kernel.send(pid, {:connected, self(), []})
+    {:keep_state, %Data{data | tracer_pids: to_subscribe(data.tracer_pids, pid)}}
   end
 
-  def handle_event(:cast, {:subscribe, pid}, _state, data) do
-    {:keep_state, %Data{data | subscribed: pid}}
+  def handle_event(:cast, {:trace, pid, false}, _state, data) when is_pid(pid) do
+    tracer_pids =
+      Enum.reject(data.tracer_pids, fn {_ref, tpid} -> tpid == pid end)
+      |> Map.new()
+
+    {:keep_state, %Data{data | tracer_pids: tracer_pids}}
+  end
+
+  def handle_event(:info, {:DOWN, ref, :process, _pid, _reason}, _state, data) do
+    {:keep_state, %Data{data | tracer_pids: Map.delete(data.tracer_pids, ref)}}
+  end
+
+  def handle_event(:cast, {:add_hook, name, function}, _state, data) do
+    {:keep_state, %Data{data | hooks: Map.put(data.hooks, name, function)}}
+  end
+
+  def handle_event(:cast, {:del_hook, name}, _state, data) do
+    {:keep_state, %Data{data | hooks: Map.delete(data.hooks, name)}}
   end
 
   def handle_event(:cast, :disconnect, _state, data) do
-    data.tcp_handler.send(xml_terminate(), get_socket(data))
-    Logger.info("(#{data.name}) sent: #{IO.ANSI.yellow()}#{xml_terminate()}#{IO.ANSI.reset()}")
+    xml_terminate = xml_terminate()
+    data.tcp_handler.send(xml_terminate, get_socket(data))
+    trace(data, :sent, packet: xml_terminate)
     data.tcp_handler.stop(get_socket(data))
+    trace(data, :disconnected, [])
     data = %{data | tls_socket: nil, socket: nil, stream: nil}
     {:next_state, :disconnected, data}
   end

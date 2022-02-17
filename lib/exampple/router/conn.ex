@@ -16,9 +16,9 @@ defmodule Exampple.Router.Conn do
   - `stanza`: the original stanza in `%Xmlel{}` format.
   - `reponse`: the generated response in use if we pass the connection
     to the `Exampple.Component` module.
-  - `envelope`: it is a closure needed if we are receiving stanzas
-    which are using an envelope. It is not needed to handle it manually,
-    see further information about this in `Exampple.Router`.
+  - `envelope`: it is an anonymous function needed if we are receiving
+    stanzas which are using an envelope. It is not needed to handle it
+    manually, see further information about this in `Exampple.Router`.
   """
   alias Exampple.Router.Conn
   alias Exampple.Xml.Xmlel
@@ -35,7 +35,18 @@ defmodule Exampple.Router.Conn do
             response: nil,
             envelope: nil
 
-  @type t() :: %__MODULE__{}
+  @type t() :: %__MODULE__{
+    domain: String.t() | nil,
+    from_jid: Jid.t() | nil,
+    to_jid: Jid.t() | nil,
+    id: String.t() | nil,
+    type: String.t() | nil,
+    xmlns: String.t() | nil,
+    stanza_type: String.t() | nil,
+    stanza: Xmlel.t() | nil,
+    response: Xmlel.t() | nil,
+    envelope: (Xmlel.t() -> Xmlel.t()) | nil
+  }
 
   @doc """
   Creates a new connection passing a `%Xmlel{}` struct in `xmlel` as the

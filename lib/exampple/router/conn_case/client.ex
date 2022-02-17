@@ -13,18 +13,10 @@ defmodule Exampple.Router.ConnCase.Client do
   end
 
   @doc """
-  The `component_received` macro injects a stanza inside of the component.
-  The stanza should be in `%Xmlel{}` format.
-  """
-  defmacro component_received(stanza) do
-    quote do
-      Exampple.DummyTcpClient.received(unquote(stanza))
-    end
-  end
-
-  @doc """
   The `client_received` macro injects a stanza inside of the client.
-  The stanza should be in `%Xmlel{}` format.
+  The stanza should be in `%Xmlel{}` format or a binary chunk.
+
+  See `Exampple.DummyTcpClient.received/1` for further information.
   """
   defmacro client_received(stanza) do
     quote do
