@@ -46,6 +46,7 @@ defmodule Exampple.ComponentTest do
       assert {:disconnected, %Component.Data{}} = :sys.get_state(Component)
     end
 
+    @tag timeout: 120_000
     test "connecting" do
       Component.connect()
       Component.wait_for_ready()
