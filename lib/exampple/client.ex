@@ -219,7 +219,7 @@ defmodule Exampple.Client do
   @spec trace(boolean()) :: :ok
   @spec trace(GenServer.server(), enable? :: boolean()) :: :ok
   def trace(name \\ __MODULE__, enable?) when is_boolean(enable?) do
-    GenStateMachine.cast(name, {:trace, enable?, self()})
+    GenStateMachine.cast(name, {:trace, self(), enable?})
   end
 
   @doc """
