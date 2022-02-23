@@ -74,13 +74,17 @@ defmodule Exampple.Template do
       iex> Exampple.Template.put("gret", "Hello %{name}!")
       iex> Exampple.Template.render!("gret", name: "World")
       "Hello World!"
+
+      iex> :ok = Exampple.Template.init()
+      iex> Exampple.Template.render!("missing", name: "World")
+      ** (ArgumentError) not_found
   """
   @spec render!(name) :: content
   @spec render!(name, bindings) :: content
   def render!(name, bindings \\ []) do
     case render(name, bindings) do
       {:ok, content} -> content
-      {:error, error} -> raise error
+      {:error, reason} -> raise ArgumentError, to_string(reason)
     end
   end
 
