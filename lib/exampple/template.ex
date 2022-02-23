@@ -12,7 +12,7 @@ defmodule Exampple.Template do
 
   @type name :: String.t
   @type key :: atom
-  @type content :: String.t
+  @type content :: String.t | ((Keyword.t()) -> String.t)
   @type bindings :: [{key, content}]
 
   @doc """
@@ -28,7 +28,7 @@ defmodule Exampple.Template do
     :ok
   end
 
-  @doc """
+  @doc ~S"""
   Use a template registered. This let us to trigger faster stanzas
   when we are working from the shell, developing tests or even when
   we have our code narrowed and focused on the business logic.
@@ -42,14 +42,24 @@ defmodule Exampple.Template do
       iex> Exampple.Template.put("gret", "Hello %{name}!")
       iex> Exampple.Template.render("gret", name: "World")
       {:ok, "Hello World!"}
+
+      iex> :ok = Exampple.Template.init()
+      iex> Exampple.Template.put("gret", &"Hello #{&1[:name]}!")
+      iex> Exampple.Template.render("gret", name: "World")
+      {:ok, "Hello World!"}
   """
   @spec render(name) :: {:ok, content} | {:error, :not_found}
   @spec render(name, bindings) :: {:ok, content} | {:error, :not_found}
   def render(name, bindings \\ []) when is_list(bindings) do
-    if content = get(name) do
-      {:ok, Interpolation.interpolate(content, bindings)}
-    else
-      {:error, :not_found}
+    case get(name) do
+      content when is_binary(content) ->
+        {:ok, Interpolation.interpolate(content, bindings)}
+
+      content when is_function(content, 1) ->
+        {:ok, content.(bindings)}
+
+      nil ->
+        {:error, :not_found}
     end
   end
 
@@ -87,8 +97,8 @@ defmodule Exampple.Template do
   @doc """
   Adds a template to be in use by the process when we call `send_template/2`
   or `send_template/3`. The `name` is the name or PID for the process, the
-  `name` is the name we will use storing the template and `fun` is the
-  function which will generate the stanza.
+  `name` is the name we will use storing the template and `xml` is the
+  text or function which will generate the stanza.
   """
   @spec put(name, content) :: content
   def put(name, xml) do
