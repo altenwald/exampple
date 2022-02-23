@@ -108,6 +108,7 @@ defmodule Exampple.ClientTest do
       assert :ok == Client.wait_for_connected(pname)
       DummyTcpClient.subscribe()
       parent = self()
+
       Client.add_hook(pname, "received", fn conn ->
         send(parent, to_string(conn.stanza))
         conn
@@ -129,12 +130,13 @@ defmodule Exampple.ClientTest do
     end
 
     test "chunks stanzas", %{pname: _pname} do
-      assert :ok == client_received(
-        "<iq type='get' from='test.example.com' to='User@example.com/res1' id='1'>" <>
-          "<query xmlns='jabber:iq:ping'/>" <>
-          "</iq><iq type='get' from='test.example.com' to='User@example.com/res1' id='2'>" <>
-          "<query xmlns='jabbe"
-      )
+      assert :ok ==
+               client_received(
+                 "<iq type='get' from='test.example.com' to='User@example.com/res1' id='1'>" <>
+                   "<query xmlns='jabber:iq:ping'/>" <>
+                   "</iq><iq type='get' from='test.example.com' to='User@example.com/res1' id='2'>" <>
+                   "<query xmlns='jabbe"
+               )
 
       Process.sleep(100)
       assert :ok == client_received("r:iq:ping'/></iq>")
@@ -188,9 +190,21 @@ defmodule Exampple.ClientTest do
     end
 
     test "use predefined template", %{pname: pname} do
-      Template.put(:auth, "<auth mechanism='PLAIN' xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>%{pass}</auth>")
-      Template.put(:bind, "<iq type='set' id='bind3' xmlns='jabber:client'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>%{res}</resource></bind></iq>")
-      Template.put(:session, "<iq type='set' id='session4'><session xmlns='urn:ietf:params:xml:ns:xmpp-session'/></iq>")
+      Template.put(
+        :auth,
+        "<auth mechanism='PLAIN' xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>%{pass}</auth>"
+      )
+
+      Template.put(
+        :bind,
+        "<iq type='set' id='bind3' xmlns='jabber:client'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>%{res}</resource></bind></iq>"
+      )
+
+      Template.put(
+        :session,
+        "<iq type='set' id='session4'><session xmlns='urn:ietf:params:xml:ns:xmpp-session'/></iq>"
+      )
+
       Template.put(:presence, "<presence/>")
 
       pass = Base.encode64(<<0, "user", 0, "pass">>)

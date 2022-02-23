@@ -10,9 +10,9 @@ defmodule Exampple.Template do
   """
   alias Exampple.Template.Interpolation
 
-  @type name :: String.t
+  @type name :: String.t()
   @type key :: atom
-  @type content :: String.t | ((Keyword.t()) -> String.t)
+  @type content :: String.t() | (Keyword.t() -> String.t())
   @type bindings :: [{key, content}]
 
   @doc """
@@ -25,6 +25,7 @@ defmodule Exampple.Template do
     if :ets.info(__MODULE__) == :undefined do
       :ets.new(__MODULE__, [:named_table, :set, :public])
     end
+
     :ok
   end
 

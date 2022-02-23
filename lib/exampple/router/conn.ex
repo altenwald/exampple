@@ -36,17 +36,17 @@ defmodule Exampple.Router.Conn do
             envelope: nil
 
   @type t() :: %__MODULE__{
-    domain: String.t() | nil,
-    from_jid: Jid.t() | nil,
-    to_jid: Jid.t() | nil,
-    id: String.t() | nil,
-    type: String.t() | nil,
-    xmlns: String.t() | nil,
-    stanza_type: String.t() | nil,
-    stanza: Xmlel.t() | nil,
-    response: Xmlel.t() | nil,
-    envelope: (Xmlel.t() -> Xmlel.t()) | nil
-  }
+          domain: String.t() | nil,
+          from_jid: Jid.t() | nil,
+          to_jid: Jid.t() | nil,
+          id: String.t() | nil,
+          type: String.t() | nil,
+          xmlns: String.t() | nil,
+          stanza_type: String.t() | nil,
+          stanza: Xmlel.t() | nil,
+          response: Xmlel.t() | nil,
+          envelope: (Xmlel.t() -> Xmlel.t()) | nil
+        }
 
   @doc """
   Creates a new connection passing a `%Xmlel{}` struct in `xmlel` as the

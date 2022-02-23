@@ -391,6 +391,7 @@ defmodule Exampple.Component do
   def handle_event(:enter, _old_state, :disconnected, _data) do
     {:keep_state_and_data, [{{:timeout, :ping}, :cancel}]}
   end
+
   def handle_event(:enter, _old_state, _state, _data) do
     :keep_state_and_data
   end

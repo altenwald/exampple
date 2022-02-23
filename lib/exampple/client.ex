@@ -44,8 +44,8 @@ defmodule Exampple.Client do
             ping: boolean() | non_neg_integer(),
             tcp_handler: module(),
             tls_handler: module(),
-            tracer_pids: %{ reference() => pid() },
-            hooks: %{ Client.hook_name() => Client.hook_function() },
+            tracer_pids: %{reference() => pid()},
+            hooks: %{Client.hook_name() => Client.hook_function()},
             name: nil | atom()
           }
 
@@ -293,6 +293,7 @@ defmodule Exampple.Client do
   end
 
   defp apply_hooks(conn, %Data{hooks: []}), do: conn
+
   defp apply_hooks(conn, %Data{hooks: hooks}) do
     Enum.reduce(hooks, conn, fn {hook_name, hook_function}, conn_acc ->
       try do
@@ -300,7 +301,10 @@ defmodule Exampple.Client do
         hook_function.(conn_acc)
       rescue
         error ->
-          Logger.error("failed hook #{hook_name} on #{to_string(conn.stanza)} with #{inspect(error)}")
+          Logger.error(
+            "failed hook #{hook_name} on #{to_string(conn.stanza)} with #{inspect(error)}"
+          )
+
           conn_acc
       end
     end)
@@ -320,25 +324,29 @@ defmodule Exampple.Client do
 
       error ->
         Logger.error("connect error #{data.host}:#{data.port}: #{inspect(error)}")
-        trace(data, :connection_error, [error_message: error])
+        trace(data, :connection_error, error_message: error)
         :keep_state_and_data
     end
   end
 
   def disconnected(:cast, {:send, packet}, data) do
     Logger.error("cannot process sent, we're still disconnected!")
-    trace(data, :send_error, [
+
+    trace(data, :send_error,
       error_message: "cannot process sent, still disconnected",
       error_data: packet
-    ])
+    )
+
     :keep_state_and_data
   end
 
   def disconnected(:cast, :upgrade_tls, data) do
     Logger.error("cannot process upgrade TLS, we're still disconnected!")
-    trace(data, :upgrade_tls_error, [
+
+    trace(data, :upgrade_tls_error,
       error_message: "cannot process upgrade TLS, still disconnected"
-    ])
+    )
+
     :keep_state_and_data
   end
 
@@ -389,7 +397,7 @@ defmodule Exampple.Client do
 
       {:error, reason} ->
         Logger.error("start TLS failed due to: #{inspect(reason)}")
-        trace(data, :error_upgrading_tls, [error_message: reason])
+        trace(data, :error_upgrading_tls, error_message: reason)
         :keep_state_and_data
     end
   end
@@ -453,7 +461,11 @@ defmodule Exampple.Client do
   def handle_event(:info, {error, _socket, reason}, _state, data)
       when error in [:tcp_error, :ssl_error] do
     Logger.error("tcp closed, disconnected, error: #{inspect(reason)}")
-    trace(data, :error_closed, error_message: "tcp closed, disconnected, error: #{inspect(reason)}")
+
+    trace(data, :error_closed,
+      error_message: "tcp closed, disconnected, error: #{inspect(reason)}"
+    )
+
     {:next_state, :disconnected, data}
   end
 

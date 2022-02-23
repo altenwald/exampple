@@ -26,7 +26,7 @@ defmodule Exampple.Template.Interpolation do
     end_pattern = :binary.compile_pattern("}")
 
     interpolate(string, "", [], start_pattern, end_pattern)
-    |> Enum.map(& if is_atom(&1), do: bindings[&1] || "", else: &1)
+    |> Enum.map(&if is_atom(&1), do: bindings[&1] || "", else: &1)
     |> Enum.reverse()
     |> Enum.join()
   end
