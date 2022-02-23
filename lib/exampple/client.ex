@@ -381,7 +381,7 @@ defmodule Exampple.Client do
         stream = XmlStream.new()
         xml_init = xml_init(data.domain)
         data.tls_handler.send(xml_init, tls_socket)
-        trace(data, :upgraded_tls)
+        trace(data, :upgraded_tls, [])
         trace(data, :sent, packet: xml_init)
 
         {:keep_state,
