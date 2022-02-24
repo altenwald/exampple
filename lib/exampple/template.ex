@@ -9,10 +9,11 @@ defmodule Exampple.Template do
   populate it individually for each node.
   """
   alias Exampple.Template.Interpolation
+  alias Exampple.Xml.Xmlel
 
   @type name :: String.t()
   @type key :: atom
-  @type content :: String.t() | (Keyword.t() -> String.t())
+  @type content :: String.t() | Xmlel.t() | (Keyword.t() -> String.t() | Xmlel.t())
   @type bindings :: [{key, content}]
 
   @doc """
@@ -64,7 +65,7 @@ defmodule Exampple.Template do
     end
   end
 
-  @doc """
+  @doc ~S"""
   See `render/1`. It performs the same action but triggering an error
   if the template name wasn't found.
 
@@ -72,6 +73,11 @@ defmodule Exampple.Template do
 
       iex> :ok = Exampple.Template.init()
       iex> Exampple.Template.put("gret", "Hello %{name}!")
+      iex> Exampple.Template.render!("gret", name: "World")
+      "Hello World!"
+
+      iex> :ok = Exampple.Template.init()
+      iex> Exampple.Template.put("gret", &"Hello #{&1[:name]}!")
       iex> Exampple.Template.render!("gret", name: "World")
       "Hello World!"
 
