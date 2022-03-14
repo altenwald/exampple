@@ -4,7 +4,7 @@ defmodule Exampple.MixProject do
   def project do
     [
       app: :exampple,
-      version: "0.10.4",
+      version: "0.10.5",
       description: "eXaMPPle is a XMPP Component Framework",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),

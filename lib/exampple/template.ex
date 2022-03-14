@@ -13,7 +13,8 @@ defmodule Exampple.Template do
 
   @type name :: String.t()
   @type key :: atom
-  @type content :: String.t() | Xmlel.t() | (Keyword.t() -> String.t() | Xmlel.t())
+  @type rendered :: String.t() | Xmlel.t()
+  @type content :: rendered() | (Keyword.t() -> rendered())
   @type bindings :: [{key, content}]
 
   @doc """
@@ -50,8 +51,8 @@ defmodule Exampple.Template do
       iex> Exampple.Template.render("gret", name: "World")
       {:ok, "Hello World!"}
   """
-  @spec render(name) :: {:ok, content} | {:error, :not_found}
-  @spec render(name, bindings) :: {:ok, content} | {:error, :not_found}
+  @spec render(name) :: {:ok, rendered} | {:error, :not_found}
+  @spec render(name, bindings) :: {:ok, rendered} | {:error, :not_found}
   def render(name, bindings \\ []) when is_list(bindings) do
     case get(name) do
       content when is_binary(content) ->
@@ -85,8 +86,8 @@ defmodule Exampple.Template do
       iex> Exampple.Template.render!("missing", name: "World")
       ** (ArgumentError) not_found
   """
-  @spec render!(name) :: content
-  @spec render!(name, bindings) :: content
+  @spec render!(name) :: rendered()
+  @spec render!(name, bindings) :: rendered()
   def render!(name, bindings \\ []) do
     case render(name, bindings) do
       {:ok, content} -> content
@@ -106,6 +107,14 @@ defmodule Exampple.Template do
   end
 
   @doc """
+  Retrieve all of the templates as a list of tuples `{name(), }
+  """
+  @spec all() :: [{name, content}]
+  def all do
+    :ets.tab2list(__MODULE__)
+  end
+
+  @doc """
   Adds a template to be in use by the process when we call `send_template/2`
   or `send_template/3`. The `name` is the name or PID for the process, the
   `name` is the name we will use storing the template and `xml` is the
@@ -115,5 +124,14 @@ defmodule Exampple.Template do
   def put(name, xml) do
     true = :ets.insert(__MODULE__, {name, xml})
     xml
+  end
+
+  @doc """
+  Adds several templates at once.
+  """
+  @spec put([{name, content}]) :: [{name, content}]
+  def put(contents) do
+    true = :ets.insert(__MODULE__, contents)
+    contents
   end
 end
