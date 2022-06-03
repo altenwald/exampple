@@ -490,6 +490,17 @@ defmodule Myapp.Router do
 end
 ```
 
+In addition to the identity, you can add extra information, like a XData form, which is very common to the discovery for XEPs like HTTP upload:
+
+```elixir
+  discovery do
+    identity category: "component", type: "generic", name: "myapp"
+    extra UploadForm.new("result", %{"max_file_size" => @max_file_size})
+  end
+```
+
+This way it will be generating also the extra data using an XData form for that.
+
 ### Envelope
 
 Because we can configure XMPP to delegate using [XEP-0355](https://xmpp.org/extensions/xep-0355.html), we could configure to receive in a transparent way the incoming messages inside of their envelope and reply them just as if we were inside of the XMPP Server replying directly to the user or component asking.
@@ -676,6 +687,13 @@ Form01.new()
 |> Xdata.validate_form()
 ```
 
+Or in a shorter way, taking advantage of the `Form01.new/2` parameters, we could use:
+
+```elixir
+Form01.new("form", %{"name" => "Manuel", "surname" => "Rubio", "gender" => "M"})
+|> Xdata.validate_form()
+```
+
 As you can see the validation is delegated to the specification of the data. Even, if you need to fill a form yourself to be sent to another server or even to a client, you can perform the action using the function `Xdata.submit/2`:
 
 ```elixir
@@ -684,6 +702,11 @@ Form01.new()
 ```
 
 The difference between _cast_ and _submit_ is the last one is changing the form_type and performing a validation. Cast isn't performing a validation.
+
+The state changes are:
+
+- Form of `form` type is changed to `submit` type.
+- Form of `submit` type is changed to `result` type.
 
 ## Something goes wrong
 

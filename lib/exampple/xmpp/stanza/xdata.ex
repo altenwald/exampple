@@ -36,8 +36,19 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
       Creates a new Xdata structure. See more information in `Exampple.Xmpp.Stanza.Xdata`.
       """
       @spec new(String.t(), map()) :: Exampple.Xmpp.Stanza.Xdata.t()
-      def new(xdata_form_type \\ "form", data \\ %{}) do
+      def new(xdata_form_type \\ "form", data \\ %{})
+
+      def new("form", data) when map_size(data) == 0 do
         Exampple.Xmpp.Stanza.Xdata.new(__MODULE__)
+      end
+
+      def new(xdata_form_type, data) when map_size(data) == 0 do
+        Exampple.Xmpp.Stanza.Xdata.new(__MODULE__, xdata_form_type)
+      end
+
+      def new(xdata_form_type, data) do
+        Exampple.Xmpp.Stanza.Xdata.new(__MODULE__, xdata_form_type)
+        |> Exampple.Xmpp.Stanza.Xdata.cast(data)
       end
 
       @doc """

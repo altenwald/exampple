@@ -175,6 +175,54 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
       assert to_string(xml) == to_string(form)
     end
 
+    test "casting values in new function" do
+      defmodule Form25 do
+        use Exampple.Xmpp.Stanza.Xdata
+
+        form "urn:xmpp:mydata", "Personal Details" do
+          instructions("Fill the whole form, please.")
+          field("name", :text_single, required: true, label: "Name")
+          field("surname", :text_single, label: "Surname")
+
+          field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
+        end
+      end
+
+      form =
+        Form25.new("result", %{
+          "name" => "Manuel",
+          "surname" => "Rubio",
+          "gender" => "M",
+          "age" => "41"
+        })
+
+      xml = ~x[
+        <x type='result' xmlns='jabber:x:data'>
+          <title>Personal Details</title>
+          <instructions>Fill the whole form, please.</instructions>
+          <field var='FORM_TYPE' type='hidden'>
+            <value>urn:xmpp:mydata</value>
+          </field>
+          <field label='Name' type='text-single' var='name'>
+            <required/>
+            <value>Manuel</value>
+          </field>
+          <field label='Surname' type='text-single' var='surname'>
+            <value>Rubio</value>
+          </field>
+          <field label='Gender' type='list-single' var='gender'>
+            <value>M</value>
+            <option label='Male'><value>M</value></option>
+            <option label='Female'><value>F</value></option>
+          </field>
+        </x>
+        ]
+
+      assert is_nil(form.errors)
+      assert form.valid?
+      assert to_string(xml) == to_string(form)
+    end
+
     test "casting multi-values" do
       defmodule Form24 do
         use Exampple.Xmpp.Stanza.Xdata

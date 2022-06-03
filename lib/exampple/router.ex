@@ -44,6 +44,7 @@ defmodule Exampple.Router do
       Module.register_attribute(__MODULE__, :routes, accumulate: true)
       Module.register_attribute(__MODULE__, :namespaces, accumulate: true)
       Module.register_attribute(__MODULE__, :identities, accumulate: true)
+      Module.register_attribute(__MODULE__, :disco_extra, accumulate: true)
       Module.register_attribute(__MODULE__, :includes, accumulate: true)
       Module.register_attribute(__MODULE__, :features, accumulate: true)
       @envelopes []
@@ -208,7 +209,12 @@ defmodule Exampple.Router do
             )
           end
 
-        identity ++ namespaces
+        extra =
+          Module.get_attribute(env.module, :disco_extra)
+          |> List.wrap()
+          |> List.flatten()
+
+        identity ++ namespaces ++ extra
       else
         []
       end
@@ -425,6 +431,19 @@ defmodule Exampple.Router do
       end
 
       Module.put_attribute(__MODULE__, :identities, Macro.escape({category, type, name}))
+    end
+  end
+
+  defmacro extra(stanzas) do
+    quote do
+      unless Module.get_attribute(__MODULE__, :disco, false) do
+        raise """
+        identity MUST be inside of a discovery block.
+        """
+      end
+
+      stanzas = unquote(stanzas)
+      Module.put_attribute(__MODULE__, :disco_extra, Macro.escape(stanzas))
     end
   end
 

@@ -162,6 +162,7 @@ defmodule Exampple.RouterTest do
             <feature var="urn:xmpp:forward:0"/>
             <feature var="jabber:iq:rpc"/>
             <feature var="urn:exampple:test:get:0"/>
+            <data/>
           </query>
         </iq>
       ])

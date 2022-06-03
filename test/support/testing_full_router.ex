@@ -3,6 +3,7 @@ defmodule TestingFullRouter do
 
   discovery do
     identity(category: "component", type: "generic", name: "Testing component")
+    extra(Exampple.Xml.Xmlel.new("data"))
   end
 
   envelope(["urn:xmpp:delegation:1", "urn:xmpp:forward:0"])
