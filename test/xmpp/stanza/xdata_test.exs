@@ -175,6 +175,25 @@ defmodule Exampple.Xmpp.Stanza.XdataTest do
       assert to_string(xml) == to_string(form)
     end
 
+    test "don't use functions for literals" do
+      assert_raise FieldError, fn ->
+        defmodule Form26 do
+          use Exampple.Xmpp.Stanza.Xdata
+
+          def phone, do: "+31666555444"
+
+          form "urn:xmpp:mydata", "Personal Details" do
+            instructions("Fill the whole form, please.")
+            field("name", :text_single, required: true, label: "Name", value: "John")
+            field("surname", :text_single, label: "Surname", value: "Doe")
+            field("phone", :text_single, value: phone())
+
+            field("gender", :list_single, label: "Gender", options: [{"Male", "M"}, {"Female", "F"}])
+          end
+        end
+      end
+    end
+
     test "casting values in new function" do
       defmodule Form25 do
         use Exampple.Xmpp.Stanza.Xdata

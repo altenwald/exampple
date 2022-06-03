@@ -245,7 +245,7 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
 
   [XEP-0004]: https://xmpp.org/extensions/xep-0004.html
   """
-  defmacro field(var, type, args) do
+  defmacro field(var, type, args \\ []) do
     required = args[:required] || false
     label = args[:label]
     desc = args[:desc]
@@ -257,6 +257,17 @@ defmodule Exampple.Xmpp.Stanza.Xdata do
         "list-" <> _ -> args[:options]
         _ -> nil
       end
+
+    case value do
+      {fname, [line: _], args} when is_atom(fname) and is_list(args) ->
+        raise FieldError,
+        """
+        cannot use functions for Xdata field values, you must use literals.
+        """
+
+      _ ->
+        :ok
+    end
 
     field =
       %{
