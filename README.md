@@ -16,7 +16,7 @@ You can install the application for your project in the following way:
 ```elixir
 def deps do
   [
-    {:exampple, "~> 0.9.0"}
+    {:exampple, "~> 0.10.0"}
   ]
 end
 ```

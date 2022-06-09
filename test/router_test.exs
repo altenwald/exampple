@@ -9,6 +9,12 @@ defmodule Exampple.RouterTest do
   alias Exampple.Router.Conn
   alias Exampple.Xmpp.Stanza
 
+  defp register_process do
+    unless Process.whereis(:test_get_and_set) do
+      Process.register(self(), :test_get_and_set)
+    end
+  end
+
   describe "defining routes" do
     test "wrong controller module for router definition" do
       assert_raise ArgumentError, fn ->
@@ -76,7 +82,7 @@ defmodule Exampple.RouterTest do
 
       query = stanza.children
 
-      Process.register(self(), :test_get_and_set)
+      register_process()
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
 
       assert_receive {:ok, :set, ^conn, ^query}
@@ -102,7 +108,7 @@ defmodule Exampple.RouterTest do
 
       query = stanza.children
 
-      Process.register(self(), :test_get_and_set)
+      register_process()
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
 
       assert_receive {:ok, :groupchat, ^conn, ^query}
@@ -189,7 +195,7 @@ defmodule Exampple.RouterTest do
 
       query = [~x[<query xmlns="urn:exampple:test:set:0"/>]]
 
-      Process.register(self(), :test_get_and_set)
+      register_process()
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
 
       assert_receive {:ok, :set, conn, ^query}
@@ -223,7 +229,7 @@ defmodule Exampple.RouterTest do
       ]
       domain = "example.com"
 
-      Process.register(self(), :test_get_and_set)
+      register_process()
       assert {:ok, _pid} = Exampple.Router.route(stanza, domain, :exampple)
 
       reply = ~x[
